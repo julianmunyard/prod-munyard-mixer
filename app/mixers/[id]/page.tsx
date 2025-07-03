@@ -380,7 +380,7 @@ useEffect(() => {
     WebkitAppearance: 'slider-vertical',
     writingMode: 'vertical-lr',
     height: 'calc(100% - 16px)',
-    transform: isSafari ? 'none' : 'rotate(180deg)',
+    transform: isIOS ? 'rotate(180deg)' : 'none',
   }}
 />
   </div>
