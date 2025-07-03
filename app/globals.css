@@ -1,7 +1,55 @@
-@import "tailwindcss";
-
 :root {
   --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+html,
+body {
+  width: 100%;
+  max-width: none;
+  font-size: 100%; /* ✅ prevent root font shrinking */
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body, h1, h2, h3, h4, h5, h6, p {
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
+
+@import "tailwindcss";
+
+/* THEME + BACKGROUND */
+:root {
+  --background: #FCFAEE;
   --foreground: #171717;
 }
 
@@ -20,7 +68,169 @@
 }
 
 body {
+  font-family: var(--font-sans), sans-serif;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ✅ MIXER MODULE FIX */
+.mixer-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+}
+.mixer-grid {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.mixer-module {
+  width: 6rem;
+  padding: 1rem;
+  background-color: #B30000;
+  border-radius: 0.5rem;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+  border: 1px solid #444;
+}
+
+/* FLASHY SOLO BUTTON */
+@keyframes flash {
+  0%, 100% {
+    background-color: #15803d;
+  }
+  50% {
+    background-color: #22c55e;
+  }
+}
+.flash {
+  animation: flash 0.8s ease-in-out infinite;
+}
+
+/* VILLAGE FONT */
+@font-face {
+  font-family: 'Village';
+  src: url('/fonts/Village-wLn3.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+.village {
+  font-family: 'Village', sans-serif;
+  color: inherit;
+}
+
+/* UNIVERSAL RED SLIDER THUMB — FIXED FOR SAFARI */
+input[type="range"] {
+  -webkit-appearance: slider-vertical;
+  appearance: slider-vertical;
+  writing-mode: bt-lr;
+  height: 140px;
+  width: 2px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  position: relative;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  background: #FCFAEE;
+  height: 140px;
+  border-radius: 2px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 40px;
+  width: 18px;
+  background: #B8001F;
+  border-radius: 9999px;
+  border: none;
+  position: relative;
+  top: 0;
+}
+input[type="range"]::-moz-range-track {
+  background: #FCFAEE;
+  height: 140px;
+  border-radius: 2px;
+}
+input[type="range"]::-moz-range-thumb {
+  height: 40px;
+  width: 18px;
+  background: #B8001F;
+  border-radius: 9999px;
+  border: none;
+}
+input[type="range"]::-ms-thumb {
+  height: 40px;
+  width: 18px;
+  background: #B8001F;
+  border-radius: 9999px;
+  border: none;
+}
+
+/* PRESSABLE BUTTON STYLES */
+@layer utilities {
+  .pressable {
+    transition: background-color 0.15s ease, transform 0.1s ease;
+    will-change: transform;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .pressable:hover {
+    background-color: #b91c1c;
+    transform: translateY(-1px);
+  }
+
+  .pressable:active {
+    background-color: #7f1d1d;
+    transform: translateY(1px);
+  }
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.rotate-notice {
+  animation: fadeInOut 2s ease-in-out forwards;
+}
+
+@keyframes rotateToSideFade {
+  0% {
+    opacity: 1;
+    transform: rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform: rotate(90deg);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(90deg);
+  }
+}
+
+.fade-rotate {
+  animation: rotateToSideFade 2.2s ease-out forwards;
+  animation-delay: 0.8s;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@media not all and (min-resolution:.001dpcm) {
+  @supports (-webkit-appearance: none) {
+    .safari-invert-fix {
+      transform: none !important;
+    }
+  }
 }
