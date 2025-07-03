@@ -369,18 +369,18 @@ useEffect(() => {
   max="1.5"
   step="0.01"
      value={isIOS ? 2 - varispeed : varispeed}
-  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-    const raw = parseFloat(e.target.value)
-    const adjusted = isIOS ? 2 - raw : raw
-    setVarispeed(adjusted)
-    setVarispeed(parseFloat(e.target.value))
-  }}
+onChange={(e: ChangeEvent<HTMLInputElement>) => {
+  const raw = parseFloat(e.target.value)
+  const adjusted = isIOS ? 2 - raw : raw
+  setVarispeed(adjusted)
+}}
+
   className="w-[6px] absolute top-[8px] bottom-[8px] appearance-none bg-transparent z-10"
   style={{
     WebkitAppearance: 'slider-vertical',
     writingMode: 'vertical-lr',
     height: 'calc(100% - 16px)',
-    transform: isIOS ? 'rotate(180deg)' : 'none',
+    transform: isSafari ? 'none' : 'rotate(180deg)',
   }}
 />
   </div>
