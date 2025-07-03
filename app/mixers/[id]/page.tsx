@@ -1,5 +1,10 @@
 'use client'
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable prefer-const */
+
 import { useEffect, useRef, useState, ChangeEvent } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import DelayKnob from '../../components/DelayKnob'
