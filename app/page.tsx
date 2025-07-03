@@ -146,7 +146,16 @@ await axios.put(signed.signedUrl, file, {
           UPLOAD STEMS
         </h1>
 
-        {userEmail && <p style={{ marginBottom: '2rem' }}>Logged in as: {userEmail}</p>}
+    {userEmail && (
+  <p style={{ marginBottom: '2rem' }}>
+    Logged in as:{' '}
+    {userEmail
+      .split('@')[0]
+      .split('.')[0]
+      .charAt(0)
+      .toUpperCase() + userEmail.split('@')[0].split('.')[0].slice(1)}
+  </p>
+)}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <label>

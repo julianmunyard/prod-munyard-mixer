@@ -141,21 +141,23 @@ if (Array.isArray(stems)) {
               <strong>{song.title}</strong><br />
               <span>{song.artist_name}</span>
             </div>
-<button
-  type="button"
-  onClick={() => handleDelete(song.id, song.stems)}
-  style={{
-    backgroundColor: '#B8001F',
-    color: 'black',
-    border: 'none',
-    padding: '0.5rem 1rem',
-    cursor: 'pointer',
-    borderRadius: '4px',
-    fontSize: '0.9rem'
-  }}
->
-  Delete
-</button>
+<form onSubmit={(e) => e.preventDefault()}>
+  <button
+    type="button"
+    onClick={() => handleDelete(song.id, song.stems)}
+    style={{
+      backgroundColor: '#B8001F',
+      color: 'black',
+      border: 'none',
+      padding: '0.5rem 1rem',
+      cursor: 'pointer',
+      borderRadius: '4px',
+      fontSize: '0.9rem'
+    }}
+  >
+    Delete
+  </button>
+</form>
 
           </div>
         </li>
