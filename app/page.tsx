@@ -192,7 +192,7 @@ await axios.put(signed.signedUrl, file, {
   <input
     id="file-upload"
     type="file"
-    accept="audio/*"
+    accept=".mp3,.wav,audio/*"
     multiple
     ref={fileInputRef}
     onChange={(e) => {

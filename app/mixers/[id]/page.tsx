@@ -37,6 +37,9 @@ export default function MixerPage() {
   const [loadingStems, setLoadingStems] = useState(true)
   const [allReady, setAllReady] = useState(false)
 
+const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
+
 
   const delaysRef = useRef<Record<string, number>>({})
   const audioCtxRef = useRef<AudioContext | null>(null)
@@ -159,6 +162,14 @@ useEffect(() => {
     nodesRef.current = {}
   }
 
+// ✅ Cleanup when user navigates away
+useEffect(() => {
+  return () => {
+    stopAll()
+    audioCtxRef.current?.close()
+  }
+}, [])
+
   const playAll = async () => {
     const ctx = audioCtxRef.current
     if (!ctx) return
@@ -214,7 +225,7 @@ useEffect(() => {
 
   if (!song) return <div className="p-8 text-white">Loading...</div>
 
-  const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+
 
 
   return (
@@ -328,9 +339,22 @@ useEffect(() => {
                   cursor: 'pointer',
                 }} className={solos[label] ? 'flash' : ''}>SOLO</button>
 
-                <div style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'white', color: '#B8001F', marginTop: '6px' }}>
-                  {label}
-                </div>
+<div style={{
+  fontSize: '12px',
+  padding: '4px 10px',
+  borderRadius: '4px',
+  backgroundColor: 'white',
+  color: '#B8001F',
+  marginTop: '6px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '100%',
+  textAlign: 'center',
+  wordBreak: 'break-word'
+}}>
+  {label}
+</div>
               </div>
             </div>
           ))}
@@ -344,8 +368,11 @@ useEffect(() => {
   min="0.5"
   max="1.5"
   step="0.01"
-  value={varispeed}
+     value={isIOS ? 2 - varispeed : varispeed}
   onChange={(e: ChangeEvent<HTMLInputElement>) => {
+    const raw = parseFloat(e.target.value)
+    const adjusted = isIOS ? 2 - raw : raw
+    setVarispeed(adjusted)
     setVarispeed(parseFloat(e.target.value))
   }}
   className="w-[6px] absolute top-[8px] bottom-[8px] appearance-none bg-transparent z-10"
@@ -356,7 +383,6 @@ useEffect(() => {
     transform: isSafari ? 'none' : 'rotate(180deg)',
   }}
 />
-
   </div>
 </div>
 </main>

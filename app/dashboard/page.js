@@ -108,7 +108,12 @@ if (Array.isArray(stems)) {
           Dashboard
         </h1>
 
-        {userEmail && <p style={{ fontSize: '1rem', marginBottom: '2rem' }}>Welcome, {userEmail}</p>}
+{userEmail && (
+  <p style={{ fontSize: '1rem', marginBottom: '2rem' }}>
+    Welcome, {userEmail.split('@')[0].split('.')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].split('.')[0].slice(1)}
+  </p>
+)}
+
 
        {projects.length === 0 ? (
   <div style={{ marginBottom: '2rem' }}>
