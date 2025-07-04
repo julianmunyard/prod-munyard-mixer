@@ -14,13 +14,6 @@ export default function LoginPage() {
     else window.location.href = '/dashboard'
   }
 
-  async function handleSignup(e) {
-    e.preventDefault()
-    const { error } = await supabase.auth.signUp({ email, password })
-    if (error) setError(error.message)
-    else alert('Check your email to confirm sign-up.')
-  }
-
   return (
     <main style={{ padding: '4rem', fontFamily: 'Geist Mono, monospace', textAlign: 'center' }}>
       <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Login or Sign Up</h1>
@@ -41,8 +34,29 @@ export default function LoginPage() {
           style={{ padding: '0.5rem 1rem', fontSize: '1rem' }}
         />
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button onClick={handleLogin} style={{ padding: '0.5rem', background: '#B8001F', color: 'white', border: 'none', fontSize: '1rem' }}>Login</button>
-        <button onClick={handleSignup} style={{ padding: '0.5rem', background: '#222', color: 'white', border: 'none', fontSize: '1rem' }}>Sign Up</button>
+        
+        <button
+          onClick={handleLogin}
+          style={{ padding: '0.5rem', background: '#B8001F', color: 'white', border: 'none', fontSize: '1rem' }}
+        >
+          Login
+        </button>
+
+        <a
+          href="/signup"
+          style={{
+            display: 'inline-block',
+            textAlign: 'center',
+            padding: '0.5rem',
+            background: '#222',
+            color: 'white',
+            border: 'none',
+            fontSize: '1rem',
+            textDecoration: 'none'
+          }}
+        >
+          Sign Up
+        </a>
       </form>
     </main>
   )

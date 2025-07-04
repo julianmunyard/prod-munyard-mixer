@@ -15,7 +15,7 @@ import axios, { AxiosProgressEvent } from 'axios'
 export default function Home() {
   const router = useRouter()
   const [userEmail, setUserEmail] = useState<string | null>(null)
-
+  const [locked, setLocked] = useState(true)
   const [artistName, setArtistName] = useState('')
   const [projectTitle, setProjectTitle] = useState('')
   const [color, setColor] = useState('Red (Classic)')
@@ -27,15 +27,25 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [uploadedStemUrls, setUploadedStemUrls] = useState<{ label: string; file: string }[]>([])
 
-
   useEffect(() => {
     async function getUser() {
       const { data: { user }, error } = await supabase.auth.getUser()
-      if (error) console.error('Auth error:', error.message)
-      if (user) setUserEmail(user.email ?? null)
+      if (error) {
+        console.error('Auth error:', error.message)
+        return
+      }
+
+      if (user?.confirmed_at) {
+        setUserEmail(user.email ?? null)
+      } else {
+        alert('Please verify your email before continuing.')
+        router.push('/login')
+      }
     }
+
     getUser()
   }, [])
+
 
   const uploadFileWithProgress = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop()
@@ -51,18 +61,18 @@ export default function Home() {
       throw new Error('Failed to get signed URL')
     }
 
-await axios.put(signed.signedUrl, file, {
-  headers: {
-    'Content-Type': file.type || 'audio/wav',
-    'Content-Length': `${file.size}`
-  },
-  onUploadProgress: (progressEvent: AxiosProgressEvent) => {
-    const percent = progressEvent.total
-      ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
-      : 0;
-    setUploadProgress(prev => ({ ...prev, [file.name]: percent }))
-  }
-})
+    await axios.put(signed.signedUrl, file, {
+      headers: {
+        'Content-Type': file.type || 'audio/wav',
+        'Content-Length': `${file.size}`
+      },
+      onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+        const percent = progressEvent.total
+          ? Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          : 0;
+        setUploadProgress(prev => ({ ...prev, [file.name]: percent }))
+      }
+    })
 
     return supabase.storage.from('stems').getPublicUrl(filePath).data.publicUrl
   }
@@ -127,6 +137,14 @@ await axios.put(signed.signedUrl, file, {
       console.log('✅ Inserted song:', data)
       router.push(`/mixers/${data.id}`)
     }
+  }
+
+  if (locked) {
+    return (
+      <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <p style={{ fontFamily: 'Geist Mono, monospace', fontSize: '1.25rem' }}>Verifying session…</p>
+      </main>
+    )
   }
 
   return (

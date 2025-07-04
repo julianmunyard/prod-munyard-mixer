@@ -13,12 +13,14 @@ export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null); // ✅ new
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const handleSignUp = async (e) => {
     e.preventDefault();
     setErrorMsg(null);
+    setSuccessMsg(null);
     setIsSubmitting(true);
 
     const { data: existingUser, error: signInError } = await supabase.auth.signInWithPassword({
@@ -39,10 +41,11 @@ export default function SignUp() {
 
     if (error) {
       setErrorMsg(error.message);
-      setIsSubmitting(false);
     } else {
-      router.push('/dashboard');
+      setSuccessMsg('✅ Check your email to confirm your sign-up.');
     }
+
+    setIsSubmitting(false);
   };
 
   return (
@@ -82,6 +85,20 @@ export default function SignUp() {
           />
 
           {errorMsg && <p style={{ color: '#f87171' }}>{errorMsg}</p>}
+
+          {successMsg && (
+            <div style={{
+              backgroundColor: '#FCFAEE',
+              color: '#B8001F',
+              padding: '1rem 1.5rem',
+              borderRadius: '0.5rem',
+              fontSize: '1rem',
+              fontFamily: 'Geist Mono, monospace',
+              animation: 'fadeIn 0.5s ease-in-out forwards'
+            }}>
+              {successMsg}
+            </div>
+          )}
 
           <button
             type="submit"
@@ -129,6 +146,10 @@ export default function SignUp() {
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
     </main>
