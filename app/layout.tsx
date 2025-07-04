@@ -26,8 +26,8 @@ return (
   <html lang="en">
     <head>
       {/* Favicon & PWA */}
-      <link rel="icon" type="image/png" href="/M-icon.png" />
-      <link rel="shortcut icon" type="image/png" href="/M-icon.png" />
+      <link rel="icon" type="image/x-icon" href="/munyard-icon.ico" />
+      <link rel="shortcut icon" href="/munyard-icon.ico" />
       <link rel="manifest" href="/manifest.json" />
       <meta name="theme-color" content="#FCFAEE" />
 
