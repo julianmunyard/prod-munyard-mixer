@@ -26,6 +26,8 @@ export default function Create() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [uploadedStemUrls, setUploadedStemUrls] = useState<{ label: string; file: string }[]>([])
+  const [bpm, setBpm] = useState<number | ''>('') 
+
 
   useEffect(() => {
     async function getUser() {
@@ -111,16 +113,17 @@ export default function Create() {
       }
     }
 
-    const { data, error: insertError } = await supabase
-      .from('songs')
-      .insert({
-        user_id: user.id,
-        artist_name: artistName,
-        title: projectTitle,
-        effects: [effect],
-        color,
-        stems: uploadedStemUrls,
-      })
+const { data, error: insertError } = await supabase
+  .from('songs')
+  .insert({
+    user_id: user.id,
+    artist_name: artistName,
+    title: projectTitle,
+    effects: [effect],
+    color,
+    stems: uploadedStemUrls,
+    bpm: bpm !== '' ? Number(bpm) : null,
+  })
       .select()
       .single()
 
@@ -187,6 +190,17 @@ export default function Create() {
               onChange={(e) => setProjectTitle(e.target.value)}
               style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
             />
+          </label>
+
+          <label>
+          BPM (Optional)
+          <input
+          type="number"
+          value={bpm}
+          onChange={(e) => setBpm(Number(e.target.value))}
+          placeholder="e.g. 120"
+          style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
+          />
           </label>
 
           <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }}>

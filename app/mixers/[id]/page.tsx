@@ -9,6 +9,8 @@ import { useEffect, useRef, useState, ChangeEvent } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import DelayKnob from '../../components/DelayKnob'
 import { useParams } from 'next/navigation'
+import VarispeedSlider from '../../components/VarispeedSlider'
+
 
 type Song = {
   id: string
@@ -36,6 +38,8 @@ export default function MixerPage() {
   const [showNotification, setShowNotification] = useState(false)
   const [loadingStems, setLoadingStems] = useState(true)
   const [allReady, setAllReady] = useState(false)
+  const [bpm, setBpm] = useState<number | null>(null)
+
 
 const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
@@ -55,14 +59,19 @@ useEffect(() => {
   const fetchSong = async () => {
     const { data, error } = await supabase.from('songs').select('*').eq('id', id).single()
     if (error || !data) return console.error('❌ Song fetch failed', error)
-// 🎨 Apply theme from Supabase song data
-if (data.color === 'Blue & Yellow') {
-  document.documentElement.style.setProperty('--bg', '#001F54')   // deep blue
-  document.documentElement.style.setProperty('--fg', '#FFD700')   // golden yellow
-} else {
-  document.documentElement.style.setProperty('--bg', '#B8001F')   // default red
-  document.documentElement.style.setProperty('--fg', '#ffffff')   // default white
-}
+
+    // 🎨 Apply theme from Supabase song data
+    if (data.color === 'Blue & Yellow') {
+      document.documentElement.style.setProperty('--bg', '#001F54')
+      document.documentElement.style.setProperty('--fg', '#FFD700')
+    } else {
+      document.documentElement.style.setProperty('--bg', '#B8001F')
+      document.documentElement.style.setProperty('--fg', '#ffffff')
+    }
+
+    // ✅ Set the BPM value from Supabase
+    if (data.bpm) setBpm(data.bpm)
+
     const parsedStems = typeof data.stems === 'string' ? JSON.parse(data.stems) : data.stems
 
     const usedLabels = new Set<string>()
@@ -77,9 +86,6 @@ if (data.color === 'Blue & Yellow') {
       return { label, file: stem.file }
     })
 
-    
-
-
     setSong(data)
     setStems(stemObjs)
     setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])))
@@ -90,6 +96,7 @@ if (data.color === 'Blue & Yellow') {
 
   if (id) fetchSong()
 }, [id])
+
 
 useEffect(() => {
   if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -106,11 +113,11 @@ useEffect(() => {
     setLoadingStems(true)
     setAllReady(false)
 
-    if (!audioCtxRef.current) {
-      const ctx = new AudioContext()
-      await ctx.audioWorklet.addModule('/granular-processor.js')
-      audioCtxRef.current = ctx
-    }
+if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+  const ctx = new AudioContext()
+  await ctx.audioWorklet.addModule('/granular-processor.js')
+  audioCtxRef.current = ctx
+}
 
     const ctx = audioCtxRef.current!
     const eighth = 60 / 120 / 2
@@ -170,11 +177,20 @@ useEffect(() => {
   }
 }, [])
 
-  const playAll = async () => {
-    const ctx = audioCtxRef.current
-    if (!ctx) return
-    if (ctx.state === 'suspended') await ctx.resume()
-    stopAll()
+
+const playAll = async () => {
+  let ctx = audioCtxRef.current
+
+  // ✅ Fix: If context is missing or was closed, recreate it
+  if (!ctx || ctx.state === 'closed') {
+    ctx = new AudioContext()
+    await ctx.audioWorklet.addModule('/granular-processor.js')
+    audioCtxRef.current = ctx
+  }
+
+  if (ctx.state === 'suspended') await ctx.resume()
+
+  stopAll()
 
     stems.forEach(({ label }) => {
       const buffer = buffersRef.current[label]
@@ -361,29 +377,13 @@ useEffect(() => {
         </div>
       </div>
 <div className="absolute right-4 top-[260px] flex flex-col items-center">
+  {bpm && (
+    <div className="mb-1 text-xs text-red-700 font-mono">
+      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+    </div>
+  )}
   <span className="mb-3 text-sm text-red-700 tracking-wider">VARISPEED</span>
-  <div className="relative flex flex-col items-center border border-red-700 rounded-md" style={{ height: '350px', width: '36px', paddingTop: '8px', paddingBottom: '8px' }}>
-<input
-  type="range"
-  min="0.5"
-  max="1.5"
-  step="0.01"
-     value={isIOS ? 2 - varispeed : varispeed}
-onChange={(e: ChangeEvent<HTMLInputElement>) => {
-  const raw = parseFloat(e.target.value)
-  const adjusted = isIOS ? 2 - raw : raw
-  setVarispeed(adjusted)
-}}
-
-  className="w-[6px] absolute top-[8px] bottom-[8px] appearance-none bg-transparent z-10"
-  style={{
-    WebkitAppearance: 'slider-vertical',
-    writingMode: 'vertical-lr',
-    height: 'calc(100% - 16px)',
-    transform: isSafari ? 'none' : 'rotate(180deg)',
-  }}
-/>
-  </div>
+  <VarispeedSlider value={varispeed} onChange={setVarispeed} isIOS={isIOS} />
 </div>
 </main>
 )
