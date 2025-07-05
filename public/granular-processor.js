@@ -37,10 +37,22 @@ class GranularProcessor extends AudioWorkletProcessor {
       return true;
     }
 
+    const buffer = this.buffer;
+    const bufferLength = buffer.length;
+
     for (let i = 0; i < channel.length; i++) {
-      const idx = Math.floor(this.position);
-      channel[i] = this.buffer[idx % this.buffer.length] || 0;
+      const idx = this.position;
+      const i0 = Math.floor(idx);
+      const i1 = (i0 + 1) % bufferLength;
+      const frac = idx - i0;
+
+      const sample = (1 - frac) * buffer[i0 % bufferLength] + frac * buffer[i1];
+      channel[i] = sample;
+
       this.position += rate;
+      if (this.position >= bufferLength) {
+        this.position -= bufferLength;
+      }
     }
 
     return true;
