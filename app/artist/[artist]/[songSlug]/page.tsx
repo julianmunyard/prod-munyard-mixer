@@ -7,9 +7,9 @@
 
 import { useEffect, useRef, useState, ChangeEvent } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import DelayKnob from '../../components/DelayKnob'
+import DelayKnob from '../../../components/DelayKnob'
 import { useParams } from 'next/navigation'
-import VarispeedSlider from '../../components/VarispeedSlider'
+import VarispeedSlider from '../../../components/VarispeedSlider'
 
 
 type Song = {
@@ -27,8 +27,8 @@ type Stem = {
 
 
 export default function MixerPage() {
-  const { id } = useParams()
-  const [song, setSong] = useState<Song | null>(null)
+const { artist, songSlug } = useParams() as { artist: string; songSlug: string }
+  const [songData, setSongData] = useState<Song | null>(null)
   const [stems, setStems] = useState<Stem[]>([])
   const [volumes, setVolumes] = useState<Record<string, number>>({})
   const [delays, setDelays] = useState<Record<string, number>>({})
@@ -57,7 +57,15 @@ const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigato
 
 useEffect(() => {
   const fetchSong = async () => {
-    const { data, error } = await supabase.from('songs').select('*').eq('id', id).single()
+    console.log('🧪 Fetching song with:', { artist, songSlug })  // 👈 Add this
+
+    const { data, error } = await supabase
+      .from('songs')
+      .select('*')
+      .eq('artist_slug', artist)
+      .eq('song_slug', songSlug)
+      .single()
+      
     if (error || !data) return console.error('❌ Song fetch failed', error)
 
     // 🎨 Apply theme from Supabase song data
@@ -86,7 +94,7 @@ useEffect(() => {
       return { label, file: stem.file }
     })
 
-    setSong(data)
+    setSongData(data)
     setStems(stemObjs)
     setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])))
     setDelays(Object.fromEntries(stemObjs.map(s => [s.label, 0])))
@@ -94,8 +102,8 @@ useEffect(() => {
     setSolos(Object.fromEntries(stemObjs.map(s => [s.label, false])))
   }
 
-  if (id) fetchSong()
-}, [id])
+  if (artist && songSlug) fetchSong()
+}, [artist, songSlug])
 
 
 useEffect(() => {
@@ -242,14 +250,14 @@ node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTim
     })
   }, [varispeed])
 
-  if (!song) return <div className="p-8 text-white">Loading...</div>
+if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
 
 
   return (
     <main className="min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 font-sans relative overflow-y-auto" style={{ maxHeight: '100dvh' }}>
-      <h1 className="village text-center mb-16" style={{ fontSize: '96px', letterSpacing: '0.05em', lineHeight: '1.1' }}>{song.title}</h1>
+      <h1 className="village text-center mb-16" style={{ fontSize: '96px', letterSpacing: '0.05em', lineHeight: '1.1' }}>{songData?.title}</h1>
 
       {showNotification && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">

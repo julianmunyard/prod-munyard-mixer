@@ -12,6 +12,14 @@ import { supabase } from '../../lib/supabaseClient'
 import { v4 as uuidv4 } from 'uuid'
 import axios, { AxiosProgressEvent } from 'axios'
 
+function toSlug(input: string) {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-') // replace spaces/symbols with hyphens
+    .replace(/^-+|-+$/g, '')     // remove leading/trailing hyphens
+}
+
 export default function Create() {
   const router = useRouter()
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -94,6 +102,13 @@ export default function Create() {
       return
     }
 
+      // ✅ VALIDATE REQUIRED FIELDS
+  if (!artistName.trim() || !projectTitle.trim()) {
+    alert('Please enter both an artist name and a project title.')
+    setIsSubmitting(false)
+    return
+  }
+  
     let uploadedStemUrls: { label: string; file: string }[] = []
 
     if (stems && stems.length > 0) {
@@ -113,6 +128,9 @@ export default function Create() {
       }
     }
 
+const artistSlug = toSlug(artistName)
+const songSlug = toSlug(projectTitle)
+
 const { data, error: insertError } = await supabase
   .from('songs')
   .insert({
@@ -123,9 +141,11 @@ const { data, error: insertError } = await supabase
     color,
     stems: uploadedStemUrls,
     bpm: bpm !== '' ? Number(bpm) : null,
+    artist_slug: artistSlug,
+    song_slug: songSlug
   })
-      .select()
-      .single()
+  .select()
+  .single()
 
     if (insertError || !data) {
       console.error('❌ Insert error:', insertError?.message)
@@ -133,7 +153,7 @@ const { data, error: insertError } = await supabase
       setIsSubmitting(false)
     } else {
       console.log('✅ Inserted song:', data)
-      router.push(`/mixers/${data.id}`)
+      router.push(`/artist/${artistSlug}/${songSlug}`)
     }
   }
 

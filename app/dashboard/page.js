@@ -28,7 +28,7 @@ export default function Dashboard() {
 
       const { data: songs, error: songsError } = await supabase
         .from('songs')
-        .select('id, title, artist_name, stems')
+        .select('id, title, artist_name, artist_slug, song_slug, stems')
         .eq('user_id', user.id)
 
       if (songsError) console.error('Songs fetch error:', songsError)
@@ -127,7 +127,18 @@ if (Array.isArray(stems)) {
         <li key={song.id} style={{ marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
             <div
-              onClick={() => router.push(`/mixers/${song.id}`)}
+              onClick={() => {
+  if (song.artist_slug && song.song_slug) {
+    router.push(`/artist/${song.artist_slug}/${song.song_slug}`)
+  } else {
+    console.error('❌ Missing slug values:', {
+  artist_slug: song.artist_slug,
+  song_slug: song.song_slug,
+  song,
+})
+    alert('This song is missing slugs and cannot be opened.')
+  }
+}}
               style={{
                 flexGrow: 1,
                 padding: '1rem',
