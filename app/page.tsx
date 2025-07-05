@@ -27,29 +27,41 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [uploadedStemUrls, setUploadedStemUrls] = useState<{ label: string; file: string }[]>([])
 
-useEffect(() => {
-  async function getUser() {
-    const { data, error } = await supabase.auth.getSession()
-
-    if (error || !data.session) {
-      router.push('/login')
-      return
+  // 👇 Redirect if already logged in
+  useEffect(() => {
+    const redirectIfLoggedIn = async () => {
+      const { data } = await supabase.auth.getSession()
+      if (data.session) {
+        router.replace('/dashboard')
+      }
     }
 
-    const user = data.session.user
+    redirectIfLoggedIn()
+  }, [])
 
-    if (user.email_confirmed_at || user.confirmed_at) {
-      setUserEmail(user.email ?? null)
-      setLocked(false) // ✅ unlock immediately
-    } else {
-      alert('Please verify your email before continuing.')
-      router.push('/login')
+  // 👇 Existing logic to handle unlocked state after confirming email
+  useEffect(() => {
+    async function getUser() {
+      const { data, error } = await supabase.auth.getSession()
+
+      if (error || !data.session) {
+        router.push('/login')
+        return
+      }
+
+      const user = data.session.user
+
+      if (user.email_confirmed_at || user.confirmed_at) {
+        setUserEmail(user.email ?? null)
+        setLocked(false) // ✅ unlock immediately
+      } else {
+        alert('Please verify your email before continuing.')
+        router.push('/login')
+      }
     }
-  }
 
-  getUser()
-}, [])
-
+    getUser()
+  }, [])
 
 
   const uploadFileWithProgress = async (file: File): Promise<string> => {
