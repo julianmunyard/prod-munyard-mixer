@@ -13,6 +13,9 @@ type Props = {
 export default function VarispeedSlider({ value, onChange, isIOS, bpm }: Props) {
 const previousTick = useRef<number | null>(null)
 
+const playbackRate = value // this is already the corrected rate, 0.5–1.5
+
+
 function handleChange(e: ChangeEvent<HTMLInputElement>) {
   const raw = parseFloat(e.target.value)
   const adjusted = isIOS ? 2 - raw : raw
@@ -75,7 +78,7 @@ function handleChange(e: ChangeEvent<HTMLInputElement>) {
 {bpm && (
   <div className="absolute -top-10 flex flex-col items-center">
     <span className="text-[13px] font-mono text-[#B8001F]">
-      {Math.round(bpm * (isIOS ? 2 - value : value))} BPM
+      {Math.round((bpm ?? 0) * playbackRate)} BPM
     </span>
     <span className="text-[12px] font-mono text-[#B8001F] tracking-wider mt-1">
       VARISPEED
