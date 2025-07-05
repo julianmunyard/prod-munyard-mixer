@@ -166,19 +166,19 @@ if (Array.isArray(stems)) {
   </div>
 )}
 
-        <button
-          onClick={() => router.push('/')}
-          style={{
-            padding: '0.75rem 1.5rem',
-            backgroundColor: '#B8001F',
-            color: 'white',
-            fontSize: '1.25rem',
-            border: 'none',
-            cursor: 'pointer'
-          }}
-        >
-          Create New Project
-        </button>
+<button
+  onClick={() => router.push('/create')}
+  style={{
+    padding: '0.75rem 1.5rem',
+    backgroundColor: '#B8001F',
+    color: 'white',
+    fontSize: '1.25rem',
+    border: 'none',
+    cursor: 'pointer'
+  }}
+>
+  Create New Project
+</button>
       </div>
     </main>
   )
