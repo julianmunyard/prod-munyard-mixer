@@ -235,7 +235,9 @@ const playAll = async () => {
     const ctx = audioCtxRef.current
     if (!ctx) return
     Object.values(nodesRef.current).forEach((node) => {
-      node.parameters.get('playbackRate')?.setValueAtTime(varispeed, ctx.currentTime)
+      const playbackRate = isIOS ? 2 - varispeed : varispeed;
+node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
+
     })
   }, [varispeed])
 
