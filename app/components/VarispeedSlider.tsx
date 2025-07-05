@@ -75,7 +75,7 @@ function handleChange(e: ChangeEvent<HTMLInputElement>) {
 {bpm && (
   <div className="absolute -top-10 flex flex-col items-center">
     <span className="text-[13px] font-mono text-[#B8001F]">
-      {Math.round(bpm * (isIOS ? 2 - value : value))} BPM
+      {Math.round(bpm * (isIOS ? value : 2 - value))} BPM
     </span>
     <span className="text-[12px] font-mono text-[#B8001F] tracking-wider mt-1">
       VARISPEED
