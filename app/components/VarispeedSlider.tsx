@@ -12,14 +12,11 @@ type Props = {
 export default function VarispeedSlider({ value, onChange, isIOS, bpm }: Props) {
   const previousTick = useRef<number | null>(null)
 
-  const rawDisplay = isIOS ? 2 - value : value // for BPM and slider visual
-
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
     const raw = parseFloat(e.target.value)
-    const adjusted = isIOS ? 2 - raw : raw
-    onChange(adjusted)
+    onChange(raw)
 
-    const rounded = Math.round(adjusted * 10)
+    const rounded = Math.round(raw * 10)
 
     if (previousTick.current === null) {
       previousTick.current = rounded
@@ -66,7 +63,7 @@ export default function VarispeedSlider({ value, onChange, isIOS, bpm }: Props) 
       {bpm && (
         <div className="absolute -top-10 flex flex-col items-center">
           <span className="text-[13px] font-mono text-[#B8001F]">
-            {Math.round(bpm * rawDisplay)} BPM
+            {Math.round(bpm * (isIOS ? 2 - value : value))} BPM
           </span>
           <span className="text-[12px] font-mono text-[#B8001F] tracking-wider mt-1">
             VARISPEED
@@ -80,14 +77,14 @@ export default function VarispeedSlider({ value, onChange, isIOS, bpm }: Props) 
         min="0.5"
         max="1.5"
         step="0.01"
-        value={rawDisplay}
+        value={value}
         onChange={handleChange}
         className="w-[6px] absolute top-[8px] bottom-[8px] appearance-none bg-transparent z-10"
         style={{
           WebkitAppearance: 'slider-vertical',
           writingMode: 'vertical-lr',
           height: 'calc(100% - 16px)',
-          transform: isSafari ? 'none' : 'rotate(180deg)',
+          transform: isSafari ? 'none' : 'rotate(180deg)', // Flip visually for Chrome
         }}
       />
     </div>

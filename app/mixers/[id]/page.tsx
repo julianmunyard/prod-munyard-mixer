@@ -200,7 +200,8 @@ const playAll = async () => {
 
       const node = new AudioWorkletNode(ctx, 'granular-player')
       node.port.postMessage({ type: 'load', buffer: buffer.getChannelData(0) })
-      node.parameters.get('playbackRate')?.setValueAtTime(varispeed, ctx.currentTime)
+      const playbackRate = isIOS ? 2 - varispeed : varispeed;
+      node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
       node.connect(delay)
 
       const soloed = Object.values(solos).some(Boolean)
