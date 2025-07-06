@@ -322,7 +322,10 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
       stems.length === 1 && typeof window !== 'undefined' && window.innerWidth < 768
         ? 'center'
         : 'flex-start',
-    paddingRight: '64px',
+    paddingRight:
+      stems.length === 1 && typeof window !== 'undefined' && window.innerWidth < 768
+        ? '0px'
+        : '64px',
     boxSizing: 'border-box',
     width: '100%',
     overflowX: 'hidden',
