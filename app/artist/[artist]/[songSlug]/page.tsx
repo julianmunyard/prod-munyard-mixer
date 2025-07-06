@@ -312,142 +312,139 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 </div>
 
 
-
- <div className="relative flex justify-center overflow-x-hidden">
-<div className="flex gap-8 flex-wrap justify-center">
-    {stems.map(({ label }) => (
-      <div key={label} className="mixer-module" style={{
-        width: '96px',
-        minHeight: '440px',
-        backgroundColor: '#B30000',
-        border: '1px solid #444',
-        boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
-        borderRadius: '10px',
-        padding: '16px',
+<div
+  className="relative flex flex-nowrap items-end justify-center gap-8 px-4 overflow-hidden"
+  style={{ maxWidth: '100vw' }}
+>
+  {stems.map(({ label }) => (
+    <div key={label} className="mixer-module" style={{
+      width: '96px',
+      minHeight: '440px',
+      backgroundColor: '#B30000',
+      border: '1px solid #444',
+      boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
+      borderRadius: '10px',
+      padding: '16px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      flexShrink: 0, // ✅ prevents wrapping
+    }}>
+      <div style={{
+        width: '16px',
+        height: '40px',
+        backgroundColor: '#15803d',
+        borderRadius: '2px',
+        animation: 'pulse 1s infinite',
+        marginBottom: '18px'
+      }} />
+      <div style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        marginBottom: '30px',
+        fontSize: '10px',
+        color: 'white'
       }}>
-        <div style={{
-          width: '16px',
-          height: '40px',
-          backgroundColor: '#15803d',
-          borderRadius: '2px',
-          animation: 'pulse 1s infinite',
-          marginBottom: '18px'
+        <span style={{ marginBottom: '4px' }}>LEVEL</span>
+        <input type="range" min="0" max="1" step="0.01" value={volumes[label]} onChange={(e) => {
+          setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+        }} className="volume-slider" style={{
+          writingMode: 'bt-lr' as any,
+          WebkitAppearance: 'slider-vertical',
+          width: '4px',
+          height: '150px',
+          background: 'transparent',
         }} />
+      </div>
+
+      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+        <DelayKnob
+          value={delays[label]}
+          onChange={(val) => {
+            setDelays((prev) => ({ ...prev, [label]: val }))
+            delaysRef.current[label] = val
+          }}
+        />
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <button onClick={() => {
+          setMutes(prev => ({ ...prev, [label]: !prev[label] }))
+          setSolos(prev => ({ ...prev, [label]: false }))
+        }} style={{
+          fontSize: '12px',
+          padding: '4px 10px',
+          borderRadius: '4px',
+          marginBottom: '8px',
+          backgroundColor: mutes[label] ? '#FFD700' : 'white',
+          color: mutes[label] ? 'black' : '#B8001F',
+          border: 'none',
+          cursor: 'pointer',
+        }}>MUTE</button>
+
+        <button onClick={() => {
+          setSolos(prev => ({ ...prev, [label]: !prev[label] }))
+          setMutes(prev => ({ ...prev, [label]: false }))
+        }} style={{
+          fontSize: '12px',
+          padding: '4px 10px',
+          borderRadius: '4px',
+          marginBottom: '8px',
+          backgroundColor: solos[label] ? '#00FF99' : 'white',
+          color: solos[label] ? 'black' : '#B8001F',
+          border: 'none',
+          cursor: 'pointer',
+        }} className={solos[label] ? 'flash' : ''}>SOLO</button>
+
         <div style={{
+          fontSize: '13px',
+          fontWeight: 'normal',
+          padding: '6px 8px',
+          borderRadius: '4px',
+          backgroundColor: 'white',
+          color: '#B8001F',
+          marginTop: '10px',
+          textAlign: 'center',
+          width: '80px',
+          minHeight: '34px',
+          lineHeight: '1.3',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          marginBottom: '30px',
-          fontSize: '10px',
-          color: 'white'
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          whiteSpace: 'normal',
+          wordBreak: 'break-word',
+          textTransform: 'uppercase',
         }}>
-          <span style={{ marginBottom: '4px' }}>LEVEL</span>
-          <input type="range" min="0" max="1" step="0.01" value={volumes[label]} onChange={(e) => {
-            setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
-          }} className="volume-slider" style={{
-            writingMode: 'bt-lr' as any,
-            WebkitAppearance: 'slider-vertical',
-            width: '4px',
-            height: '150px',
-            background: 'transparent',
-          }} />
-        </div>
-
-        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-          <DelayKnob
-            value={delays[label]}
-            onChange={(val) => {
-              setDelays((prev) => ({ ...prev, [label]: val }))
-              delaysRef.current[label] = val
-            }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <button onClick={() => {
-            setMutes(prev => ({ ...prev, [label]: !prev[label] }))
-            setSolos(prev => ({ ...prev, [label]: false }))
-          }} style={{
-            fontSize: '12px',
-            padding: '4px 10px',
-            borderRadius: '4px',
-            marginBottom: '8px',
-            backgroundColor: mutes[label] ? '#FFD700' : 'white',
-            color: mutes[label] ? 'black' : '#B8001F',
-            border: 'none',
-            cursor: 'pointer',
-          }}>MUTE</button>
-
-          <button onClick={() => {
-            setSolos(prev => ({ ...prev, [label]: !prev[label] }))
-            setMutes(prev => ({ ...prev, [label]: false }))
-          }} style={{
-            fontSize: '12px',
-            padding: '4px 10px',
-            borderRadius: '4px',
-            marginBottom: '8px',
-            backgroundColor: solos[label] ? '#00FF99' : 'white',
-            color: solos[label] ? 'black' : '#B8001F',
-            border: 'none',
-            cursor: 'pointer',
-          }} className={solos[label] ? 'flash' : ''}>SOLO</button>
-
-<div style={{
-  fontSize: '13px',
-  fontWeight: 'normal',
-  padding: '6px 8px',
-  borderRadius: '4px',
-  backgroundColor: 'white',
-  color: '#B8001F',
-  marginTop: '10px',
-  textAlign: 'center',
-  width: '80px',            // consistent width
-  minHeight: '34px',        // lets short labels stay compact
-  lineHeight: '1.3',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  flexWrap: 'wrap',         // wraps long labels cleanly
-  whiteSpace: 'normal',
-  wordBreak: 'break-word',
-  textTransform: 'uppercase',
-}}>
-  {label}
-</div>
-
-
-
-
+          {label}
         </div>
       </div>
-    ))}
-  </div>
-
-{/* VARISPEED SLIDER — anchored to bottom of mixer modules */}
-<div style={{
-  position: 'absolute',
-  top: '50%',
-  right: 0,
-  transform: 'translateY(-50%)',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center', // 👈 CENTER the text and slider together
-  paddingRight: '8px',  // ✅ still give space from edge
-  zIndex: 10,
-}}>
-
-  {bpm && (
-    <div className="mb-1 text-xs text-red-700 font-mono">
-      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
     </div>
-  )}
-  <span className="mb-3 text-sm text-red-700 tracking-wider">VARISPEED</span>
-  <VarispeedSlider value={varispeed} onChange={setVarispeed} isIOS={isIOS} />
+  ))}
+
+  {/* VARISPEED SLIDER — anchored to edge */}
+  <div style={{
+    position: 'absolute',
+    top: '50%',
+    right: 0,
+    transform: 'translateY(-50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    paddingRight: '8px',
+    zIndex: 10,
+  }}>
+    {bpm && (
+      <div className="mb-1 text-xs text-red-700 font-mono">
+        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+      </div>
+    )}
+    <span className="mb-3 text-sm text-red-700 tracking-wider">VARISPEED</span>
+    <VarispeedSlider value={varispeed} onChange={setVarispeed} isIOS={isIOS} />
+  </div>
 </div>
-</div>
+
 </main>
 )
 }
