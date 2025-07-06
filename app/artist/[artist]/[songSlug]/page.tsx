@@ -269,8 +269,11 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
   return (
    <main
-  className="min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 pb-32 font-sans relative overflow-y-auto"
-  style={{ maxHeight: '100dvh' }}
+  className="min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 pb-32 font-sans relative"
+  style={{
+    maxWidth: '100vw',
+    overflowX: 'hidden', // 💡 Prevents sideways scroll
+  }}
 >
       <h1 className="village text-center mb-16" style={{ fontSize: '96px', letterSpacing: '0.05em', lineHeight: '1.1' }}>{songData?.title}</h1>
 
@@ -314,7 +317,13 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 <div
   className="relative flex flex-nowrap items-end justify-center gap-8 px-4"
-  style={{ maxWidth: '100vw', overflowX: 'visible' }}
+  style={{
+    paddingRight: '64px',         // 🧱 Space for varispeed
+    boxSizing: 'border-box',      // ✅ So the padding stays inside
+    width: '100%',
+    overflowX: 'hidden',          // 🚫 Prevents horizontal scroll
+    maxWidth: '100vw',            // ✅ Enforces viewport width
+  }}
 >
   {stems.map(({ label }) => (
     <div key={label} className="mixer-module" style={{
@@ -424,19 +433,17 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
   ))}
 
 {/* VARISPEED SLIDER — anchored to edge */}
-<div
-  style={{
-    position: 'absolute',
-    top: '50%',
-    right: (isIOS || window.innerWidth < 768) ? '-40px' : '0',
-    transform: 'translateY(-50%)',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    paddingRight: 0,
-    zIndex: 10,
-  }}
->
+<div style={{
+  position: 'absolute',
+  top: '50%',
+  right: 0,                  // ✅ Hugs the right edge neatly
+  transform: 'translateY(-50%)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  paddingRight: 0,
+  zIndex: 10,
+}}>
     {bpm && (
       <div className="mb-1 text-xs text-red-700 font-mono">
         {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
