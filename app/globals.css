@@ -243,9 +243,3 @@ canvas {
   -webkit-user-select: none;
   user-select: none;
 }
-
-@media screen and (max-height: 500px) and (orientation: landscape) {
-  .varispeed-slider {
-    right: 10px !important; /* or 20px / 60px — whatever works */
-  }
-}

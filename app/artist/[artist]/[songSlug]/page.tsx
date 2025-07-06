@@ -437,9 +437,9 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 <div
   className="varispeed-slider"
   style={{
-    position: 'absolute',
-    top: '50%',
-    right: '20px', // default for desktop
+    position: 'fixed', // ✅ ← KEY FIX
+    top: '60%',
+    right: '10px',
     transform: 'translateY(-50%)',
     display: 'flex',
     flexDirection: 'column',
