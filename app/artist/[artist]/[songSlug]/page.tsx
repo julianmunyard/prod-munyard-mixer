@@ -82,17 +82,29 @@ useEffect(() => {
 
     const parsedStems = typeof data.stems === 'string' ? JSON.parse(data.stems) : data.stems
 
-    const usedLabels = new Set<string>()
-    const stemObjs: Stem[] = parsedStems.map((stem: any, i: number) => {
-      let rawLabel = stem.label?.trim() || stem.file?.split('/').pop() || `Untitled Stem ${i + 1}`
-      rawLabel = rawLabel.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ')
-      let label = rawLabel
-      while (usedLabels.has(label)) {
-        label += `_${i}`
-      }
-      usedLabels.add(label)
-      return { label, file: stem.file }
-    })
+ const usedLabels = new Set<string>()
+const stemObjs: Stem[] = parsedStems.map((stem: any, i: number) => {
+  // Prefer the user-entered label, or fallback to the file name
+  let rawLabel = stem.label?.trim() || stem.file?.split('/').pop() || `Untitled Stem ${i + 1}`
+
+  // Remove extension
+  rawLabel = rawLabel.replace(/\.[^/.]+$/, '')
+
+  // Only do fancy formatting *if* the label came from the filename
+  if (!stem.label) {
+    rawLabel = rawLabel.replace(/[_-]/g, ' ')
+  }
+
+  // De-dupe
+  let label = rawLabel
+  while (usedLabels.has(label)) {
+    label += `_${i}`
+  }
+
+  usedLabels.add(label)
+  return { label, file: stem.file }
+})
+
 
     setSongData(data)
     setStems(stemObjs)
@@ -298,96 +310,129 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
 
-      <div className="flex justify-center">
-        <div className="flex gap-16">
-          {stems.map(({ label }) => (
-            <div key={label} className="mixer-module" style={{
-              width: '96px',
-              minHeight: '440px',
-              backgroundColor: '#B30000',
-              border: '1px solid #444',
-              boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
-              borderRadius: '10px',
-              padding: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}>
-              <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', fontSize: '10px', color: 'white' }}>
-                <span style={{ marginBottom: '4px' }}>LEVEL</span>
-                <input type="range" min="0" max="1" step="0.01" value={volumes[label]} onChange={(e) => {
-                  setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
-                }} className="volume-slider" style={{
-                  writingMode: 'bt-lr' as any,
-                  WebkitAppearance: 'slider-vertical',
-                  width: '4px',
-                  height: '150px',
-                  background: 'transparent',
-                }} />
-              </div>
+ <div className="relative flex justify-center overflow-x-hidden">
+  <div className="flex gap-8">
+    {stems.map(({ label }) => (
+      <div key={label} className="mixer-module" style={{
+        width: '96px',
+        minHeight: '440px',
+        backgroundColor: '#B30000',
+        border: '1px solid #444',
+        boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
+        borderRadius: '10px',
+        padding: '16px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}>
+        <div style={{
+          width: '16px',
+          height: '40px',
+          backgroundColor: '#15803d',
+          borderRadius: '2px',
+          animation: 'pulse 1s infinite',
+          marginBottom: '18px'
+        }} />
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginBottom: '30px',
+          fontSize: '10px',
+          color: 'white'
+        }}>
+          <span style={{ marginBottom: '4px' }}>LEVEL</span>
+          <input type="range" min="0" max="1" step="0.01" value={volumes[label]} onChange={(e) => {
+            setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+          }} className="volume-slider" style={{
+            writingMode: 'bt-lr' as any,
+            WebkitAppearance: 'slider-vertical',
+            width: '4px',
+            height: '150px',
+            background: 'transparent',
+          }} />
+        </div>
 
-              <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-                <DelayKnob
-                  value={delays[label]}
-                  onChange={(val) => {
-                    setDelays((prev) => ({ ...prev, [label]: val }))
-                    delaysRef.current[label] = val
-                  }}
-                />
-              </div>
+        <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+          <DelayKnob
+            value={delays[label]}
+            onChange={(val) => {
+              setDelays((prev) => ({ ...prev, [label]: val }))
+              delaysRef.current[label] = val
+            }}
+          />
+        </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <button onClick={() => {
-                  setMutes(prev => ({ ...prev, [label]: !prev[label] }))
-                  setSolos(prev => ({ ...prev, [label]: false }))
-                }} style={{
-                  fontSize: '12px',
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  marginBottom: '8px',
-                  backgroundColor: mutes[label] ? '#FFD700' : 'white',
-                  color: mutes[label] ? 'black' : '#B8001F',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}>MUTE</button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <button onClick={() => {
+            setMutes(prev => ({ ...prev, [label]: !prev[label] }))
+            setSolos(prev => ({ ...prev, [label]: false }))
+          }} style={{
+            fontSize: '12px',
+            padding: '4px 10px',
+            borderRadius: '4px',
+            marginBottom: '8px',
+            backgroundColor: mutes[label] ? '#FFD700' : 'white',
+            color: mutes[label] ? 'black' : '#B8001F',
+            border: 'none',
+            cursor: 'pointer',
+          }}>MUTE</button>
 
-                <button onClick={() => {
-                  setSolos(prev => ({ ...prev, [label]: !prev[label] }))
-                  setMutes(prev => ({ ...prev, [label]: false }))
-                }} style={{
-                  fontSize: '12px',
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  marginBottom: '8px',
-                  backgroundColor: solos[label] ? '#00FF99' : 'white',
-                  color: solos[label] ? 'black' : '#B8001F',
-                  border: 'none',
-                  cursor: 'pointer',
-                }} className={solos[label] ? 'flash' : ''}>SOLO</button>
+          <button onClick={() => {
+            setSolos(prev => ({ ...prev, [label]: !prev[label] }))
+            setMutes(prev => ({ ...prev, [label]: false }))
+          }} style={{
+            fontSize: '12px',
+            padding: '4px 10px',
+            borderRadius: '4px',
+            marginBottom: '8px',
+            backgroundColor: solos[label] ? '#00FF99' : 'white',
+            color: solos[label] ? 'black' : '#B8001F',
+            border: 'none',
+            cursor: 'pointer',
+          }} className={solos[label] ? 'flash' : ''}>SOLO</button>
 
 <div style={{
-  fontSize: '12px',
-  padding: '4px 10px',
+  fontSize: '13px',
+  fontWeight: 'normal',
+  padding: '6px 8px',
   borderRadius: '4px',
   backgroundColor: 'white',
   color: '#B8001F',
-  marginTop: '6px',
+  marginTop: '10px',
+  textAlign: 'center',
+  width: '80px',            // consistent width
+  minHeight: '34px',        // lets short labels stay compact
+  lineHeight: '1.3',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '100%',
-  textAlign: 'center',
-  wordBreak: 'break-word'
+  flexWrap: 'wrap',         // wraps long labels cleanly
+  whiteSpace: 'normal',
+  wordBreak: 'break-word',
+  textTransform: 'uppercase',
 }}>
   {label}
 </div>
-              </div>
-            </div>
-          ))}
+
+
+
+
         </div>
       </div>
-<div className="absolute right-4 top-[260px] flex flex-col items-center">
+    ))}
+  </div>
+
+{/* VARISPEED SLIDER — absolute right, tracks mixer vertical alignment */}
+<div style={{
+  position: 'absolute',
+  top: '50%',
+  right: '2rem',
+  transform: 'translateY(-50%)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+}}>
   {bpm && (
     <div className="mb-1 text-xs text-red-700 font-mono">
       {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
@@ -395,6 +440,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
   )}
   <span className="mb-3 text-sm text-red-700 tracking-wider">VARISPEED</span>
   <VarispeedSlider value={varispeed} onChange={setVarispeed} isIOS={isIOS} />
+</div>
 </div>
 </main>
 )

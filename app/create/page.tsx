@@ -35,6 +35,10 @@ export default function Create() {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [uploadedStemUrls, setUploadedStemUrls] = useState<{ label: string; file: string }[]>([])
   const [bpm, setBpm] = useState<number | ''>('') 
+  const [stemNames, setStemNames] = useState<Record<number, string>>({})
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+
+
 
 
   useEffect(() => {
@@ -118,7 +122,11 @@ export default function Create() {
 
         try {
           const publicUrl = await uploadFileWithProgress(file)
-          uploadedStemUrls.push({ label: file.name, file: publicUrl })
+          uploadedStemUrls.push({
+  label: stemNames[i]?.trim() || file.name,
+  file: publicUrl,
+})
+
         } catch (err) {
           console.error('Upload failed:', err)
           alert('One of your files failed to upload.')
@@ -274,7 +282,57 @@ const { data, error: insertError } = await supabase
                 {uploadedFiles.map((file, i) => (
                   <div key={i} style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ flexGrow: 1 }}>
-                      <div style={{ fontSize: '0.85rem', marginBottom: '0.25rem' }}>{file}</div>
+
+{editingIndex === i ? (
+  <input
+    autoFocus
+    type="text"
+    value={stemNames[i] || ''}
+    onChange={(e) =>
+      setStemNames((prev) => ({ ...prev, [i]: e.target.value }))
+    }
+    onBlur={() => setEditingIndex(null)}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter') setEditingIndex(null)
+    }}
+    style={{
+      width: '100%',
+      padding: '0.4rem 0.5rem',
+      fontSize: '0.85rem',
+      marginBottom: '0.5rem',
+      backgroundColor: 'white',
+      color: 'black',
+      border: '1px solid #ccc',
+      borderRadius: '4px',
+    }}
+  />
+) : (
+  <div
+    onClick={() => setEditingIndex(i)}
+    style={{
+      cursor: 'pointer',
+      marginBottom: '0.5rem',
+    }}
+    title="Click to rename"
+  >
+    <div
+      style={{
+        fontSize: '0.85rem',
+        color: 'white',
+        paddingBottom: '2px',
+        display: 'inline-block',
+      }}
+    >
+      {stemNames[i]?.trim() || file}
+    </div>
+    <div style={{ fontSize: '0.65rem', color: '#aaa', marginTop: '2px' }}>
+      tap to rename
+    </div>
+  </div>
+)}
+
+
+
                       <div style={{ width: '100%', backgroundColor: '#eee', borderRadius: '4px' }}>
                         <div
                           style={{

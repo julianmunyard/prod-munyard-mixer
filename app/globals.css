@@ -234,3 +234,13 @@ input[type="range"]::-ms-thumb {
     }
   }
 }
+
+/* ✅ Fix for touch dragging on mobile interfering with scroll */
+input[type="range"],
+.knob-wrapper, /* or whatever DelayKnob's outer container is */
+canvas {
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
