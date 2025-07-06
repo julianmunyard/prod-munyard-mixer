@@ -314,7 +314,6 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
   </button>
 </div>
 
-
 <div className="relative w-full overflow-x-hidden">
   <div
     className="flex justify-center items-end gap-8 mx-auto"
@@ -431,30 +430,28 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
     ))}
   </div>
 
-  {/* VARISPEED SLIDER */}
 <div
-  className="varispeed-mobile-fix"
+  className="varispeed-slider"
   style={{
     position: 'absolute',
     top: '50%',
-    right: 0, // ← baseline desktop fallback
+    right: '20px', // default for desktop
     transform: 'translateY(-50%)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    zIndex: 10,
+    zIndex: 1000,
   }}
 >
-    {bpm && (
-      <div className="mb-1 text-xs text-red-700 font-mono">
-        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-      </div>
-    )}
-    <span className="mb-3 text-sm text-red-700 tracking-wider">VARISPEED</span>
-    <VarispeedSlider value={varispeed} onChange={setVarispeed} isIOS={isIOS} />
-  </div>
+  {bpm ? (
+    <div className="mb-1 text-xs text-red-700 font-mono">
+      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+    </div>
+  ) : null}
+  <span className="mb-3 text-sm text-red-700 tracking-wider">VARISPEED</span>
+  <VarispeedSlider value={varispeed} onChange={setVarispeed} isIOS={isIOS} />
 </div>
-
+</div>
 </main>
 )
 }

@@ -244,15 +244,8 @@ canvas {
   user-select: none;
 }
 
-
-@media (max-width: 768px) {
-  .varispeed-mobile-fix {
-    right: -90px !important; /* adjust this value as needed */
-  }
-}
-
 @media screen and (max-height: 500px) and (orientation: landscape) {
-  .varispeed-slide-right {
-    right: -60px !important;
+  .varispeed-slider {
+    right: 40px !important; /* or 20px / 60px — whatever works */
   }
 }
