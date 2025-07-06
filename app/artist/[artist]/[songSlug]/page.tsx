@@ -432,18 +432,19 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
   </div>
 
   {/* VARISPEED SLIDER */}
-  <div
-    style={{
-      position: 'absolute',
-      top: '50%',
-      right: 16,
-      transform: 'translateY(-50%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      zIndex: 10,
-    }}
-  >
+<div
+  className="varispeed-mobile-fix"
+  style={{
+    position: 'absolute',
+    top: '50%',
+    right: 0, // ← baseline desktop fallback
+    transform: 'translateY(-50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    zIndex: 10,
+  }}
+>
     {bpm && (
       <div className="mb-1 text-xs text-red-700 font-mono">
         {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM

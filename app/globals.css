@@ -244,3 +244,9 @@ canvas {
   user-select: none;
 }
 
+
+@media (max-width: 768px) {
+  .varispeed-mobile-fix {
+    right: -64px !important; /* adjust this value as needed */
+  }
+}
