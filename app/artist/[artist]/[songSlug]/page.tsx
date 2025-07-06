@@ -428,7 +428,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
   style={{
     position: 'absolute',
     top: '50%',
-    right: (isIOS || window.innerWidth < 768) ? '-12px' : '0',
+    right: (isIOS || window.innerWidth < 768) ? '-15px' : '0',
     transform: 'translateY(-50%)',
     display: 'flex',
     flexDirection: 'column',
