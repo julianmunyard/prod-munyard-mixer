@@ -436,7 +436,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
     style={{
       position: 'absolute',
       top: '50%',
-      right: 0,
+      right: 16,
       transform: 'translateY(-50%)',
       display: 'flex',
       flexDirection: 'column',
