@@ -268,7 +268,10 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
   return (
-    <main className="min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 font-sans relative overflow-y-auto" style={{ maxHeight: '100dvh' }}>
+   <main
+  className="min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 pb-32 font-sans relative overflow-y-auto"
+  style={{ maxHeight: '100dvh' }}
+>
       <h1 className="village text-center mb-16" style={{ fontSize: '96px', letterSpacing: '0.05em', lineHeight: '1.1' }}>{songData?.title}</h1>
 
       {showNotification && (
@@ -311,7 +314,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
  <div className="relative flex justify-center overflow-x-hidden">
-  <div className="flex gap-8">
+<div className="flex gap-8 flex-wrap justify-center">
     {stems.map(({ label }) => (
       <div key={label} className="mixer-module" style={{
         width: '96px',
@@ -423,7 +426,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
     ))}
   </div>
 
-{/* VARISPEED SLIDER — absolute right, tracks mixer vertical alignment */}
+{/* VARISPEED SLIDER — anchored to bottom of mixer modules */}
 <div style={{
   position: 'absolute',
   top: '50%',
@@ -433,6 +436,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
   flexDirection: 'column',
   alignItems: 'center',
 }}>
+
   {bpm && (
     <div className="mb-1 text-xs text-red-700 font-mono">
       {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
