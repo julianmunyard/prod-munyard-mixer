@@ -244,3 +244,11 @@ canvas {
   user-select: none;
 }
 
+/* Mobile landscape fix */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .mixer-module {
+    transform: scale(0.8);
+    transform-origin: top center;
+  }
+}
+

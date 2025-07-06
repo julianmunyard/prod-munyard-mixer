@@ -430,11 +430,13 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 <div style={{
   position: 'absolute',
   top: '50%',
-  right: '2rem',
+  right: 0,
   transform: 'translateY(-50%)',
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',
+  alignItems: 'center', // 👈 CENTER the text and slider together
+  paddingRight: '8px',  // ✅ still give space from edge
+  zIndex: 10,
 }}>
 
   {bpm && (
