@@ -318,15 +318,18 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 <div
   className="relative flex flex-nowrap items-end gap-8 px-4"
   style={{
-    justifyContent: stems.length === 1 ? 'center' : 'flex-start',
-    paddingRight: '64px',         // 🧱 Space for varispeed
-    boxSizing: 'border-box',      // ✅ So the padding stays inside
+    justifyContent:
+      stems.length === 1 && typeof window !== 'undefined' && window.innerWidth < 768
+        ? 'center'
+        : 'flex-start',
+    paddingRight: '64px',
+    boxSizing: 'border-box',
     width: '100%',
-    overflowX: 'hidden',          // 🚫 Prevents horizontal scroll
-    maxWidth: '100vw',            // ✅ Enforces viewport width
+    overflowX: 'hidden',
+    maxWidth: '100vw',
   }}
 >
-  
+
   {stems.map(({ label }) => (
     <div key={label} className="mixer-module" style={{
       width: '96px',
