@@ -316,8 +316,9 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
 <div
-  className="relative flex flex-nowrap items-end justify-center gap-8 px-4"
+  className="relative flex flex-nowrap items-end gap-8 px-4"
   style={{
+    justifyContent: stems.length === 1 ? 'center' : 'flex-start',
     paddingRight: '64px',         // 🧱 Space for varispeed
     boxSizing: 'border-box',      // ✅ So the padding stays inside
     width: '100%',
@@ -325,6 +326,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
     maxWidth: '100vw',            // ✅ Enforces viewport width
   }}
 >
+  
   {stems.map(({ label }) => (
     <div key={label} className="mixer-module" style={{
       width: '96px',
