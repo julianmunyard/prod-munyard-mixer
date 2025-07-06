@@ -250,3 +250,9 @@ canvas {
     right: -90px !important; /* adjust this value as needed */
   }
 }
+
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .varispeed-slide-right {
+    right: -60px !important;
+  }
+}
