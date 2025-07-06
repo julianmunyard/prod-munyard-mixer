@@ -313,8 +313,8 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
 <div
-  className="relative flex flex-nowrap items-end justify-center gap-8 px-4 overflow-hidden"
-  style={{ maxWidth: '100vw' }}
+  className="relative flex flex-nowrap items-end justify-center gap-8 px-4"
+  style={{ maxWidth: '100vw', overflowX: 'visible' }}
 >
   {stems.map(({ label }) => (
     <div key={label} className="mixer-module" style={{
@@ -428,7 +428,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
   style={{
     position: 'absolute',
     top: '50%',
-    right: (isIOS || window.innerWidth < 768) ? '-15px' : '0',
+    right: (isIOS || window.innerWidth < 768) ? '-40px' : '0',
     transform: 'translateY(-50%)',
     display: 'flex',
     flexDirection: 'column',
