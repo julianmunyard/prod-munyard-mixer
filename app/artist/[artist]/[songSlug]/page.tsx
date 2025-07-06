@@ -432,7 +432,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    paddingRight: '8px',
+    paddingRight: isIOS || window.innerWidth < 768 ? '24px' : '8px',
     zIndex: 10,
   }}>
     {bpm && (
