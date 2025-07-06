@@ -268,11 +268,15 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
   return (
-   <main
-  className="min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 pb-32 font-sans relative"
+<main
+  className="min-h-screen bg-[#FCFAEE] text-[#B8001F] font-sans relative"
   style={{
+    paddingTop: '2rem',
+    paddingLeft: '2rem',
+    paddingBottom: '8rem',
+    paddingRight: '0rem', // ✅ remove the right padding
     maxWidth: '100vw',
-    overflowX: 'hidden', // 💡 Prevents sideways scroll
+    overflowX: 'hidden',
   }}
 >
       <h1 className="village text-center mb-16" style={{ fontSize: '96px', letterSpacing: '0.05em', lineHeight: '1.1' }}>{songData?.title}</h1>

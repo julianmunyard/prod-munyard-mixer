@@ -246,6 +246,6 @@ canvas {
 
 @media screen and (max-height: 500px) and (orientation: landscape) {
   .varispeed-slider {
-    right: 0px !important; /* or 20px / 60px — whatever works */
+    right: 10px !important; /* or 20px / 60px — whatever works */
   }
 }
