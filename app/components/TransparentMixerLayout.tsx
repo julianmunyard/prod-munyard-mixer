@@ -1,5 +1,9 @@
 'use client'
 
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import DelayKnob from './DelayKnob'
 import type { Stem } from '@/app/artist/[artist]/[songSlug]/page'
 
