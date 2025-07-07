@@ -253,7 +253,7 @@ canvas {
 
 @media screen and (max-height: 500px) and (orientation: landscape) {
   .six-or-more-stems {
-    transform: scale(0.92);
+    transform: scale(0.80);
     transform-origin: top right;
   }
 }
