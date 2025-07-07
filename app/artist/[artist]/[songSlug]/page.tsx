@@ -256,17 +256,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
   return (
-<main
-  className={`min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 font-sans relative overflow-y-auto ${
-    stems.length >= 6 ? 'six-or-more-stems' : ''
-  }`}
-  style={{
-    maxHeight: '100dvh',
-    overflowX: 'hidden',
-    position: 'relative',
-  }}
->
-
+    <main className="min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 font-sans relative overflow-y-auto" style={{ maxHeight: '100dvh' }}>
       <h1 className="village text-center mb-16" style={{ fontSize: '96px', letterSpacing: '0.05em', lineHeight: '1.1' }}>{songData?.title}</h1>
 
       {showNotification && (
@@ -309,10 +299,10 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
       <div className="flex justify-center">
-        <div className="flex gap-8">
+        <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
           {stems.map(({ label }) => (
             <div key={label} className="mixer-module" style={{
-              width: '96px',
+              width: stems.length >= 6 ? '86px' : '96px',
               minHeight: '440px',
               backgroundColor: '#B30000',
               border: '1px solid #444',
@@ -378,20 +368,23 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 <div style={{
   fontSize: '12px',
-  padding: '4px 10px',
+  padding: '4px 6px',
   borderRadius: '4px',
   backgroundColor: 'white',
   color: '#B8001F',
   marginTop: '6px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  display: 'block',
   width: '100%',
+  maxWidth: '100%',
   textAlign: 'center',
-  wordBreak: 'break-word'
+  whiteSpace: 'nowrap',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  boxSizing: 'border-box',
 }}>
   {label}
 </div>
+
               </div>
             </div>
           ))}

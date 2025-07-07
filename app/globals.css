@@ -251,14 +251,6 @@ canvas {
 }
 
 
-@media screen and (max-height: 500px) and (orientation: landscape) {
-  .six-or-more-stems {
-    transform: scale(0.80);
-    transform-origin: top right;
-  }
-}
-
-
 html, body {
   overflow-x: hidden;
   width: 100%;
