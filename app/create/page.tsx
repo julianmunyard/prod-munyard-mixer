@@ -16,8 +16,8 @@ function toSlug(input: string) {
   return input
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-') // replace spaces/symbols with hyphens
-    .replace(/^-+|-+$/g, '')     // remove leading/trailing hyphens
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 export default function Create() {
@@ -37,21 +37,18 @@ export default function Create() {
   const [bpm, setBpm] = useState<number | ''>('') 
   const [stemNames, setStemNames] = useState<Record<number, string>>({})
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
-
-
+  const [backgroundVideo, setBackgroundVideo] = useState<File | null>(null)
+  const [videoFile, setVideoFile] = useState<File | null>(null)
 
 
   useEffect(() => {
     async function getUser() {
       const { data, error } = await supabase.auth.getSession()
-
       if (error || !data.session) {
         router.push('/login')
         return
       }
-
       const user = data.session.user
-
       if (user.email_confirmed_at || user.confirmed_at) {
         setUserEmail(user.email ?? null)
         setLocked(false)
@@ -60,21 +57,16 @@ export default function Create() {
         router.push('/login')
       }
     }
-
     getUser()
   }, [])
 
   const uploadFileWithProgress = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop()
     const filePath = `${userEmail}/${uuidv4()}.${fileExt}`
-
     const { data: signed, error: signedError } = await supabase
-      .storage
-      .from('stems')
+      .storage.from('stems')
       .createSignedUploadUrl(filePath)
-
     if (signedError || !signed) throw new Error('Failed to get signed URL')
-
     await axios.put(signed.signedUrl, file, {
       headers: {
         'Content-Type': file.type || 'audio/wav',
@@ -85,48 +77,36 @@ export default function Create() {
         setUploadProgress(prev => ({ ...prev, [file.name]: percent }))
       }
     })
-
     return supabase.storage.from('stems').getPublicUrl(filePath).data.publicUrl
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (!user || authError) {
       alert('You must be logged in.')
       setIsSubmitting(false)
       return
     }
-
     if (!userEmail) {
       alert('Missing user email. Please log in again.')
       setIsSubmitting(false)
       return
     }
-
-      // ✅ VALIDATE REQUIRED FIELDS
-  if (!artistName.trim() || !projectTitle.trim()) {
-    alert('Please enter both an artist name and a project title.')
-    setIsSubmitting(false)
-    return
-  }
-  
+    if (!artistName.trim() || !projectTitle.trim()) {
+      alert('Please enter both an artist name and a project title.')
+      setIsSubmitting(false)
+      return
+    }
     let uploadedStemUrls: { label: string; file: string }[] = []
-
     if (stems && stems.length > 0) {
       for (let i = 0; i < stems.length; i++) {
         const file = stems[i]
         setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
-
         try {
           const publicUrl = await uploadFileWithProgress(file)
-          uploadedStemUrls.push({
-  label: stemNames[i]?.trim() || file.name,
-  file: publicUrl,
-})
-
+          uploadedStemUrls.push({ label: stemNames[i]?.trim() || file.name, file: publicUrl })
         } catch (err) {
           console.error('Upload failed:', err)
           alert('One of your files failed to upload.')
@@ -136,24 +116,46 @@ export default function Create() {
       }
     }
 
-const artistSlug = toSlug(artistName)
-const songSlug = toSlug(projectTitle)
+    let videoPublicUrl: string | null = null
+if (color === 'Transparent' && backgroundVideo) {
+  const videoExt = backgroundVideo.name.split('.').pop()
+  const videoPath = `${user.id}/videos/${uuidv4()}.${videoExt}`
 
-const { data, error: insertError } = await supabase
-  .from('songs')
-  .insert({
-    user_id: user.id,
-    artist_name: artistName,
-    title: projectTitle,
-    effects: [effect],
-    color,
-    stems: uploadedStemUrls,
-    bpm: bpm !== '' ? Number(bpm) : null,
-    artist_slug: artistSlug,
-    song_slug: songSlug
+  const { data: uploadData, error: uploadError } = await supabase
+  .storage
+  .from('videos')
+  .upload(videoPath, backgroundVideo, {
+    contentType: backgroundVideo.type,
+    upsert: false,
   })
-  .select()
-  .single()
+
+if (uploadError) {
+  console.error('❌ Video upload error:', uploadError.message)
+} else {
+const { data: publicUrlData } = supabase.storage.from('videos').getPublicUrl(videoPath)
+videoPublicUrl = publicUrlData.publicUrl
+}
+}
+
+
+    const artistSlug = toSlug(artistName)
+    const songSlug = toSlug(projectTitle)
+
+    const { data, error: insertError } = await supabase.from('songs')
+      .insert({
+        user_id: user.id,
+        artist_name: artistName,
+        title: projectTitle,
+        effects: [effect],
+        color,
+        stems: uploadedStemUrls,
+        bpm: bpm !== '' ? Number(bpm) : null,
+        artist_slug: artistSlug,
+        song_slug: songSlug,
+        background_video: videoPublicUrl,
+      })
+      .select()
+      .single()
 
     if (insertError || !data) {
       console.error('❌ Insert error:', insertError?.message)
@@ -172,6 +174,10 @@ const { data, error: insertError } = await supabase
       </main>
     )
   }
+
+
+
+
 
   return (
     <main
@@ -378,16 +384,40 @@ const { data, error: insertError } = await supabase
             </div>
           )}
 
-          <label>
-            Choose Your Mixer Color
-            <select
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
-            >
-              <option>Red (Classic)</option>
-            </select>
-          </label>
+        <label>
+  Choose Your Mixer Theme
+  <select
+    value={color}
+    onChange={(e) => setColor(e.target.value)}
+    style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
+  >
+    <option>Red (Classic)</option>
+    <option>Transparent</option>
+  </select>
+</label>
+
+
+{color === 'Transparent' && (
+  <label>
+    Background Video (MP4 or WebM)
+    <input
+      type="file"
+      accept="video/mp4,video/webm"
+onChange={(e) => {
+  const file = e.target.files?.[0]
+  if (file) {
+    setBackgroundVideo(file)
+  }
+}}
+
+
+      style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
+    />
+    <span style={{ fontSize: '0.85rem', color: '#aaa' }}>
+      Video will loop and play fullscreen behind the transparent mixer
+    </span>
+  </label>
+)}
 
           <label>
             Which Effects Do You Want?

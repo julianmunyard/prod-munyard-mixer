@@ -3,11 +3,13 @@
 import { useState, useRef, useEffect } from 'react'
 
 type DelayKnobProps = {
-  value: number // 0 - 1
-  onChange: (val: number) => void
-}
+  value: number;
+  onChange: (value: number) => void;
+  color?: string;
+};
 
-export default function DelayKnob({ value, onChange }: DelayKnobProps) {
+
+export default function DelayKnob({ value, onChange, color }: DelayKnobProps) {
   const knobRef = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState(false)
 
@@ -53,14 +55,14 @@ export default function DelayKnob({ value, onChange }: DelayKnobProps) {
   const angle = -135 + value * 270
 
   return (
-    <div className="flex flex-col items-center text-xs text-white select-none">
-      <span className="mb-1">DELAY</span>
-      <div
-        ref={knobRef}
-        onMouseDown={() => setDragging(true)}
-        onTouchStart={() => setDragging(true)}
-        className="w-8 h-8 rounded-full bg-gray-700 border border-white flex items-center justify-center relative cursor-pointer"
-      >
+<div className="flex flex-col items-center text-xs select-none" style={{ color: color ?? 'white' }}>
+  <span className="mb-1">DELAY</span>
+<div
+  ref={knobRef}
+  onMouseDown={() => setDragging(true)}
+  onTouchStart={() => setDragging(true)}
+  className="w-8 h-8 rounded-full bg-gray-700 border border-white ring-2 ring-[#B8001F] flex items-center justify-center relative cursor-pointer"
+>
         <div
           className="absolute w-1 h-3 bg-white rounded"
           style={{ transform: `rotate(${angle}deg) translateY(-10px)` }}

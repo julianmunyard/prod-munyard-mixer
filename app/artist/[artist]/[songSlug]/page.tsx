@@ -11,20 +11,29 @@ import { supabase } from '@/lib/supabaseClient'
 import DelayKnob from '../../../components/DelayKnob'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
+import TransparentMixerLayout from '../../../components/TransparentMixerLayout'
+
+
 
 // ==================== Types ====================
 type Song = {
   id: string
   title: string
   artist_name: string
+  artist_slug: string
+  song_slug: string
+  bpm: number
   effects: string[] | string
   stems: { label: string; file: string }[] | string
+  color: string // ✅ Add this
+  background_video?: string // ✅ Add this
 }
 
-type Stem = {
+export type Stem = {
   label: string
   file: string
 }
+
 
 // ==================== Main Component ====================
 export default function MixerPage() {
@@ -182,36 +191,51 @@ export default function MixerPage() {
     }
   }, [])
 
-  const playAll = async () => {
-    let ctx = audioCtxRef.current
-    if (!ctx || ctx.state === 'closed') {
-      ctx = new AudioContext()
-      await ctx.audioWorklet.addModule('/granular-processor.js')
-      audioCtxRef.current = ctx
-    }
+const playAll = async () => {
+  let ctx = audioCtxRef.current
 
-    if (ctx.state === 'suspended') await ctx.resume()
-    stopAll()
-
-    stems.forEach(({ label }) => {
-      const buffer = buffersRef.current[label]
-      const gain = gainNodesRef.current[label]
-      const delay = delayNodesRef.current[label]
-      if (!buffer || !gain || !delay) return
-
-      const node = new AudioWorkletNode(ctx, 'granular-player')
-      node.port.postMessage({ type: 'load', buffer: buffer.getChannelData(0) })
-      const playbackRate = isIOS ? 2 - varispeed : varispeed;
-      node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
-      node.connect(delay)
-
-      const soloed = Object.values(solos).some(Boolean)
-      const shouldPlay = soloed ? solos[label] : !mutes[label]
-      gain.gain.value = shouldPlay ? volumes[label] : 0
-
-      nodesRef.current[label] = node
-    })
+  if (!ctx || ctx.state === 'closed') {
+    ctx = new AudioContext()
+    await ctx.audioWorklet.addModule('/granular-processor.js')
+    audioCtxRef.current = ctx
   }
+
+  if (ctx.state === 'suspended') await ctx.resume()
+
+  // ✅ Try to play background video if it exists
+  const bgVideo = document.querySelector('video') as HTMLVideoElement | null
+  if (bgVideo) {
+    try {
+      await bgVideo.play()
+    } catch (err) {
+      console.warn('Background video play blocked:', err)
+    }
+  }
+
+  stopAll()
+
+  stems.forEach(({ label }) => {
+    const buffer = buffersRef.current[label]
+    const gain = gainNodesRef.current[label]
+    const delay = delayNodesRef.current[label]
+    if (!buffer || !gain || !delay) return
+
+    const node = new AudioWorkletNode(ctx, 'granular-player')
+    node.port.postMessage({ type: 'load', buffer: buffer.getChannelData(0) })
+    
+    const playbackRate = isIOS ? 2 - varispeed : varispeed
+    node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
+
+    node.connect(delay)
+
+    const soloed = Object.values(solos).some(Boolean)
+    const shouldPlay = soloed ? solos[label] : !mutes[label]
+    gain.gain.value = shouldPlay ? volumes[label] : 0
+
+    nodesRef.current[label] = node
+  })
+}
+
 
   useEffect(() => {
     const ctx = audioCtxRef.current
@@ -290,103 +314,117 @@ export default function MixerPage() {
       </button>
     </div>
 
-    {/* Mixer Modules */}
-    <div className="flex justify-center">
-      <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
-        {stems.map(({ label }) => (
-          <div key={label} className="mixer-module" style={{
-            width: stems.length >= 6 ? '86px' : '96px',
-            minHeight: '440px',
-            backgroundColor: '#B30000',
-            border: '1px solid #444',
-            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
-            borderRadius: '10px',
-            padding: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}>
-            {/* VU Meter */}
-            <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
+{/* Mixer Modules */}
+{songData?.color === 'Transparent' ? (
+<TransparentMixerLayout
+  stems={stems}
+  volumes={volumes}
+  setVolumes={setVolumes}
+  delays={delays}
+  setDelays={setDelays}
+  mutes={mutes}
+  setMutes={setMutes}
+  solos={solos}
+  setSolos={setSolos}
+  bpm={songData?.bpm}
+  varispeed={varispeed}
+  isIOS={isIOS}
+  delaysRef={delaysRef}
+  backgroundVideo={songData?.background_video} // ✅ THIS LINE MUST EXIST
+/>
 
-            {/* Volume Slider */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', fontSize: '10px', color: 'white' }}>
-              <span style={{ marginBottom: '4px' }}>LEVEL</span>
-              <input type="range" min="0" max="1" step="0.01" value={volumes[label]} onChange={(e) => {
-                setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
-              }} className="volume-slider" style={{
-                writingMode: 'bt-lr' as any,
-                WebkitAppearance: 'slider-vertical',
-                width: '4px',
-                height: '150px',
-                background: 'transparent',
-              }} />
-            </div>
+) : (
+  <div className="flex justify-center">
+    <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
+      {stems.map(({ label }) => (
+        <div key={label} className="mixer-module" style={{
+          width: stems.length >= 6 ? '86px' : '96px',
+          minHeight: '440px',
+          backgroundColor: '#B30000',
+          border: '1px solid #444',
+          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
+          borderRadius: '10px',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}>
+          <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', fontSize: '10px', color: 'white' }}>
+            <span style={{ marginBottom: '4px' }}>LEVEL</span>
+            <input type="range" min="0" max="1" step="0.01" value={volumes[label]} onChange={(e) => {
+              setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+            }} className="volume-slider" style={{
+              writingMode: 'bt-lr' as any,
+              WebkitAppearance: 'slider-vertical',
+              width: '4px',
+              height: '150px',
+              background: 'transparent',
+            }} />
+          </div>
+          <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+            <DelayKnob
+              value={delays[label]}
+              onChange={(val) => {
+                setDelays((prev) => ({ ...prev, [label]: val }))
+                delaysRef.current[label] = val
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <button onClick={() => {
+              setMutes(prev => ({ ...prev, [label]: !prev[label] }))
+              setSolos(prev => ({ ...prev, [label]: false }))
+            }} style={{
+              fontSize: '12px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              marginBottom: '8px',
+              backgroundColor: mutes[label] ? '#FFD700' : 'white',
+              color: mutes[label] ? 'black' : '#B8001F',
+              border: 'none',
+              cursor: 'pointer',
+            }}>MUTE</button>
 
-            {/* Delay Knob */}
-            <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-              <DelayKnob
-                value={delays[label]}
-                onChange={(val) => {
-                  setDelays((prev) => ({ ...prev, [label]: val }))
-                  delaysRef.current[label] = val
-                }}
-              />
-            </div>
+            <button onClick={() => {
+              setSolos(prev => ({ ...prev, [label]: !prev[label] }))
+              setMutes(prev => ({ ...prev, [label]: false }))
+            }} style={{
+              fontSize: '12px',
+              padding: '4px 10px',
+              borderRadius: '4px',
+              marginBottom: '8px',
+              backgroundColor: solos[label] ? '#00FF99' : 'white',
+              color: solos[label] ? 'black' : '#B8001F',
+              border: 'none',
+              cursor: 'pointer',
+            }} className={solos[label] ? 'flash' : ''}>SOLO</button>
 
-            {/* Mute & Solo Buttons + Label */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <button onClick={() => {
-                setMutes(prev => ({ ...prev, [label]: !prev[label] }))
-                setSolos(prev => ({ ...prev, [label]: false }))
-              }} style={{
-                fontSize: '12px',
-                padding: '4px 10px',
-                borderRadius: '4px',
-                marginBottom: '8px',
-                backgroundColor: mutes[label] ? '#FFD700' : 'white',
-                color: mutes[label] ? 'black' : '#B8001F',
-                border: 'none',
-                cursor: 'pointer',
-              }}>MUTE</button>
-
-              <button onClick={() => {
-                setSolos(prev => ({ ...prev, [label]: !prev[label] }))
-                setMutes(prev => ({ ...prev, [label]: false }))
-              }} style={{
-                fontSize: '12px',
-                padding: '4px 10px',
-                borderRadius: '4px',
-                marginBottom: '8px',
-                backgroundColor: solos[label] ? '#00FF99' : 'white',
-                color: solos[label] ? 'black' : '#B8001F',
-                border: 'none',
-                cursor: 'pointer',
-              }} className={solos[label] ? 'flash' : ''}>SOLO</button>
-
-              <div style={{
-                fontSize: '12px',
-                padding: '4px 6px',
-                borderRadius: '4px',
-                backgroundColor: 'white',
-                color: '#B8001F',
-                marginTop: '6px',
-                display: 'block',
-                width: '100%',
-                maxWidth: '100%',
-                textAlign: 'center',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                boxSizing: 'border-box',
-              }}>
-                {label}
-              </div>
+            <div style={{
+              fontSize: '12px',
+              padding: '4px 6px',
+              borderRadius: '4px',
+              backgroundColor: 'white',
+              color: '#B8001F',
+              marginTop: '6px',
+              display: 'block',
+              width: '100%',
+              maxWidth: '100%',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              boxSizing: 'border-box',
+            }}>
+              {label}
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
+  </div>
+)}
+
 
     {/* Varispeed Slider */}
     <div className="absolute right-4 top-[260px] flex flex-col items-center">
