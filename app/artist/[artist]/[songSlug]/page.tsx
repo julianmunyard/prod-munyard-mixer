@@ -256,7 +256,17 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 
   return (
-    <main className="min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 font-sans relative overflow-y-auto" style={{ maxHeight: '100dvh' }}>
+<main
+  className={`min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 font-sans relative overflow-y-auto ${
+    stems.length >= 6 ? 'six-or-more-stems' : ''
+  }`}
+  style={{
+    maxHeight: '100dvh',
+    overflowX: 'hidden',
+    position: 'relative',
+  }}
+>
+
       <h1 className="village text-center mb-16" style={{ fontSize: '96px', letterSpacing: '0.05em', lineHeight: '1.1' }}>{songData?.title}</h1>
 
       {showNotification && (

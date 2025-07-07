@@ -249,3 +249,18 @@ canvas {
     right: -20px !important; /* Adjust as needed: -30px or -40px if needed */
   }
 }
+
+
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .six-or-more-stems {
+    transform: scale(0.92);
+    transform-origin: top right;
+  }
+}
+
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
