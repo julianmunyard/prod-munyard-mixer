@@ -45,12 +45,14 @@ export default function TransparentMixerLayout({
   return (
     <>
       {backgroundVideo && (
-        <video
-          src={backgroundVideo}
-          autoPlay
-          muted
-          loop
-          playsInline
+<video
+  src={backgroundVideo}
+  autoPlay
+  muted
+  loop
+  playsInline
+  preload="auto" // ✅ Force preload
+
           style={{
             position: 'fixed',
             top: 0,

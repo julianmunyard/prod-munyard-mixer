@@ -204,6 +204,8 @@ const playAll = async () => {
 
   // ✅ Try to play background video if it exists
   const bgVideo = document.querySelector('video') as HTMLVideoElement | null
+  console.log('🎥 Background video element:', bgVideo)
+
   if (bgVideo) {
     try {
       await bgVideo.play()
