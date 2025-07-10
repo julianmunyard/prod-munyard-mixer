@@ -42,29 +42,31 @@ export default function TransparentMixerLayout({
   delaysRef,
   backgroundVideo,
 }: TransparentMixerLayoutProps) {
-  return (
-    <>
-      {backgroundVideo && (
-<video
-  src={backgroundVideo}
-  autoPlay
-  muted
-  loop
-  playsInline
-  preload="auto"
-  style={{
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    objectFit: 'cover',
-    zIndex: -1,
-    pointerEvents: 'none',
-  }}
-/>
+  
+return (
+  <>
+    {backgroundVideo && (
+      <video
+        src={backgroundVideo}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          objectFit: 'cover',
+          zIndex: -1,
+          pointerEvents: 'none',
+        }}
+      />
+    )}
 
-      )}
+  
 
       <div className="flex justify-center">
         <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
