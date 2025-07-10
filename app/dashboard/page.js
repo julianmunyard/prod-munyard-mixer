@@ -46,8 +46,8 @@ const handleDelete = async (songId, stems) => {
     // SAFELY handle stem file paths
     const parsedStems = typeof stems === 'string' ? JSON.parse(stems) : stems
 
-if (Array.isArray(stems)) {
-  const deleteFilePaths = stems
+if (Array.isArray(parsedStems)) {
+  const deleteFilePaths = parsedStems
     .map((stem) => {
       if (!stem || !stem.file) return null // 🛡️ protect against undefined
       const parts = stem.file.split('/')

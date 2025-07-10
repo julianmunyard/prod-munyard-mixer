@@ -274,13 +274,10 @@ const playAll = async () => {
 
 
   return (
- <main
-  className="min-h-screen text-[#B8001F] p-8 font-sans relative overflow-y-auto"
-  style={{
-    maxHeight: '100dvh',
-    backgroundColor: songData?.color === 'Transparent' ? 'transparent' : '#FCFAEE',
-    zIndex: 1,
-  }}
+<main
+  className={`min-h-screen font-sans relative overflow-y-auto ${
+    songData?.color === 'Transparent' ? 'bg-transparent' : 'bg-[#FCFAEE]'
+  } text-[#B8001F] p-8 landscape:!p-0 landscape:!bg-transparent`}
 >
 
 
