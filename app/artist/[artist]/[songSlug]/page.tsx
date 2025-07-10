@@ -274,7 +274,15 @@ const playAll = async () => {
 
 
   return (
-  <main className="min-h-screen bg-[#FCFAEE] text-[#B8001F] p-8 font-sans relative overflow-y-auto" style={{ maxHeight: '100dvh' }}>
+ <main
+  className="min-h-screen text-[#B8001F] p-8 font-sans relative overflow-y-auto"
+  style={{
+    maxHeight: '100dvh',
+    backgroundColor: songData?.color === 'Transparent' ? 'transparent' : '#FCFAEE',
+    zIndex: 1,
+  }}
+>
+
 
     {/* Title */}
     <h1 className="village text-center mb-16" style={{ fontSize: '96px', letterSpacing: '0.05em', lineHeight: '1.1' }}>{songData?.title}</h1>

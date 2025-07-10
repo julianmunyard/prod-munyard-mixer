@@ -51,18 +51,19 @@ export default function TransparentMixerLayout({
   muted
   loop
   playsInline
-  preload="auto" // ✅ Force preload
+  preload="auto"
+  style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    objectFit: 'cover',
+    zIndex: -1,
+    pointerEvents: 'none',
+  }}
+/>
 
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            objectFit: 'cover',
-            zIndex: -1,
-          }}
-        />
       )}
 
       <div className="flex justify-center">
