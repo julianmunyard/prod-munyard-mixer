@@ -276,9 +276,16 @@ const playAll = async () => {
   return (
 <main
   className={`min-h-screen font-sans relative overflow-y-auto ${
-    songData?.color === 'Transparent' ? 'bg-transparent' : 'bg-[#FCFAEE]'
-  } text-[#B8001F] p-8 landscape:!p-0 landscape:!bg-transparent`}
+    songData?.color === 'Transparent' && songData?.background_video
+      ? 'bg-transparent text-[#B8001F]'
+      : songData?.color === 'Red (Classic)' || songData?.color === 'Transparent'
+        ? 'bg-[#FCFAEE] text-[#B8001F]'
+        : songData?.color === 'Blue & Yellow'
+          ? 'bg-[#001F54] text-[#FFD700]'
+          : 'bg-black text-white'
+  } p-8 landscape:p-0`}
 >
+
 
 
     {/* Title */}
