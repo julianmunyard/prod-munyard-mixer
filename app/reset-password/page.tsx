@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabaseClient'
 function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState('')
   const [loading, setLoading] = useState(true)
+  const [validSession, setValidSession] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -15,8 +16,12 @@ function ResetPasswordForm() {
       if (hash) {
         const { error } = await supabase.auth.exchangeCodeForSession(hash)
         if (error) {
+          console.error(error.message)
           alert('Link expired or invalid')
+          setLoading(false)
+          return
         }
+        setValidSession(true)
       }
       setLoading(false)
     }
@@ -35,6 +40,17 @@ function ResetPasswordForm() {
   }
 
   if (loading) return null
+
+  if (!validSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FCFAEE] text-[#B8001F]" style={{ fontFamily: 'Geist Mono, monospace' }}>
+        <div className="p-6 bg-white rounded shadow-md w-full max-w-md text-center">
+          <h1 className="text-xl mb-4 font-bold">Invalid or Expired Link</h1>
+          <p className="text-sm mb-4">Please request a new password reset link.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#FCFAEE] text-[#B8001F]" style={{ fontFamily: 'Geist Mono, monospace' }}>
