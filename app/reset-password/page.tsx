@@ -1,36 +1,33 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState('')
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
   const accessToken = searchParams.get('access_token')
-  const refreshToken = searchParams.get('refresh_token')
 
   useEffect(() => {
     const init = async () => {
-      if (accessToken && refreshToken) {
-        const { error } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken,
-        })
+      const hash = window.location.hash
+      if (hash) {
+        const { error } = await supabase.auth.exchangeCodeForSession(hash)
         if (error) {
-          alert('Invalid or expired link.')
+          alert('Link expired or invalid')
         }
       }
       setLoading(false)
     }
+
     init()
-  }, [accessToken, refreshToken])
+  }, [])
 
   const handleReset = async () => {
     const { error } = await supabase.auth.updateUser({ password: newPassword })
-
     if (error) {
       alert('Error resetting password.')
     } else {
@@ -42,10 +39,7 @@ export default function ResetPasswordPage() {
   if (loading) return null
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center bg-[#FCFAEE] text-[#B8001F]"
-      style={{ fontFamily: 'Geist Mono, monospace' }}
-    >
+    <div className="min-h-screen flex items-center justify-center bg-[#FCFAEE] text-[#B8001F]" style={{ fontFamily: 'Geist Mono, monospace' }}>
       <div className="p-6 bg-white rounded shadow-md w-full max-w-md">
         <h1 className="text-xl mb-4 font-bold">Reset Your Password</h1>
         <input
@@ -63,5 +57,13 @@ export default function ResetPasswordPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   )
 }
