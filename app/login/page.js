@@ -14,6 +14,8 @@ export default function LoginPage() {
     else window.location.href = '/dashboard'
   }
 
+
+  
   return (
     <main style={{ padding: '4rem', fontFamily: 'Geist Mono, monospace', textAlign: 'center' }}>
       <h1 style={{ fontSize: '2rem', marginBottom: '2rem' }}>Login or Sign Up</h1>
@@ -33,6 +35,22 @@ export default function LoginPage() {
           onChange={e => setPassword(e.target.value)}
           style={{ padding: '0.5rem 1rem', fontSize: '1rem' }}
         />
+
+<a
+  href="/forgot-password"
+  style={{
+    fontSize: '0.875rem',
+    color: '#B8001F',
+    textDecoration: 'underline',
+    textAlign: 'center',
+    marginTop: '-0.25rem',
+    marginBottom: '0.75rem',
+    display: 'block',
+  }}
+>
+  Forgot password?
+</a>
+
         {error && <p style={{ color: 'red' }}>{error}</p>}
         
         <button

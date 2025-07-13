@@ -184,27 +184,28 @@ return (
                   SOLO
                 </button>
 
-                <div
-                  style={{
-                    fontSize: '12px',
-                    padding: '4px 6px',
-                    borderRadius: '4px',
-                    backgroundColor: '#FCFAEE',
-                    color: '#B8001F',
-                    marginTop: '6px',
-                    display: 'block',
-                    width: '100%',
-                    maxWidth: '100%',
-                    textAlign: 'center',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    boxSizing: 'border-box',
-                    border: '1px solid #B8001F',
-                  }}
-                >
-                  {label}
-                </div>
+<div style={{
+  fontSize: '12px',
+  padding: '4px 6px',
+  borderRadius: '4px',
+  backgroundColor: '#FCFAEE',
+  color: '#B8001F',
+  marginTop: '6px',
+  display: 'block',
+  width: '100%',
+  maxWidth: '100%',
+  textAlign: 'center',
+  whiteSpace: 'normal',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  wordBreak: 'normal',
+  lineHeight: '1.2',
+  boxSizing: 'border-box',
+  border: '1px solid #B8001F',
+}}
+>
+  {label}
+</div>
               </div>
             </div>
           ))}
