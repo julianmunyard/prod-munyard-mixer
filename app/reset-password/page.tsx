@@ -9,7 +9,7 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const accessToken = searchParams.get('access_token')
+
 
   useEffect(() => {
     const init = async () => {
