@@ -1,15 +1,13 @@
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 
 function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState('')
   const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const searchParams = useSearchParams()
-
 
   useEffect(() => {
     const init = async () => {
