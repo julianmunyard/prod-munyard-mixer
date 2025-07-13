@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, FormEvent } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 
 export default function ForgotPasswordPage() {
@@ -8,7 +8,7 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
