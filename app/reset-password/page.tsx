@@ -10,24 +10,31 @@ function ResetPasswordForm() {
   const [validSession, setValidSession] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    const init = async () => {
-      const hash = window.location.hash
-      if (hash) {
-        const { error } = await supabase.auth.exchangeCodeForSession(hash)
-        if (error) {
-          console.error(error.message)
-          alert('Link expired or invalid')
-          setLoading(false)
-          return
-        }
-        setValidSession(true)
-      }
-      setLoading(false)
-    }
+useEffect(() => {
+  const hash = window.location.hash
 
-    init()
-  }, [])
+  // Check if Supabase has added an error to the URL
+  if (hash.includes('error')) {
+    alert('This link is invalid or has expired.')
+    setLoading(false)
+    return
+  }
+
+  const exchange = async () => {
+    const { error } = await supabase.auth.exchangeCodeForSession(hash)
+    if (error) {
+      alert('Failed to start session. Try requesting a new link.')
+    }
+    setLoading(false)
+  }
+
+  if (hash) {
+    exchange()
+  } else {
+    setLoading(false)
+  }
+}, [])
+
 
   const handleReset = async () => {
     const { error } = await supabase.auth.updateUser({ password: newPassword })
