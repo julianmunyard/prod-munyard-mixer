@@ -11,28 +11,27 @@ function ResetPasswordForm() {
   const router = useRouter()
 
 useEffect(() => {
-  const hash = window.location.hash
-
-  // Check if Supabase has added an error to the URL
-  if (hash.includes('error')) {
-    alert('This link is invalid or has expired.')
-    setLoading(false)
-    return
-  }
-
-  const exchange = async () => {
-    const { error } = await supabase.auth.exchangeCodeForSession(hash)
-    if (error) {
-      alert('Failed to start session. Try requesting a new link.')
+  const init = async () => {
+    let hash = window.location.hash
+    if (hash.startsWith('#token=')) {
+      hash = '#' + hash.slice(7) // remove "#token=" and prepend "#"
     }
+
+    if (hash) {
+      const { error } = await supabase.auth.exchangeCodeForSession(hash)
+      if (error) {
+        console.error(error.message)
+        alert('Link expired or invalid')
+        setLoading(false)
+        return
+      }
+      setValidSession(true)
+    }
+
     setLoading(false)
   }
 
-  if (hash) {
-    exchange()
-  } else {
-    setLoading(false)
-  }
+  init()
 }, [])
 
 
