@@ -12,12 +12,10 @@ function ResetPasswordForm() {
 
 useEffect(() => {
   const init = async () => {
-    let hash = window.location.hash
-    if (hash.startsWith('#token=')) {
-      hash = '#' + hash.slice(7) // remove "#token=" and prepend "#"
-    }
+    const hash = window.location.hash
 
-    if (hash) {
+    // This is all you need now — no manual parsing
+    if (hash && hash.includes('access_token')) {
       const { error } = await supabase.auth.exchangeCodeForSession(hash)
       if (error) {
         console.error(error.message)
