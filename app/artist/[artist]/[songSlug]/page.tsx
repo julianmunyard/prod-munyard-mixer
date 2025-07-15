@@ -25,9 +25,11 @@ type Song = {
   bpm: number
   effects: string[] | string
   stems: { label: string; file: string }[] | string
-  color: string // ✅ Add this
-  background_video?: string // ✅ Add this
+  color: string
+  background_video?: string
+  primary_color?: string // ✅ ADD THIS
 }
+
 
 export type Stem = {
   label: string
@@ -50,6 +52,8 @@ export default function MixerPage() {
   const [loadingStems, setLoadingStems] = useState(true)
   const [allReady, setAllReady] = useState(false)
   const [bpm, setBpm] = useState<number | null>(null)
+  const primary = songData?.primary_color || '#B8001F' // fallback red
+
 
   // -------------------- Device Detection --------------------
   const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
@@ -111,6 +115,19 @@ export default function MixerPage() {
 
     if (artist && songSlug) fetchSong()
   }, [artist, songSlug])
+
+useEffect(() => {
+  if (!songData) return;
+
+  if (
+    songData.background_video &&
+    songData.color === 'Red (Classic)'
+  ) {
+    document.body.classList.add('red-theme-video')
+  } else {
+    document.body.classList.remove('red-theme-video')
+  }
+}, [songData])
 
   // ---------- Show "Rotate Phone" notification on mobile ----------
   useEffect(() => {
@@ -267,196 +284,244 @@ const playAll = async () => {
       node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
     })
   }, [varispeed])
+if (!songData) return <div className="p-8 text-white">Loading...</div>
 
-  if (!songData) return <div className="p-8 text-white">Loading...</div>
+return (
+  <>
 
+  <style>{`
+  input[type="range"]::-webkit-slider-thumb {
+    background: ${primary};
+  }
+  input[type="range"]::-moz-range-thumb {
+    background: ${primary};
+  }
+  input[type="range"]::-ms-thumb {
+    background: ${primary};
+  }
+`}</style>
 
-
-
-  return (
-<main
-  className={`min-h-screen font-sans relative overflow-y-auto ${
-    songData?.color === 'Transparent' && songData?.background_video
-      ? 'bg-transparent text-[#B8001F]'
-      : songData?.color === 'Red (Classic)' || songData?.color === 'Transparent'
-        ? 'bg-[#FCFAEE] text-[#B8001F]'
-        : songData?.color === 'Blue & Yellow'
-          ? 'bg-[#001F54] text-[#FFD700]'
-          : 'bg-black text-white'
-  } p-8 landscape:p-0`}
->
-
-
-
-    {/* Title */}
-    <h1 className="village text-center mb-16" style={{ fontSize: '96px', letterSpacing: '0.05em', lineHeight: '1.1' }}>{songData?.title}</h1>
-
-    {/* Rotate Notification */}
-    {showNotification && (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
-        <div className="bg-[#FCFAEE] text-[#B8001F] px-10 py-6 rounded-xl shadow-lg flex flex-col items-center text-center pointer-events-auto">
-          <p className="font-mono text-lg leading-snug">ROTATE<br />YOUR<br />PHONE</p>
-        </div>
-      </div>
-    )}
-
-    {/* Playback Buttons */}
-    <div className="flex justify-center mb-12 gap-8">
-      <button
-        onClick={playAll}
-        disabled={!allReady}
-        className={`pressable px-6 py-2 font-mono tracking-wide flex items-center gap-2 ${
-          allReady ? 'bg-[#B30000] text-white' : 'bg-gray-400 text-gray-200 cursor-not-allowed'
-        }`}
-      >
-        {loadingStems && (
-          <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-        )}
-        Play
-      </button>
-
-      <button onClick={stopAll} className="pressable bg-[#B30000] text-white px-6 py-2 font-mono tracking-wide">Stop</button>
-
-      <button
-        onClick={() => {
-          setSolos(Object.fromEntries(stems.map(s => [s.label, false])))
-          setMutes(Object.fromEntries(stems.map(s => [s.label, false])))
-        }}
-        className="pressable bg-[#B30000] text-white px-6 py-2 font-mono tracking-wide"
-      >
-        UNSOLO
-      </button>
-    </div>
-
-{/* Mixer Modules */}
-{songData?.color === 'Transparent' ? (
-<TransparentMixerLayout
-  stems={stems}
-  volumes={volumes}
-  setVolumes={setVolumes}
-  delays={delays}
-  setDelays={setDelays}
-  mutes={mutes}
-  setMutes={setMutes}
-  solos={solos}
-  setSolos={setSolos}
-  bpm={songData?.bpm}
-  varispeed={varispeed}
-  isIOS={isIOS}
-  delaysRef={delaysRef}
-  backgroundVideo={songData?.background_video} // ✅ THIS LINE MUST EXIST
-/>
-
-) : (
-  <div className="flex justify-center">
-    <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
-      {stems.map(({ label }) => (
-        <div key={label} className="mixer-module" style={{
-          width: stems.length >= 6 ? '86px' : '96px',
-          minHeight: '440px',
-          backgroundColor: '#B30000',
-          border: '1px solid #444',
-          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
-          borderRadius: '10px',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}>
-          <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', fontSize: '10px', color: 'white' }}>
-            <span style={{ marginBottom: '4px' }}>LEVEL</span>
-            <input type="range" min="0" max="1" step="0.01" value={volumes[label]} onChange={(e) => {
-              setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
-            }} className="volume-slider" style={{
-              writingMode: 'bt-lr' as any,
-              WebkitAppearance: 'slider-vertical',
-              width: '4px',
-              height: '150px',
-              background: 'transparent',
-            }} />
-          </div>
-          <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-            <DelayKnob
-              value={delays[label]}
-              onChange={(val) => {
-                setDelays((prev) => ({ ...prev, [label]: val }))
-                delaysRef.current[label] = val
-              }}
-            />
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <button onClick={() => {
-              setMutes(prev => ({ ...prev, [label]: !prev[label] }))
-              setSolos(prev => ({ ...prev, [label]: false }))
-            }} style={{
-              fontSize: '12px',
-              padding: '4px 10px',
-              borderRadius: '4px',
-              marginBottom: '8px',
-              backgroundColor: mutes[label] ? '#FFD700' : 'white',
-              color: mutes[label] ? 'black' : '#B8001F',
-              border: 'none',
-              cursor: 'pointer',
-            }}>MUTE</button>
-
-            <button onClick={() => {
-              setSolos(prev => ({ ...prev, [label]: !prev[label] }))
-              setMutes(prev => ({ ...prev, [label]: false }))
-            }} style={{
-              fontSize: '12px',
-              padding: '4px 10px',
-              borderRadius: '4px',
-              marginBottom: '8px',
-              backgroundColor: solos[label] ? '#00FF99' : 'white',
-              color: solos[label] ? 'black' : '#B8001F',
-              border: 'none',
-              cursor: 'pointer',
-            }} className={solos[label] ? 'flash' : ''}>SOLO</button>
-
-<div style={{
-  fontSize: '12px',
-  padding: '4px 6px',
-  borderRadius: '4px',
-  backgroundColor: '#FCFAEE',
-  color: '#B8001F',
-  marginTop: '6px',
-  display: 'block',
-  width: '100%',
-  maxWidth: '100%',
-  textAlign: 'center',
-  whiteSpace: 'normal',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  wordBreak: 'normal',
-  lineHeight: '1.2',
-  boxSizing: 'border-box',
-  border: '1px solid #B8001F',
-}}
->
-  {label}
-</div>
-
-
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
+    {/* ✅ Background Video for non-transparent themes */}
+{songData?.background_video &&
+  (songData.color === 'Transparent' || songData.color === 'Red (Classic)') && (
+    <video
+      src={songData.background_video}
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="auto"
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        objectFit: 'cover',
+        zIndex: -1,
+        pointerEvents: 'none',
+      }}
+    />
 )}
 
 
-    {/* Varispeed Slider */}
-    <div className="absolute right-4 top-[260px] flex flex-col items-center">
-      {bpm && (
-        <div className="mb-1 text-xs text-red-700 font-mono">
-          {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+
+<main
+  className={`min-h-screen font-sans relative overflow-y-auto p-8 landscape:p-0 ${
+    songData?.color === 'Transparent' && songData?.background_video
+      ? 'bg-transparent text-[#B8001F]'
+      : 'bg-[#FCFAEE] text-[#B8001F]'
+  }`}
+>
+
+      {/* Title */}
+      <h1
+        className="village text-center mb-16"
+        style={{
+          fontSize: '96px',
+          letterSpacing: '0.05em',
+          lineHeight: '1.1',
+          color: primary,
+        }}
+      >
+        {songData?.title}
+      </h1>
+
+      {/* Rotate Notification */}
+      {showNotification && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
+          <div className="bg-[#FCFAEE] text-[#B8001F] px-10 py-6 rounded-xl shadow-lg flex flex-col items-center text-center pointer-events-auto">
+            <p className="font-mono text-lg leading-snug">ROTATE<br />YOUR<br />PHONE</p>
+          </div>
         </div>
       )}
-      <span className="mb-3 text-sm text-red-700 tracking-wider">VARISPEED</span>
-      <VarispeedSlider value={varispeed} onChange={setVarispeed} isIOS={isIOS} />
-    </div>
 
-  </main>
-)
-}
+      {/* Playback Buttons */}
+      <div className="flex justify-center mb-12 gap-8">
+        <button
+          onClick={playAll}
+          disabled={!allReady}
+          className={`pressable px-6 py-2 font-mono tracking-wide flex items-center gap-2 ${
+            !allReady ? 'bg-gray-400 text-gray-200 cursor-not-allowed' : ''
+          }`}
+          style={allReady ? { backgroundColor: primary, color: 'white' } : undefined}
+        >
+          {loadingStems && (
+            <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+          )}
+          Play
+        </button>
+
+        <button
+          onClick={stopAll}
+          className="pressable text-white px-6 py-2 font-mono tracking-wide"
+          style={{ backgroundColor: primary }}
+        >
+          Stop
+        </button>
+
+        <button
+          onClick={() => {
+            setSolos(Object.fromEntries(stems.map(s => [s.label, false])))
+            setMutes(Object.fromEntries(stems.map(s => [s.label, false])))
+          }}
+          style={{ backgroundColor: primary, color: 'white' }}
+          className="pressable px-6 py-2 font-mono tracking-wide"
+        >
+          UNSOLO
+        </button>
+      </div>
+
+      {/* Mixer Modules */}
+      {songData?.color === 'Transparent' ? (
+        <TransparentMixerLayout
+          stems={stems}
+          volumes={volumes}
+          setVolumes={setVolumes}
+          delays={delays}
+          setDelays={setDelays}
+          mutes={mutes}
+          setMutes={setMutes}
+          solos={solos}
+          setSolos={setSolos}
+          bpm={songData?.bpm}
+          varispeed={varispeed}
+          isIOS={isIOS}
+          delaysRef={delaysRef}
+          backgroundVideo={songData?.background_video}
+          primaryColor={primary}
+        />
+      ) : (
+        <div className="flex justify-center">
+          <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
+            {stems.map(({ label }) => (
+              <div key={label} className="mixer-module" style={{
+                width: stems.length >= 6 ? '86px' : '96px',
+                minHeight: '440px',
+                backgroundColor: primary,
+                border: '1px solid #444',
+                boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
+                borderRadius: '10px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}>
+                <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', fontSize: '10px', color: 'white' }}>
+                  <span style={{ marginBottom: '4px' }}>LEVEL</span>
+                  <input type="range" min="0" max="1" step="0.01" value={volumes[label]} onChange={(e) => {
+                    setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+                  }} className="volume-slider" style={{
+                    writingMode: 'bt-lr' as any,
+                    WebkitAppearance: 'slider-vertical',
+                    width: '4px',
+                    height: '150px',
+                    background: 'transparent',
+                  }} />
+                </div>
+                <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+                  <DelayKnob
+                    value={delays[label]}
+                    onChange={(val) => {
+                      setDelays((prev) => ({ ...prev, [label]: val }))
+                      delaysRef.current[label] = val
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <button onClick={() => {
+                    setMutes(prev => ({ ...prev, [label]: !prev[label] }))
+                    setSolos(prev => ({ ...prev, [label]: false }))
+                  }} style={{
+                    fontSize: '12px',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    marginBottom: '8px',
+                    backgroundColor: mutes[label] ? '#FFD700' : '#FCFAEE',
+                    color: mutes[label] ? 'black' : primary,
+                    border: `1px solid ${primary}`,
+                    cursor: 'pointer',
+                  }}>
+                    MUTE
+                  </button>
+
+                  <button onClick={() => {
+                    setSolos(prev => ({ ...prev, [label]: !prev[label] }))
+                    setMutes(prev => ({ ...prev, [label]: false }))
+                  }} style={{
+                    fontSize: '12px',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    marginBottom: '8px',
+                    backgroundColor: solos[label] ? '#00FF99' : '#FCFAEE',
+                    color: solos[label] ? 'black' : primary,
+                    border: `1px solid ${primary}`,
+                    cursor: 'pointer',
+                  }} className={solos[label] ? 'flash' : ''}>
+                    SOLO
+                  </button>
+
+                  <div style={{
+                    fontSize: '12px',
+                    padding: '4px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: '#FCFAEE',
+                    color: primary,
+                    marginTop: '6px',
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: '100%',
+                    textAlign: 'center',
+                    whiteSpace: 'normal',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    wordBreak: 'normal',
+                    lineHeight: '1.2',
+                    boxSizing: 'border-box',
+                    border: `1px solid ${primary}`,
+                  }}>
+                    {label}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Varispeed Slider */}
+      <div className="absolute right-4 top-[260px] flex flex-col items-center">
+        {bpm && (
+          <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
+            {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+          </div>
+        )}
+        <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
+          VARISPEED
+        </span>
+        <VarispeedSlider value={varispeed} onChange={setVarispeed} isIOS={isIOS} primaryColor={primary} />
+      </div>
+    </main>
+  </>
+) }

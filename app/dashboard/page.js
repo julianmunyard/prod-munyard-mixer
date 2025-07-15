@@ -82,6 +82,8 @@ if (Array.isArray(parsedStems)) {
       return
     }
 
+    
+
     // Update UI
     setProjects((prev) => prev.filter((p) => p.id !== songId))
 

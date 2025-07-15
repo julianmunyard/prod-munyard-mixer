@@ -258,16 +258,9 @@ html, body {
 }
 
 @media screen and (orientation: landscape) and (max-height: 500px) {
-  html, body {
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow-x: hidden;
-  }
-
   main {
     padding: 0 !important;
     margin: 0 !important;
-    background: transparent !important;
   }
 
   video {
@@ -279,4 +272,8 @@ html, body {
     left: 0;
     z-index: 0;
   }
+}
+body.red-theme-video,
+body.red-theme-video main {
+  background: transparent !important;
 }

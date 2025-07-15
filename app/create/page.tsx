@@ -39,6 +39,8 @@ export default function Create() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [backgroundVideo, setBackgroundVideo] = useState<File | null>(null)
   const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [primaryColor, setPrimaryColor] = useState('#B8001F') // default red
+
 
 
   useEffect(() => {
@@ -116,8 +118,8 @@ export default function Create() {
       }
     }
 
-    let videoPublicUrl: string | null = null
-if (color === 'Transparent' && backgroundVideo) {
+let videoPublicUrl: string | null = null
+if (backgroundVideo) {
   const videoExt = backgroundVideo.name.split('.').pop()
   const videoPath = `${user.id}/videos/${uuidv4()}.${videoExt}`
 
@@ -142,18 +144,19 @@ videoPublicUrl = publicUrlData.publicUrl
     const songSlug = toSlug(projectTitle)
 
     const { data, error: insertError } = await supabase.from('songs')
-      .insert({
-        user_id: user.id,
-        artist_name: artistName,
-        title: projectTitle,
-        effects: [effect],
-        color,
-        stems: uploadedStemUrls,
-        bpm: bpm !== '' ? Number(bpm) : null,
-        artist_slug: artistSlug,
-        song_slug: songSlug,
-        background_video: videoPublicUrl,
-      })
+.insert({
+  user_id: user.id,
+  artist_name: artistName,
+  title: projectTitle,
+  effects: [effect],
+  color,
+  primary_color: primaryColor, // ✅ ADD THIS
+  stems: uploadedStemUrls,
+  bpm: bpm !== '' ? Number(bpm) : null,
+  artist_slug: artistSlug,
+  song_slug: songSlug,
+  background_video: videoPublicUrl,
+})
       .select()
       .single()
 
@@ -396,27 +399,84 @@ videoPublicUrl = publicUrlData.publicUrl
   </select>
 </label>
 
-
-{color === 'Transparent' && (
-  <label>
-    Background Video (MP4 or WebM)
+<label>
+  Choose Your Accent Color
+  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
+    <div
+      style={{
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        border: '2px solid #ccc',
+        backgroundColor: primaryColor,
+        cursor: 'pointer',
+      }}
+      onClick={() => document.getElementById('hex-color-input')?.click()}
+      title="Click to pick color"
+    />
     <input
+      id="hex-color-input"
+      type="color"
+      value={primaryColor}
+      onChange={(e) => setPrimaryColor(e.target.value)}
+      style={{ display: 'none' }}
+    />
+    <input
+      type="text"
+      value={primaryColor}
+      onChange={(e) => {
+        const val = e.target.value
+        if (/^#[0-9A-Fa-f]{6}$/.test(val)) setPrimaryColor(val)
+      }}
+      placeholder="#B8001F"
+      style={{
+        padding: '0.4rem',
+        fontFamily: 'monospace',
+        width: '100%',
+        color: primaryColor,
+        border: `1px solid ${primaryColor}`,
+        backgroundColor: '#fff',
+      }}
+    />
+  </div>
+
+  
+</label>
+{(color === 'Transparent' || color === 'Red (Classic)') && (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
+    <span style={{ fontWeight: 'bold' }}>Optional Background Video (MP4 or WebM)</span>
+    
+    <label
+      htmlFor="video-upload"
+      style={{
+        padding: '0.5rem 1rem',
+        backgroundColor: '#ffffff',
+        color: '#B8001F',
+        border: '1px solid #B8001F',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '0.9rem',
+        display: 'inline-block',
+      }}
+    >
+      Choose File
+    </label>
+
+    <span style={{ fontSize: '0.85rem', color: '#aaa' }}>
+      This video will loop fullscreen behind the mixer.
+    </span>
+
+    <input
+      id="video-upload"
       type="file"
       accept="video/mp4,video/webm"
-onChange={(e) => {
-  const file = e.target.files?.[0]
-  if (file) {
-    setBackgroundVideo(file)
-  }
-}}
-
-
-      style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
+      onChange={(e) => {
+        const file = e.target.files?.[0]
+        if (file) setBackgroundVideo(file)
+      }}
+      style={{ display: 'none' }}
     />
-    <span style={{ fontSize: '0.85rem', color: '#aaa' }}>
-      Video will loop and play fullscreen behind the transparent mixer
-    </span>
-  </label>
+  </div>
 )}
 
           <label>

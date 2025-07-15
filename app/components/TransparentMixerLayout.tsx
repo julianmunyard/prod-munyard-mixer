@@ -1,13 +1,11 @@
 'use client'
 
-
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import DelayKnob from './DelayKnob'
+import VarispeedSlider from './VarispeedSlider'
 import type { Stem } from '@/app/artist/[artist]/[songSlug]/page'
-
-
 
 type TransparentMixerLayoutProps = {
   stems: Stem[]
@@ -23,7 +21,8 @@ type TransparentMixerLayoutProps = {
   setMutes: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
   setSolos: React.Dispatch<React.SetStateAction<Record<string, boolean>>>
   delaysRef: React.MutableRefObject<Record<string, number>>
-  backgroundVideo?: string // ✅ ADD THIS
+  backgroundVideo?: string
+  primaryColor: string
 }
 
 export default function TransparentMixerLayout({
@@ -41,32 +40,32 @@ export default function TransparentMixerLayout({
   isIOS,
   delaysRef,
   backgroundVideo,
+  primaryColor,
 }: TransparentMixerLayoutProps) {
-  
-return (
-  <>
-    {backgroundVideo && (
-      <video
-        src={backgroundVideo}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          objectFit: 'cover',
-          zIndex: -1,
-          pointerEvents: 'none',
-        }}
-      />
-    )}
+  return (
+    <>
+      {backgroundVideo && (
+        <video
+          src={backgroundVideo}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            objectFit: 'cover',
+            zIndex: -1,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
 
-  
+
 
       <div className="flex justify-center">
         <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
@@ -78,7 +77,7 @@ return (
                 width: stems.length >= 6 ? '86px' : '96px',
                 minHeight: '440px',
                 backgroundColor: 'transparent',
-                border: '2px solid #B8001F',
+                border: `2px solid ${primaryColor}`,
                 borderRadius: '10px',
                 padding: '16px',
                 display: 'flex',
@@ -87,7 +86,6 @@ return (
                 backdropFilter: 'blur(2px)',
               }}
             >
-              {/* VU Meter */}
               <div
                 style={{
                   width: '16px',
@@ -99,7 +97,6 @@ return (
                 }}
               />
 
-              {/* Volume Slider */}
               <div
                 style={{
                   display: 'flex',
@@ -107,7 +104,7 @@ return (
                   alignItems: 'center',
                   marginBottom: '30px',
                   fontSize: '10px',
-                  color: '#B8001F',
+                  color: primaryColor,
                 }}
               >
                 <span style={{ marginBottom: '4px' }}>LEVEL</span>
@@ -118,7 +115,10 @@ return (
                   step="0.01"
                   value={volumes[label]}
                   onChange={(e) =>
-                    setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+                    setVolumes((prev) => ({
+                      ...prev,
+                      [label]: parseFloat(e.target.value),
+                    }))
                   }
                   className="volume-slider"
                   style={{
@@ -131,7 +131,6 @@ return (
                 />
               </div>
 
-              {/* Delay Knob */}
               <div style={{ marginBottom: '32px', textAlign: 'center' }}>
                 <DelayKnob
                   value={delays[label]}
@@ -139,16 +138,27 @@ return (
                     setDelays((prev) => ({ ...prev, [label]: val }))
                     delaysRef.current[label] = val
                   }}
-                  color="#B8001F"
+                  color={primaryColor}
                 />
               </div>
 
-              {/* Mute & Solo Buttons + Label */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                }}
+              >
                 <button
                   onClick={() => {
-                    setMutes((prev) => ({ ...prev, [label]: !prev[label] }))
-                    setSolos((prev) => ({ ...prev, [label]: false }))
+                    setMutes((prev) => ({
+                      ...prev,
+                      [label]: !prev[label],
+                    }))
+                    setSolos((prev) => ({
+                      ...prev,
+                      [label]: false,
+                    }))
                   }}
                   style={{
                     fontSize: '12px',
@@ -156,8 +166,8 @@ return (
                     borderRadius: '4px',
                     marginBottom: '8px',
                     backgroundColor: mutes[label] ? '#FFD700' : '#FCFAEE',
-                    color: mutes[label] ? 'black' : '#B8001F',
-                    border: '1px solid #B8001F',
+                    color: mutes[label] ? 'black' : primaryColor,
+                    border: `1px solid ${primaryColor}`,
                     cursor: 'pointer',
                   }}
                 >
@@ -166,8 +176,14 @@ return (
 
                 <button
                   onClick={() => {
-                    setSolos((prev) => ({ ...prev, [label]: !prev[label] }))
-                    setMutes((prev) => ({ ...prev, [label]: false }))
+                    setSolos((prev) => ({
+                      ...prev,
+                      [label]: !prev[label],
+                    }))
+                    setMutes((prev) => ({
+                      ...prev,
+                      [label]: false,
+                    }))
                   }}
                   style={{
                     fontSize: '12px',
@@ -175,8 +191,8 @@ return (
                     borderRadius: '4px',
                     marginBottom: '8px',
                     backgroundColor: solos[label] ? '#00FF99' : '#FCFAEE',
-                    color: solos[label] ? 'black' : '#B8001F',
-                    border: '1px solid #B8001F',
+                    color: solos[label] ? 'black' : primaryColor,
+                    border: `1px solid ${primaryColor}`,
                     cursor: 'pointer',
                   }}
                   className={solos[label] ? 'flash' : ''}
@@ -184,34 +200,46 @@ return (
                   SOLO
                 </button>
 
-<div style={{
-  fontSize: '12px',
-  padding: '4px 6px',
-  borderRadius: '4px',
-  backgroundColor: '#FCFAEE',
-  color: '#B8001F',
-  marginTop: '6px',
-  display: 'block',
-  width: '100%',
-  maxWidth: '100%',
-  textAlign: 'center',
-  whiteSpace: 'normal',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  wordBreak: 'normal',
-  lineHeight: '1.2',
-  boxSizing: 'border-box',
-  border: '1px solid #B8001F',
-}}
->
-  {label}
-</div>
+                <div
+                  style={{
+                    fontSize: '12px',
+                    padding: '4px 6px',
+                    borderRadius: '4px',
+                    backgroundColor: '#FCFAEE',
+                    color: primaryColor,
+                    marginTop: '6px',
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: '100%',
+                    textAlign: 'center',
+                    whiteSpace: 'normal',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    wordBreak: 'normal',
+                    lineHeight: '1.2',
+                    boxSizing: 'border-box',
+                    border: `1px solid ${primaryColor}`,
+                  }}
+                >
+                  {label}
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      <div className="absolute right-4 top-[260px] flex flex-col items-center">
+        {bpm && (
+          <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
+            {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+          </div>
+        )}
+        <span className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
+          VARISPEED
+        </span>
+        <VarispeedSlider value={varispeed} onChange={() => {}} isIOS={isIOS} primaryColor={primaryColor} />
+      </div>
     </>
   )
 }
-
