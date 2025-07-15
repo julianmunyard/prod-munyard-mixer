@@ -83,14 +83,6 @@ export default function MixerPage() {
 
       if (error || !data) return console.error('❌ Song fetch failed', error)
 
-      if (data.color === 'Blue & Yellow') {
-        document.documentElement.style.setProperty('--bg', '#001F54')
-        document.documentElement.style.setProperty('--fg', '#FFD700')
-      } else {
-        document.documentElement.style.setProperty('--bg', '#B8001F')
-        document.documentElement.style.setProperty('--fg', '#ffffff')
-      }
-
       if (data.bpm) setBpm(data.bpm)
 
       const parsedStems = typeof data.stems === 'string' ? JSON.parse(data.stems) : data.stems
@@ -112,6 +104,11 @@ export default function MixerPage() {
       setMutes(Object.fromEntries(stemObjs.map(s => [s.label, false])))
       setSolos(Object.fromEntries(stemObjs.map(s => [s.label, false])))
     }
+
+// Set red + white for all themes
+document.documentElement.style.setProperty('--bg', '#B8001F')
+document.documentElement.style.setProperty('--fg', '#ffffff')
+
 
     if (artist && songSlug) fetchSong()
   }, [artist, songSlug])
@@ -207,6 +204,15 @@ useEffect(() => {
       audioCtxRef.current?.close()
     }
   }, [])
+
+
+  useEffect(() => {
+  return () => {
+    document.documentElement.style.removeProperty('--bg')
+    document.documentElement.style.removeProperty('--fg')
+  }
+}, [])
+
 
 const playAll = async () => {
   let ctx = audioCtxRef.current
