@@ -15,6 +15,17 @@ export default function Dashboard() {
   const [projects, setProjects] = useState([])
   const router = useRouter()
 
+  // ✅ Manually force cream background and dark text
+  useEffect(() => {
+    document.body.style.backgroundColor = '#FCFAEE'
+    document.body.style.color = '#171717'
+    return () => {
+      document.body.style.backgroundColor = ''
+      document.body.style.color = ''
+    }
+  }, [])
+
+
   useEffect(() => {
     const getUserAndProjects = async () => {
       const { data: { user }, error } = await supabase.auth.getUser()

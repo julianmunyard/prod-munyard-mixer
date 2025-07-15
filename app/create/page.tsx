@@ -41,8 +41,16 @@ export default function Create() {
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [primaryColor, setPrimaryColor] = useState('#B8001F') // default red
 
-
-
+  // ✅ Force cream background on mount
+  useEffect(() => {
+    document.body.style.backgroundColor = '#FCFAEE'
+    document.body.style.color = '#171717'
+    return () => {
+      document.body.style.backgroundColor = ''
+      document.body.style.color = ''
+    }
+  }, [])
+  
   useEffect(() => {
     async function getUser() {
       const { data, error } = await supabase.auth.getSession()
@@ -398,6 +406,7 @@ videoPublicUrl = publicUrlData.publicUrl
     <option>Transparent</option>
   </select>
 </label>
+
 
 <label>
   Choose Your Accent Color
