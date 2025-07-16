@@ -310,24 +310,25 @@ return (
     {/* ✅ Background Video for non-transparent themes */}
 {songData?.background_video &&
   (songData.color === 'Transparent' || songData.color === 'Red (Classic)') && (
-    <video
-      src={songData.background_video}
-      autoPlay
-      muted
-      loop
-      playsInline
-      preload="auto"
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100dvh',
-        objectFit: 'cover',
-        zIndex: -1,
-        pointerEvents: 'none',
-      }}
-    />
+<video
+  src={songData.background_video}
+  autoPlay
+  muted
+  loop
+  playsInline
+  preload="auto"
+  style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100dvh',
+    objectFit: 'cover',
+    zIndex: -1,
+    pointerEvents: 'none',
+    backgroundColor: '#FCFAEE', // fallback cream
+  }}
+/>
 )}
 
 
