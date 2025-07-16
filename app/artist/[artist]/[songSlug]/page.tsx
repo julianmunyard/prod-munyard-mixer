@@ -83,14 +83,6 @@ export default function MixerPage() {
 
       if (error || !data) return console.error('❌ Song fetch failed', error)
 
-      if (data.color === 'Blue & Yellow') {
-        document.documentElement.style.setProperty('--bg', '#001F54')
-        document.documentElement.style.setProperty('--fg', '#FFD700')
-      } else {
-        document.documentElement.style.setProperty('--bg', '#B8001F')
-        document.documentElement.style.setProperty('--fg', '#ffffff')
-      }
-
       if (data.bpm) setBpm(data.bpm)
 
       const parsedStems = typeof data.stems === 'string' ? JSON.parse(data.stems) : data.stems
@@ -113,8 +105,26 @@ export default function MixerPage() {
       setSolos(Object.fromEntries(stemObjs.map(s => [s.label, false])))
     }
 
+// Set red + white for all themes
+document.documentElement.style.setProperty('--bg', '#B8001F')
+document.documentElement.style.setProperty('--fg', '#ffffff')
+
+
     if (artist && songSlug) fetchSong()
   }, [artist, songSlug])
+
+useEffect(() => {
+  if (!songData) return;
+
+  if (
+    songData.background_video &&
+    songData.color === 'Red (Classic)'
+  ) {
+    document.body.classList.add('red-theme-video')
+  } else {
+    document.body.classList.remove('red-theme-video')
+  }
+}, [songData])
 
   // ---------- Show "Rotate Phone" notification on mobile ----------
   useEffect(() => {
@@ -194,6 +204,15 @@ export default function MixerPage() {
       audioCtxRef.current?.close()
     }
   }, [])
+
+
+  useEffect(() => {
+  return () => {
+    document.documentElement.style.removeProperty('--bg')
+    document.documentElement.style.removeProperty('--fg')
+  }
+}, [])
+
 
 const playAll = async () => {
   let ctx = audioCtxRef.current
@@ -275,39 +294,53 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 
 return (
   <>
-    {/* ✅ Background Video for non-transparent themes */}
-    {songData?.background_video && songData.color !== 'Transparent' && (
-      <video
-        src={songData.background_video}
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          objectFit: 'cover',
-          zIndex: -1,
-          pointerEvents: 'none',
-        }}
-      />
-    )}
 
-    <main
-      className={`min-h-screen font-sans relative overflow-y-auto ${
-        songData?.color === 'Transparent' && songData?.background_video
-          ? 'bg-transparent text-[#B8001F]'
-          : songData?.color === 'Red (Classic)' || songData?.color === 'Transparent'
-            ? 'bg-[#FCFAEE] text-[#B8001F]'
-            : songData?.color === 'Blue & Yellow'
-              ? 'bg-[#001F54] text-[#FFD700]'
-              : 'bg-black text-white'
-      } p-8 landscape:p-0`}
-    >
+  <style>{`
+  input[type="range"]::-webkit-slider-thumb {
+    background: ${primary};
+  }
+  input[type="range"]::-moz-range-thumb {
+    background: ${primary};
+  }
+  input[type="range"]::-ms-thumb {
+    background: ${primary};
+  }
+`}</style>
+
+    {/* ✅ Background Video for non-transparent themes */}
+{songData?.background_video &&
+  (songData.color === 'Transparent' || songData.color === 'Red (Classic)') && (
+<video
+  src={songData.background_video}
+  autoPlay
+  muted
+  loop
+  playsInline
+  preload="auto"
+  style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100dvh',
+    objectFit: 'cover',
+    zIndex: -1,
+    pointerEvents: 'none',
+    backgroundColor: '#FCFAEE', // fallback cream
+  }}
+/>
+)}
+
+
+
+<main
+  className={`min-h-screen font-sans relative overflow-y-auto p-8 landscape:p-0 ${
+    songData?.color === 'Transparent' && songData?.background_video
+      ? 'bg-transparent text-[#B8001F]'
+      : 'bg-[#FCFAEE] text-[#B8001F]'
+  }`}
+>
+
       {/* Title */}
       <h1
         className="village text-center mb-16"
