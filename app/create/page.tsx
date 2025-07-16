@@ -11,6 +11,8 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabaseClient'
 import { v4 as uuidv4 } from 'uuid'
 import axios, { AxiosProgressEvent } from 'axios'
+import { HexColorPicker } from 'react-colorful'
+
 
 function toSlug(input: string) {
   return input
@@ -410,36 +412,35 @@ videoPublicUrl = publicUrlData.publicUrl
 
 <label>
   Choose Your Accent Color
-  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginTop: '0.5rem' }}>
-    <div
+  <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+    <HexColorPicker
+      color={primaryColor}
+      onChange={setPrimaryColor}
       style={{
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        border: '2px solid #ccc',
-        backgroundColor: primaryColor,
-        cursor: 'pointer',
+        width: '100%',
+        maxWidth: '280px',
+        height: '280px',
+        borderRadius: '12px',
+        boxShadow: '0 0 0 1px #ccc',
       }}
-      onClick={() => document.getElementById('hex-color-input')?.click()}
-      title="Click to pick color"
-    />
-    <input
-      id="hex-color-input"
-      type="color"
-      value={primaryColor}
-      onChange={(e) => setPrimaryColor(e.target.value)}
-      style={{ display: 'none' }}
     />
     <input
       type="text"
+      inputMode="text"
+      autoComplete="off"
+      spellCheck={false}
       value={primaryColor}
       onChange={(e) => {
-        const val = e.target.value
-        if (/^#[0-9A-Fa-f]{6}$/.test(val)) setPrimaryColor(val)
+        const val = e.target.value.trim()
+        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+          setPrimaryColor(val)
+        } else {
+          setPrimaryColor(val) // allow partials while typing
+        }
       }}
       placeholder="#B8001F"
       style={{
-        padding: '0.4rem',
+        padding: '0.5rem',
         fontFamily: 'monospace',
         width: '100%',
         color: primaryColor,
@@ -448,9 +449,10 @@ videoPublicUrl = publicUrlData.publicUrl
       }}
     />
   </div>
-
-  
 </label>
+
+
+
 {(color === 'Transparent' || color === 'Red (Classic)') && (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
     <span style={{ fontWeight: 'bold' }}>Optional Background Video (MP4 or WebM)</span>

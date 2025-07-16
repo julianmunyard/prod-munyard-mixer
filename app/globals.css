@@ -1,7 +1,4 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -244,19 +241,6 @@ canvas {
   user-select: none;
 }
 
-@media screen and (max-height: 500px) and (orientation: landscape) {
-  .varispeed-slider {
-    right: -20px !important; /* Adjust as needed: -30px or -40px if needed */
-  }
-}
-
-
-html, body {
-  overflow-x: hidden;
-  width: 100%;
-  max-width: 100vw;
-}
-
 @media screen and (orientation: landscape) and (max-height: 500px) {
   main {
     padding: 0 !important;
@@ -265,7 +249,7 @@ html, body {
 
   video {
     width: 100vw !important;
-    height: 100vh !important;
+    height: 100dvh !important; /* ✅ Fixed */
     object-fit: cover !important;
     position: fixed;
     top: 0;
@@ -273,8 +257,45 @@ html, body {
     z-index: 0;
   }
 }
+
 body.red-theme-video,
 body.red-theme-video main {
   background: transparent !important;
 }
 
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important; /* ✅ Fixed */
+    max-width: 100vw !important;
+    max-height: 100dvh !important; /* ✅ Fixed */
+    background: black !important;
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+    touch-action: none !important;
+  }
+
+  video {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw !important;
+    height: 100dvh !important; /* ✅ Fixed */
+    object-fit: cover !important;
+    z-index: -1 !important;
+    background: black !important;
+  }
+
+  main {
+    width: 100vw !important;
+    height: 100dvh !important; /* ✅ Fixed */
+    max-width: 100vw !important;
+    max-height: 100dvh !important; /* ✅ Fixed */
+    background: transparent !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
