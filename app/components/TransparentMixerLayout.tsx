@@ -230,17 +230,28 @@ export default function TransparentMixerLayout({
         </div>
       </div>
 
-      <div className="absolute right-4 top-[260px] flex flex-col items-center">
-        {bpm && (
-          <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
-            {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-          </div>
-        )}
-        <span className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
-          VARISPEED
-        </span>
-        <VarispeedSlider value={varispeed} onChange={() => {}} isIOS={isIOS} primaryColor={primaryColor} />
-      </div>
+<div
+  className="
+    absolute right-4 flex flex-col items-center
+    top-[260px] sm:top-[300px] [@media(max-height:700px)]:top-[300px]
+  "
+>
+  {bpm && (
+    <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
+      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+    </div>
+  )}
+  <span className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
+    VARISPEED
+  </span>
+  <VarispeedSlider
+    value={varispeed}
+    onChange={() => {}}
+    isIOS={isIOS}
+    primaryColor={primaryColor}
+  />
+</div>
+
     </>
   )
 }
