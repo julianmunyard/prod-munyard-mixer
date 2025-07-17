@@ -522,7 +522,7 @@ return (
   className={`
     absolute right-4 
     flex flex-col items-center
-    ${songData?.title.length > 16 ? 'top-[300px]' : 'top-[260px]'}
+    ${songData?.title.length > 16 ? 'top-[350px]' : 'top-[260px]'}
     sm:top-[260px]
   `}
 >
