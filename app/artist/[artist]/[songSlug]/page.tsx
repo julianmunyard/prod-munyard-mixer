@@ -521,7 +521,7 @@ return (
 <div
   className="
     absolute right-4 
-    top-[260px] 
+    top-[360px] 
     sm:top-[260px] 
     top-[300px] 
     flex flex-col items-center
