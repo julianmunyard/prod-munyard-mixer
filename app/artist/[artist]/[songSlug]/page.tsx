@@ -519,13 +519,12 @@ return (
 
 {/* Varispeed Slider */}
 <div
-  className="
+  className={`
     absolute right-4 
-    top-[360px] 
-    sm:top-[260px] 
-    top-[300px] 
     flex flex-col items-center
-  "
+    ${songData?.title.length > 16 ? 'top-[300px]' : 'top-[260px]'}
+    sm:top-[260px]
+  `}
 >
   {bpm && (
     <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
@@ -542,7 +541,6 @@ return (
     primaryColor={primary}
   />
 </div>
-
     </main>
   </>
 ) }
