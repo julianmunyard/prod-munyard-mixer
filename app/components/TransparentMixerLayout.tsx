@@ -229,12 +229,10 @@ export default function TransparentMixerLayout({
           ))}
         </div>
       </div>
-
 <div
-  className="
-    absolute right-4 flex flex-col items-center
-    top-[260px] sm:top-[300px] [@media(max-height:700px)]:top-[300px]
-  "
+  className={`absolute right-4 flex flex-col items-center ${
+    (primaryColor?.length ?? 0) > 0 ? 'top-[350px]' : 'top-[260px]'
+  } sm:top-[260px]`}
 >
   {bpm && (
     <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
@@ -251,7 +249,6 @@ export default function TransparentMixerLayout({
     primaryColor={primaryColor}
   />
 </div>
-
     </>
   )
 }
