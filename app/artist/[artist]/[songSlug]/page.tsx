@@ -518,24 +518,31 @@ return (
       )}
 
 {/* Varispeed Slider */}
-<div className="flex justify-end mt-[-180px] mb-8 pr-4">
-  <div className="flex flex-col items-center">
-    {bpm && (
-      <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
-        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-      </div>
-    )}
-    <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
-      VARISPEED
-    </span>
-    <VarispeedSlider
-      value={varispeed}
-      onChange={setVarispeed}
-      isIOS={isIOS}
-      primaryColor={primary}
-    />
-  </div>
+<div
+  className="
+    absolute right-4 
+    top-[260px] 
+    sm:top-[260px] 
+    top-[300px] 
+    flex flex-col items-center
+  "
+>
+  {bpm && (
+    <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
+      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+    </div>
+  )}
+  <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
+    VARISPEED
+  </span>
+  <VarispeedSlider
+    value={varispeed}
+    onChange={setVarispeed}
+    isIOS={isIOS}
+    primaryColor={primary}
+  />
 </div>
+
     </main>
   </>
 ) }
