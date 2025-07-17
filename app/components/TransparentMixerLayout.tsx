@@ -43,32 +43,38 @@ export default function TransparentMixerLayout({
   primaryColor,
 }: TransparentMixerLayoutProps) {
   return (
-    <>
-      {backgroundVideo && (
-        <video
-          src={backgroundVideo}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          style={{
+  <>
+    {backgroundVideo && (
+      <video
+        src={backgroundVideo}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        style={{
           position: 'fixed',
           top: 0,
           left: 0,
           width: '100vw',
-          height: '100dvh', // ✅ this is the key fix
+          height: '100dvh',
           objectFit: 'cover',
           zIndex: -1,
           pointerEvents: 'none',
-          backgroundColor: 'black' // ✅ fallback for loading moment
-          }}
-        />
-      )}
+          backgroundColor: 'black',
+        }}
+      />
+    )}
 
-
-
-      <div className="flex justify-center">
+    <div
+      className="w-full overflow-y-auto"
+      style={{
+        maxHeight: '100dvh',
+        paddingBottom: '6rem',
+        WebkitOverflowScrolling: 'touch',
+      }}
+    >
+      <div className="flex justify-center pt-4">
         <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
           {stems.map(({ label }) => (
             <div
@@ -229,26 +235,24 @@ export default function TransparentMixerLayout({
           ))}
         </div>
       </div>
-<div
-  className={`absolute right-4 flex flex-col items-center ${
-    (primaryColor?.length ?? 0) > 0 ? 'top-[350px]' : 'top-[260px]'
-  } sm:top-[260px]`}
->
-  {bpm && (
-    <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
-      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+
+      {/* Varispeed now scrollable below */}
+      <div className="flex flex-col items-center mt-10 mb-10">
+        {bpm && (
+          <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
+            {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+          </div>
+        )}
+        <span className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
+          VARISPEED
+        </span>
+        <VarispeedSlider
+          value={varispeed}
+          onChange={() => {}}
+          isIOS={isIOS}
+          primaryColor={primaryColor}
+        />
+      </div>
     </div>
-  )}
-  <span className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
-    VARISPEED
-  </span>
-  <VarispeedSlider
-    value={varispeed}
-    onChange={() => {}}
-    isIOS={isIOS}
-    primaryColor={primaryColor}
-  />
-</div>
-    </>
-  )
-}
+  </>
+) }
