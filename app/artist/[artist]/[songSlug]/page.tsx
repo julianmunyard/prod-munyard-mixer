@@ -518,7 +518,7 @@ return (
       )}
 
 {/* Varispeed Slider */}
-<div className="flex justify-end w-full mt-8 md:absolute md:top-[260px] md:right-4 md:mt-0 z-10">
+<div className="flex justify-end mt-[-180px] mb-8 pr-4">
   <div className="flex flex-col items-center">
     {bpm && (
       <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
@@ -528,7 +528,12 @@ return (
     <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
       VARISPEED
     </span>
-    <VarispeedSlider value={varispeed} onChange={setVarispeed} isIOS={isIOS} primaryColor={primary} />
+    <VarispeedSlider
+      value={varispeed}
+      onChange={setVarispeed}
+      isIOS={isIOS}
+      primaryColor={primary}
+    />
   </div>
 </div>
     </main>
