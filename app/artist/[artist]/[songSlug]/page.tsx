@@ -568,34 +568,57 @@ return (
         primaryColor={primary}
       />
     </div>
+{/* Mobile Portrait Varispeed Layout */}
+<div className="sm:hidden w-full flex justify-center">
+  <div
+    className="relative"
+    style={{
+      marginTop: '12px',
+      width: '350px',
+      height: '140px', // ✅ increased height to allow room for both
+    }}
+  >
+    {/* Labels */}
+    <div
+      className="absolute top-0 left-0 w-full flex flex-col items-center"
+      style={{ pointerEvents: 'none' }}
+    >
+      <div className="text-xs font-mono mb-1" style={{ color: primary }}>
+        {Math.round(bpm! * (isIOS ? 2 - varispeed : varispeed))} BPM
+      </div>
+      <div className="text-sm tracking-wider" style={{ color: primary }}>
+        VARISPEED
+      </div>
+    </div>
 
-    {/* Portrait mobile: horizontal below modules */}
-<div className="sm:hidden w-full mt-6 px-4 flex justify-center">
-<div
-  className="rounded-lg px-4 py-3"
-  style={{
-    backgroundColor: '#FCFAEE',
-    border: `2px solid ${primary}`,
-    width: '86px', // ✅ Matches desktop mixer module width
-    minWidth: '86px',
-    maxWidth: '86px',
-  }}
->
-    <div className="text-center text-xs font-mono mb-1" style={{ color: primary }}>
-      {Math.round(bpm! * (isIOS ? 2 - varispeed : varispeed))} BPM
+    {/* Slider */}
+    <div
+      className="absolute left-1/2"
+      style={{
+        transform: 'translateX(-50%) rotate(-90deg)',
+        top: '-96px', // ✅ position below labels
+      }}
+    >
+      <VarispeedSlider
+        value={varispeed}
+        onChange={setVarispeed}
+        isIOS={isIOS}
+        primaryColor={primary}
+      />
     </div>
-    <div className="text-center text-sm tracking-wider mb-3" style={{ color: primary }}>
-      VARISPEED
-    </div>
-    <VarispeedSlider
-      value={varispeed}
-      onChange={setVarispeed}
-      isIOS={isIOS}
-      primaryColor={primary}
-      horizontal={true} // ✅ horizontal mode
-    />
   </div>
 </div>
+
+
+
+
+
+
+
+
+
+
+
   </>
 )}
     </main>
