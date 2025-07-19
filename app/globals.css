@@ -330,3 +330,20 @@ main {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
+html,
+
+body {
+  height: auto;
+  min-height: 100dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* FORCE RESET BACKGROUND PER PAGE */
+body[data-page="dashboard"],
+body[data-page="create"] {
+  --background: #FCFAEE !important;
+  --foreground: #171717 !important;
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}

@@ -401,23 +401,25 @@ return (
 
       {/* Mixer Modules */}
       {songData?.color === 'Transparent' ? (
-        <TransparentMixerLayout
-          stems={stems}
-          volumes={volumes}
-          setVolumes={setVolumes}
-          delays={delays}
-          setDelays={setDelays}
-          mutes={mutes}
-          setMutes={setMutes}
-          solos={solos}
-          setSolos={setSolos}
-          bpm={songData?.bpm}
-          varispeed={varispeed}
-          isIOS={isIOS}
-          delaysRef={delaysRef}
-          backgroundVideo={songData?.background_video}
-          primaryColor={primary}
-        />
+<TransparentMixerLayout
+  stems={stems}
+  volumes={volumes}
+  setVolumes={setVolumes}
+  delays={delays}
+  setDelays={setDelays}
+  mutes={mutes}
+  setMutes={setMutes}
+  solos={solos}
+  setSolos={setSolos}
+  bpm={songData?.bpm}
+  varispeed={varispeed}
+  setVarispeed={setVarispeed} // ✅ ADD THIS
+  isIOS={isIOS}
+  delaysRef={delaysRef}
+  backgroundVideo={songData?.background_video}
+  primaryColor={primary}
+/>
+
       ) : (
         <div className="flex justify-center">
           <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
@@ -517,30 +519,32 @@ return (
         </div>
       )}
 
-{/* Varispeed Slider */}
-<div
-  className={`
-    absolute right-4 
-    flex flex-col items-center
-    ${songData?.title.length > 16 ? 'top-[350px]' : 'top-[260px]'}
-    sm:top-[260px]
-  `}
->
-  {bpm && (
-    <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
-      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-    </div>
-  )}
-  <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
-    VARISPEED
-  </span>
-  <VarispeedSlider
-    value={varispeed}
-    onChange={setVarispeed}
-    isIOS={isIOS}
-    primaryColor={primary}
-  />
-</div>
+{/* Varispeed Slider - only show if NOT Transparent layout */}
+{songData?.color !== 'Transparent' && (
+  <div
+    className={`
+      absolute right-4 
+      flex flex-col items-center
+      ${songData?.title.length > 16 ? 'top-[350px]' : 'top-[260px]'}
+      sm:top-[260px]
+    `}
+  >
+    {bpm && (
+      <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
+        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+      </div>
+    )}
+    <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
+      VARISPEED
+    </span>
+    <VarispeedSlider
+      value={varispeed}
+      onChange={setVarispeed}
+      isIOS={isIOS}
+      primaryColor={primary}
+    />
+  </div>
+)}
     </main>
   </>
 ) }

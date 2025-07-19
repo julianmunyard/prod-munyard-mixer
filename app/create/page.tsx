@@ -12,6 +12,9 @@ import { supabase } from '../../lib/supabaseClient'
 import { v4 as uuidv4 } from 'uuid'
 import axios, { AxiosProgressEvent } from 'axios'
 import { HexColorPicker } from 'react-colorful'
+import MiniMixerPreview from '../components/MiniMixerPreview'
+
+
 
 
 function toSlug(input: string) {
@@ -42,16 +45,22 @@ export default function Create() {
   const [backgroundVideo, setBackgroundVideo] = useState<File | null>(null)
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [primaryColor, setPrimaryColor] = useState('#B8001F') // default red
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false)
+  const [showEffectDropdown, setShowEffectDropdown] = useState(false)
 
-  // ✅ Force cream background on mount
-  useEffect(() => {
-    document.body.style.backgroundColor = '#FCFAEE'
-    document.body.style.color = '#171717'
-    return () => {
-      document.body.style.backgroundColor = ''
-      document.body.style.color = ''
-    }
-  }, [])
+
+// ✅ Force cream background + body data attribute
+useEffect(() => {
+  document.body.setAttribute('data-page', 'create')
+  document.body.style.backgroundColor = '#FCFAEE'
+  document.body.style.color = '#171717'
+
+  return () => {
+    document.body.removeAttribute('data-page')
+    document.body.style.backgroundColor = ''
+    document.body.style.color = ''
+  }
+}, [])
   
   useEffect(() => {
     async function getUser() {
@@ -193,17 +202,21 @@ videoPublicUrl = publicUrlData.publicUrl
 
 
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '3rem 1.5rem',
-        fontFamily: 'Geist Mono, monospace',
-        textAlign: 'center',
-      }}
-    >
+<main
+  style={{
+    minHeight: '100vh',
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    padding: '3rem 1.5rem 6rem',
+    fontFamily: 'Geist Mono, monospace',
+    textAlign: 'center',
+    backgroundColor: '#FCFAEE',
+    display: 'flex',              // ✅ restore flex
+    justifyContent: 'center',    // ✅ center horizontally
+    alignItems: 'flex-start',    // ✅ top align to allow scrolling
+  }}
+>
+
       <div style={{ width: '100%', maxWidth: '500px' }}>
         <h1 style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '2rem' }}>UPLOAD STEMS</h1>
 
@@ -240,15 +253,24 @@ videoPublicUrl = publicUrlData.publicUrl
           </label>
 
           <label>
-          BPM (Optional)
-          <input
-          type="number"
-          value={bpm}
-          onChange={(e) => setBpm(Number(e.target.value))}
-          placeholder="e.g. 120"
-          style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
-          />
-          </label>
+  BPM (Optional)
+  <input
+    type="number"
+    min="0"
+    value={bpm}
+    onChange={(e) => {
+      const val = e.target.value
+      setBpm(val === '' ? '' : Number(val))
+    }}
+    placeholder="e.g. 120"
+    style={{
+      padding: '0.5rem',
+      width: '100%',
+      backgroundColor: 'white',
+      color: 'black',
+    }}
+  />
+</label>
 
           <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
             Upload Stems (WAV/MP3)
@@ -337,7 +359,7 @@ videoPublicUrl = publicUrlData.publicUrl
     <div
       style={{
         fontSize: '0.85rem',
-        color: 'white',
+        color: '#B8001F',
         paddingBottom: '2px',
         display: 'inline-block',
       }}
@@ -397,28 +419,80 @@ videoPublicUrl = publicUrlData.publicUrl
             </div>
           )}
 
-        <label>
-  Choose Your Mixer Theme
-  <select
-    value={color}
-    onChange={(e) => setColor(e.target.value)}
-    style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
+<div style={{ position: 'relative', width: '100%' }}>
+  <label style={{ display: 'block', marginBottom: '0.5rem' }}>Choose Your Mixer Theme</label>
+  <div
+    onClick={() => setShowThemeDropdown((prev) => !prev)}
+    style={{
+      width: '100%',
+      padding: '0.5rem',
+      backgroundColor: 'white',
+      color: 'black',
+      border: '1px solid #ccc',
+      cursor: 'pointer',
+      appearance: 'none',
+      position: 'relative',
+    }}
   >
-    <option>Red (Classic)</option>
-    <option>Transparent</option>
-  </select>
-</label>
+    {color}
+    <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+      ▼
+    </span>
+  </div>
+
+  {showThemeDropdown && (
+    <div
+      style={{
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        width: '100%',
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        zIndex: 10,
+        fontSize: '0.9rem',
+      }}
+    >
+      {['Red (Classic)', 'Transparent'].map((themeOption) => (
+        <div
+          key={themeOption}
+          onClick={() => {
+            setColor(themeOption)
+            setShowThemeDropdown(false)
+          }}
+          style={{
+            padding: '0.5rem',
+            cursor: 'pointer',
+            backgroundColor: color === themeOption ? '#f3f3f3' : 'white',
+          }}
+        >
+          {themeOption}
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
 
-<label>
-  Choose Your Accent Color
-  <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+
+ {/* side by side preview */}
+<div
+  style={{
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '2rem',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginTop: '2rem',
+  }}
+>
+  {/* 🎨 Color Picker + Input */}
+  <div style={{ flex: '1 1 280px', maxWidth: '100%' }}>
     <HexColorPicker
       color={primaryColor}
       onChange={setPrimaryColor}
       style={{
         width: '100%',
-        maxWidth: '280px',
         height: '280px',
         borderRadius: '12px',
         boxShadow: '0 0 0 1px #ccc',
@@ -432,14 +506,11 @@ videoPublicUrl = publicUrlData.publicUrl
       value={primaryColor}
       onChange={(e) => {
         const val = e.target.value.trim()
-        if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
-          setPrimaryColor(val)
-        } else {
-          setPrimaryColor(val) // allow partials while typing
-        }
+        setPrimaryColor(val)
       }}
       placeholder="#B8001F"
       style={{
+        marginTop: '1rem',
         padding: '0.5rem',
         fontFamily: 'monospace',
         width: '100%',
@@ -449,8 +520,12 @@ videoPublicUrl = publicUrlData.publicUrl
       }}
     />
   </div>
-</label>
 
+  {/* 🔊 Mixer Preview */}
+  <div style={{ flex: '1 1 120px', maxWidth: '100%' }}>
+    <MiniMixerPreview theme={color} accentColor={primaryColor} />
+  </div>
+</div>
 
 
 {(color === 'Transparent' || color === 'Red (Classic)') && (
@@ -490,16 +565,58 @@ videoPublicUrl = publicUrlData.publicUrl
   </div>
 )}
 
-          <label>
-            Which Effects Do You Want?
-            <select
-              value={effect}
-              onChange={(e) => setEffect(e.target.value)}
-              style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
-            >
-              <option>Delay (1/8 note tape-style echo)</option>
-            </select>
-          </label>
+         <div style={{ position: 'relative', width: '100%' }}>
+  <label style={{ display: 'block', marginBottom: '0.5rem' }}>Which Effects Do You Want?</label>
+  <div
+    onClick={() => setShowEffectDropdown((prev) => !prev)}
+    style={{
+      width: '100%',
+      padding: '0.5rem',
+      backgroundColor: 'white',
+      color: 'black',
+      border: '1px solid #ccc',
+      cursor: 'pointer',
+      appearance: 'none',
+      WebkitAppearance: 'none',
+      MozAppearance: 'none',
+      position: 'relative',
+    }}
+  >
+    {effect}
+    <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
+      ▼
+    </span>
+  </div>
+  {showEffectDropdown && (
+    <div
+      style={{
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        width: '100%',
+        backgroundColor: 'white',
+        border: '1px solid #ccc',
+        zIndex: 10,
+        fontSize: '0.9rem',
+      }}
+    >
+      <div
+        onClick={() => {
+          setEffect('Delay (1/8 note tape-style echo)')
+          setShowEffectDropdown(false)
+        }}
+        style={{
+          padding: '0.5rem',
+          cursor: 'pointer',
+          backgroundColor: effect === 'Delay (1/8 note tape-style echo)' ? '#f3f3f3' : 'white',
+        }}
+      >
+        Delay (1/8 note tape-style echo)
+      </div>
+    </div>
+  )}
+</div>
+
 
           <button
             type="submit"

@@ -14,14 +14,13 @@ export default function Dashboard() {
   const [userId, setUserId] = useState(null)
   const [projects, setProjects] = useState([])
   const router = useRouter()
+  const [loading, setLoading] = useState(true)
 
-  // ✅ Manually force cream background and dark text
+
   useEffect(() => {
-    document.body.style.backgroundColor = '#FCFAEE'
-    document.body.style.color = '#171717'
+    document.body.setAttribute('data-page', 'dashboard')
     return () => {
-      document.body.style.backgroundColor = ''
-      document.body.style.color = ''
+      document.body.removeAttribute('data-page')
     }
   }, [])
 
@@ -44,6 +43,8 @@ export default function Dashboard() {
 
       if (songsError) console.error('Songs fetch error:', songsError)
       else setProjects(songs || [])
+    setLoading(false)
+
     }
 
     getUserAndProjects()
@@ -104,6 +105,36 @@ if (Array.isArray(parsedStems)) {
   }
 }
 
+if (loading) {
+  return (
+    <main
+      style={{
+        height: '100vh',
+        backgroundColor: '#FCFAEE',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <div
+        style={{
+          border: '4px solid #B8001F',
+          borderTop: '4px solid transparent',
+          borderRadius: '50%',
+          width: '36px',
+          height: '36px',
+          animation: 'spin 1s linear infinite',
+        }}
+      />
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+    </main>
+  )
+}
 
 
   return (
