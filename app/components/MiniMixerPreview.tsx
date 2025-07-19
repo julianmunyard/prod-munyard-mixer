@@ -57,7 +57,7 @@ export default function MixerPreviewModule({ theme, accentColor }: MixerPreviewM
           readOnly
           className="volume-slider"
           style={{
-            writingMode: 'bt-lr' as any,
+          writingMode: 'bt-lr' as React.CSSProperties['writingMode'],
             WebkitAppearance: 'slider-vertical',
             width: '6px',
             height: '160px',
