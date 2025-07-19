@@ -541,31 +541,62 @@ return (
         </div>
       )}
 
-{/* Varispeed Slider - only show if NOT Transparent layout */}
+{/* Varispeed Slider */}
 {songData?.color !== 'Transparent' && (
-  <div
-    className={`
-      absolute right-4 
-      flex flex-col items-center
-      ${songData?.title.length > 16 ? 'top-[350px]' : 'top-[260px]'}
-      sm:top-[260px]
-    `}
-  >
-    {bpm && (
-      <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
-        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-      </div>
-    )}
-    <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
+  <>
+    {/* Landscape & desktop: right side */}
+    <div
+      className={`
+        hidden sm:flex
+        absolute right-4 
+        flex-col items-center
+        ${songData?.title.length > 16 ? 'top-[350px]' : 'top-[260px]'}
+      `}
+    >
+      {bpm !== null && (
+        <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
+          {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+        </div>
+      )}
+      <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
+        VARISPEED
+      </span>
+      <VarispeedSlider
+        value={varispeed}
+        onChange={setVarispeed}
+        isIOS={isIOS}
+        primaryColor={primary}
+      />
+    </div>
+
+    {/* Portrait mobile: horizontal below modules */}
+<div className="sm:hidden w-full mt-6 px-4 flex justify-center">
+<div
+  className="rounded-lg px-4 py-3"
+  style={{
+    backgroundColor: '#FCFAEE',
+    border: `2px solid ${primary}`,
+    width: '86px', // ✅ Matches desktop mixer module width
+    minWidth: '86px',
+    maxWidth: '86px',
+  }}
+>
+    <div className="text-center text-xs font-mono mb-1" style={{ color: primary }}>
+      {Math.round(bpm! * (isIOS ? 2 - varispeed : varispeed))} BPM
+    </div>
+    <div className="text-center text-sm tracking-wider mb-3" style={{ color: primary }}>
       VARISPEED
-    </span>
+    </div>
     <VarispeedSlider
       value={varispeed}
       onChange={setVarispeed}
       isIOS={isIOS}
       primaryColor={primary}
+      horizontal={true} // ✅ horizontal mode
     />
   </div>
+</div>
+  </>
 )}
     </main>
   </>

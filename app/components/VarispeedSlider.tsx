@@ -42,6 +42,7 @@ export default function VarispeedSlider({
   const isSafari = typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
   const tickLabels = ['+9', '+7', '+5', '+4', '+2', '0', '-2', '-5', '-7', '-9', '-12']
+  
 
   if (horizontal) {
     return (
