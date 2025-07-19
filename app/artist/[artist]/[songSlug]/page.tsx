@@ -545,19 +545,18 @@ return (
 {songData?.color !== 'Transparent' && (
   <div
     className={`
+      absolute right-4 
       flex flex-col items-center
       ${songData?.title.length > 16 ? 'top-[350px]' : 'top-[260px]'}
-      sm:top-[260px] sm:absolute sm:right-4
-      fixed bottom-6 left-1/2 -translate-x-1/2
-      portrait:flex landscape:absolute
+      sm:top-[260px]
     `}
   >
     {bpm && (
-      <div className="mb-1 text-xs font-mono text-center" style={{ color: primary }}>
+      <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
         {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
       </div>
     )}
-    <span className="mb-2 text-sm tracking-wider text-center" style={{ color: primary }}>
+    <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
       VARISPEED
     </span>
     <VarispeedSlider
