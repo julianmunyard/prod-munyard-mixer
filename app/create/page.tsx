@@ -47,6 +47,8 @@ export default function Create() {
   const [primaryColor, setPrimaryColor] = useState('#B8001F') // default red
   const [showThemeDropdown, setShowThemeDropdown] = useState(false)
   const [showEffectDropdown, setShowEffectDropdown] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
 
 
 // ✅ Force cream background + body data attribute
@@ -81,25 +83,66 @@ useEffect(() => {
     getUser()
   }, [])
 
-  const uploadFileWithProgress = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop()
-    const filePath = `${userEmail}/${uuidv4()}.${fileExt}`
-    const { data: signed, error: signedError } = await supabase
-      .storage.from('stems')
-      .createSignedUploadUrl(filePath)
-    if (signedError || !signed) throw new Error('Failed to get signed URL')
+
+  
+
+const uploadFileWithProgress = async (file: File): Promise<string> => {
+  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
+  const fileExt = safeName.split('.').pop() || 'wav'
+  const filePath = `${userEmail}/${uuidv4()}.${fileExt}`
+
+  console.log('🚀 Uploading file...')
+  console.log('🧾 Name:', file.name)
+  console.log('📂 Type:', file.type)
+  console.log('📏 Size (MB):', (file.size / 1024 / 1024).toFixed(2))
+
+  // Set initial progress to 0%
+  setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
+
+  const { data: signed, error: signedError } = await supabase
+    .storage
+    .from('stems')
+    .createSignedUploadUrl(filePath)
+
+  if (signedError || !signed) {
+    console.error('❌ Failed to get signed URL:', signedError)
+    setUploadError('Upload failed. Try again or convert file to MP3.')
+    throw new Error('Failed to get signed URL')
+  }
+
+  try {
     await axios.put(signed.signedUrl, file, {
       headers: {
         'Content-Type': file.type || 'audio/wav',
-        'Content-Length': `${file.size}`
       },
-      onUploadProgress: (e: AxiosProgressEvent) => {
-        const percent = e.total ? Math.round((e.loaded * 100) / e.total) : 0
-        setUploadProgress(prev => ({ ...prev, [file.name]: percent }))
-      }
+      onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+        if (progressEvent.total) {
+          const percent = Math.round((progressEvent.loaded / progressEvent.total) * 100)
+          setUploadProgress(prev => ({ ...prev, [file.name]: percent }))
+        }
+      },
     })
-    return supabase.storage.from('stems').getPublicUrl(filePath).data.publicUrl
+  } catch (error) {
+    console.error('🔥 Direct upload failed:', error)
+    setUploadError('File too large or upload rejected. Try converting to MP3.')
+    throw error
   }
+
+  // Ensure final 100%
+  setUploadProgress(prev => ({ ...prev, [file.name]: 100 }))
+
+  const { data: publicData } = supabase.storage.from('stems').getPublicUrl(filePath)
+  if (!publicData || !publicData.publicUrl) {
+    console.error('⚠️ Failed to get public URL')
+    throw new Error('Could not retrieve public URL')
+  }
+
+  return publicData.publicUrl
+}
+
+
+
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -232,6 +275,8 @@ videoPublicUrl = publicUrlData.publicUrl
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+
           <label>
             Artist Name
             <input
@@ -657,7 +702,25 @@ videoPublicUrl = publicUrlData.publicUrl
               </>
             ) : 'Continue'}
           </button>
-        </form>
+
+          {/* ✅ Custom error block goes right below button but inside <form> */}
+          {uploadError && (
+            <div style={{
+              backgroundColor: '#FCFAEE',
+              border: '2px solid #B8001F',
+              color: '#B8001F',
+              padding: '1rem',
+              borderRadius: '6px',
+              marginTop: '1.5rem',
+              fontSize: '0.95rem',
+              textAlign: 'left'
+            }}>
+              <strong>Upload Error:</strong> {uploadError}
+            </div>
+          )}
+
+        </form> {/* ✅ Properly close form tag */}
+
       </div>
 
       <style>{`

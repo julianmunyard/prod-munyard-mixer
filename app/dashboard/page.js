@@ -138,15 +138,20 @@ if (loading) {
 
 
   return (
-    <main style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '3rem 1.5rem',
-      fontFamily: 'Geist Mono, monospace',
-      textAlign: 'center'
-    }}>
+<main
+  style={{
+    minHeight: '100vh',
+    backgroundColor: '#FCFAEE',
+    padding: '3rem 1.5rem',
+    fontFamily: 'Geist Mono, monospace',
+    textAlign: 'center',
+    overflowY: 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center', // ✅ this is fine now since we're using column layout
+  }}
+>
+
       <div style={{ width: '100%', maxWidth: '500px' }}>
         <h1 style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '2rem' }}>
           Dashboard
