@@ -522,9 +522,17 @@ videoPublicUrl = publicUrlData.publicUrl
   </div>
 
   {/* 🔊 Mixer Preview */}
-  <div style={{ flex: '1 1 120px', maxWidth: '100%' }}>
-    <MiniMixerPreview theme={color} accentColor={primaryColor} />
-  </div>
+<div
+  style={{
+    flex: '1 1 120px',
+    maxWidth: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+  } as React.CSSProperties}
+>
+  <MiniMixerPreview theme={color} accentColor={primaryColor} />
+</div>
+
 </div>
 
 
