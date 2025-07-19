@@ -541,31 +541,33 @@ return (
         </div>
       )}
 
-{/* Varispeed Slider - bottom horizontal (portrait only) */}
-<div className="w-full mt-12 flex-col items-center justify-center portrait:flex landscape:hidden hidden">
-  {bpm && (
-    <div className="mb-2 text-center text-xs font-mono" style={{ color: primary }}>
-      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-    </div>
-  )}
-  <span className="text-sm font-mono tracking-wide mb-2" style={{ color: primary }}>
-    VARISPEED
-  </span>
-  <div className="w-full flex justify-center">
-    <input
-      type="range"
-      min="0.5"
-      max="1.5"
-      step="0.01"
+{/* Varispeed Slider - only show if NOT Transparent layout */}
+{songData?.color !== 'Transparent' && (
+  <div
+    className={`
+      flex flex-col items-center
+      ${songData?.title.length > 16 ? 'top-[350px]' : 'top-[260px]'}
+      sm:top-[260px] sm:absolute sm:right-4
+      fixed bottom-6 left-1/2 -translate-x-1/2
+      portrait:flex landscape:absolute
+    `}
+  >
+    {bpm && (
+      <div className="mb-1 text-xs font-mono text-center" style={{ color: primary }}>
+        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+      </div>
+    )}
+    <span className="mb-2 text-sm tracking-wider text-center" style={{ color: primary }}>
+      VARISPEED
+    </span>
+    <VarispeedSlider
       value={varispeed}
-      onChange={(e) => setVarispeed(parseFloat(e.target.value))}
-      className="w-[220px]"
-      style={{
-        accentColor: primary,
-      }}
+      onChange={setVarispeed}
+      isIOS={isIOS}
+      primaryColor={primary}
     />
   </div>
-</div>
+)}
     </main>
   </>
 ) }
