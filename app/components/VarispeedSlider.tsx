@@ -6,11 +6,19 @@ type Props = {
   value: number
   onChange: (val: number) => void
   isIOS: boolean
-  primaryColor?: string // ✅ ADD THIS
+  primaryColor?: string
   bpm?: number | null
+  horizontal?: boolean
 }
 
-export default function VarispeedSlider({ value, onChange, isIOS, bpm, primaryColor = '#B8001F' }: Props) {
+export default function VarispeedSlider({
+  value,
+  onChange,
+  isIOS,
+  bpm,
+  primaryColor = '#B8001F',
+  horizontal = false,
+}: Props) {
   const previousTick = useRef<number | null>(null)
 
   function handleChange(e: ChangeEvent<HTMLInputElement>) {
@@ -18,7 +26,6 @@ export default function VarispeedSlider({ value, onChange, isIOS, bpm, primaryCo
     onChange(raw)
 
     const rounded = Math.round(raw * 10)
-
     if (previousTick.current === null) {
       previousTick.current = rounded
       return
@@ -26,47 +33,73 @@ export default function VarispeedSlider({ value, onChange, isIOS, bpm, primaryCo
 
     if (rounded !== previousTick.current) {
       previousTick.current = rounded
-
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        console.log('💥 VIBRATE fired')
         navigator.vibrate(5)
-      } else {
-        console.log('❌ Vibration not supported')
       }
     }
   }
 
   const isSafari = typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
+  const tickLabels = ['+9', '+7', '+5', '+4', '+2', '0', '-2', '-5', '-7', '-9', '-12']
+
+  if (horizontal) {
+    return (
+      <div
+        className="relative w-full max-w-xs flex flex-col justify-center"
+        style={{ paddingInline: '8px', paddingBlock: '4px' }}
+      >
+        {/* Ticks */}
+        <div className="absolute top-1/2 -translate-y-1/2 left-[8px] right-[8px] z-[5] flex justify-between pointer-events-none w-full">
+          {tickLabels.map((_, i) => (
+            <div key={i} className="h-[2px] w-[10px]" style={{ backgroundColor: primaryColor }} />
+          ))}
+        </div>
+
+        {/* Labels */}
+        <div className="absolute top-[24px] left-[8px] right-[8px] z-[5] flex justify-between text-[10px] font-mono pointer-events-none">
+          {tickLabels.map((label, i) => (
+            <span key={i} style={{ color: primaryColor }}>{label}</span>
+          ))}
+        </div>
+
+        {/* Slider */}
+        <input
+          type="range"
+          min="0.5"
+          max="1.5"
+          step="0.01"
+          value={value}
+          onChange={handleChange}
+          className="absolute top-1/2 -translate-y-1/2 left-[8px] right-[8px] appearance-none bg-transparent z-10"
+          style={{ WebkitAppearance: 'none', width: 'calc(100% - 16px)' }}
+        />
+      </div>
+    )
+  }
+
   return (
-<div
-  className="relative flex flex-col items-center rounded-md"
-  style={{
-    height: '350px',
-    width: '36px',
-    paddingTop: '8px',
-    paddingBottom: '8px',
-    border: `1px solid ${primaryColor}`,
-  }}
->
-
-
-      {/* Ticks (inside) */}
+    <div
+      className="relative flex flex-col items-center rounded-md"
+      style={{
+        height: '350px',
+        width: '36px',
+        paddingTop: '8px',
+        paddingBottom: '8px',
+        border: `1px solid ${primaryColor}`,
+      }}
+    >
+      {/* Ticks */}
       <div className="absolute left-1/2 -translate-x-1/2 top-[8px] bottom-[8px] z-[5] flex flex-col justify-between pointer-events-none w-full">
-        {Array.from({ length: 11 }).map((_, i) => (
-          <div key={i} className="w-[20px] h-[2px] opacity-100 mx-auto" style={{ backgroundColor: primaryColor }} />
+        {tickLabels.map((_, i) => (
+          <div key={i} className="w-[20px] h-[2px] mx-auto" style={{ backgroundColor: primaryColor }} />
         ))}
       </div>
 
-      {/* Labels (outside left) */}
+      {/* Labels */}
       <div className="absolute -left-8 top-[8px] bottom-[8px] z-[5] flex flex-col justify-between pointer-events-none">
-        {['+9', '+7', '+5', '+4', '+2', '0', '-2', '-5', '-7', '-9', '-12'].map((label, i) => (
-          <span
-  key={i}
-  className="text-[10px] font-mono text-right w-6"
-  style={{ color: primaryColor }}
->
-
+        {tickLabels.map((label, i) => (
+          <span key={i} className="text-[10px] font-mono text-right w-6" style={{ color: primaryColor }}>
             {label}
           </span>
         ))}
@@ -97,7 +130,7 @@ export default function VarispeedSlider({ value, onChange, isIOS, bpm, primaryCo
           WebkitAppearance: 'slider-vertical',
           writingMode: 'vertical-lr',
           height: 'calc(100% - 16px)',
-          transform: isSafari ? 'none' : 'rotate(180deg)', // Flip visually for Chrome
+          transform: isSafari ? 'none' : 'rotate(180deg)',
         }}
       />
     </div>

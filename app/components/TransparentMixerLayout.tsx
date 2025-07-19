@@ -6,6 +6,7 @@
 import DelayKnob from './DelayKnob'
 import VarispeedSlider from './VarispeedSlider'
 import type { Stem } from '@/app/artist/[artist]/[songSlug]/page'
+import { useEffect, useState } from 'react'
 
 type TransparentMixerLayoutProps = {
   stems: Stem[]
@@ -44,6 +45,17 @@ export default function TransparentMixerLayout({
   backgroundVideo,
   primaryColor,
 }: TransparentMixerLayoutProps) {
+  const [isPortrait, setIsPortrait] = useState(true)
+
+  useEffect(() => {
+    const updateOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth)
+    }
+    updateOrientation()
+    window.addEventListener('resize', updateOrientation)
+    return () => window.removeEventListener('resize', updateOrientation)
+  }, [])
+
   return (
     <>
       {backgroundVideo && (
@@ -68,14 +80,33 @@ export default function TransparentMixerLayout({
         />
       )}
 
-      <div className="flex justify-center">
-        <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          overflowY: 'auto',
+          padding: '1.5rem',
+          minHeight: '100dvh',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            gap: stems.length >= 6 ? '1rem' : '2rem',
+            overflowX: isPortrait ? 'auto' : 'visible',
+            maxWidth: '100vw',
+            paddingBottom: '1.5rem',
+            paddingInline: isPortrait ? '8px' : undefined, // ✅ helps one-module scroll margin
+          }}
+        >
           {stems.map(({ label }) => (
             <div
               key={label}
               className="mixer-module"
               style={{
                 width: stems.length >= 6 ? '86px' : '96px',
+                minWidth: '86px', // ✅ force stable size for one module
                 minHeight: '440px',
                 backgroundColor: 'transparent',
                 border: `2px solid ${primaryColor}`,
@@ -85,6 +116,7 @@ export default function TransparentMixerLayout({
                 flexDirection: 'column',
                 alignItems: 'center',
                 backdropFilter: 'blur(2px)',
+                flexShrink: 0,
               }}
             >
               <div
@@ -143,13 +175,7 @@ export default function TransparentMixerLayout({
                 />
               </div>
 
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                }}
-              >
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <button
                   onClick={() => {
                     setMutes((prev) => ({
@@ -196,7 +222,6 @@ export default function TransparentMixerLayout({
                     border: `1px solid ${primaryColor}`,
                     cursor: 'pointer',
                   }}
-                  className={solos[label] ? 'flash' : ''}
                 >
                   SOLO
                 </button>
@@ -211,14 +236,12 @@ export default function TransparentMixerLayout({
                     marginTop: '6px',
                     display: 'block',
                     width: '100%',
-                    maxWidth: '100%',
                     textAlign: 'center',
                     whiteSpace: 'normal',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     wordBreak: 'normal',
                     lineHeight: '1.2',
-                    boxSizing: 'border-box',
                     border: `1px solid ${primaryColor}`,
                   }}
                 >
@@ -228,17 +251,33 @@ export default function TransparentMixerLayout({
             </div>
           ))}
         </div>
+
+        {/* Mobile Varispeed (horizontal) */}
+        {bpm !== undefined && isPortrait && (
+          <div className="mt-6 flex flex-col items-center w-full">
+            <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
+              {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+            </div>
+            <span className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
+              VARISPEED
+            </span>
+            <VarispeedSlider
+              value={varispeed}
+              onChange={setVarispeed}
+              isIOS={isIOS}
+              primaryColor={primaryColor}
+              horizontal
+            />
+          </div>
+        )}
       </div>
 
-      {/* ✅ Absolutely positioned varispeed control - behaves like top corner module */}
-      {bpm !== undefined && (
+      {/* Desktop Varispeed (vertical) */}
+      {bpm !== undefined && !isPortrait && (
         <div
-          className={`
-            absolute right-4 
-            flex flex-col items-center
-            ${stems.length >= 6 ? 'top-[350px]' : 'top-[260px]'}
-            sm:top-[260px]
-          `}
+          className={`absolute right-4 flex flex-col items-center ${
+            stems.length >= 6 ? 'top-[350px]' : 'top-[260px]'
+          } sm:top-[260px]`}
         >
           <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
             {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
