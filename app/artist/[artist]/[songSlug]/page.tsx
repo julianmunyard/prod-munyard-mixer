@@ -53,6 +53,23 @@ export default function MixerPage() {
   const [allReady, setAllReady] = useState(false)
   const [bpm, setBpm] = useState<number | null>(null)
   const primary = songData?.primary_color || '#B8001F' // fallback red
+  
+    const [isMobilePortrait, setIsMobilePortrait] = useState(false)
+  const isCompact = stems.length <= 2
+
+  useEffect(() => {
+    const check = () => {
+      if (typeof window !== 'undefined') {
+        const isPortrait = window.innerWidth < 768 && window.innerHeight > window.innerWidth
+        setIsMobilePortrait(isPortrait)
+      }
+    }
+
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
 
 
   // -------------------- Device Detection --------------------
@@ -344,7 +361,7 @@ return (
 
 
 <main
-  className={`min-h-screen font-sans relative overflow-y-auto p-8 landscape:p-0 ${
+  className={`min-h-screen font-sans relative p-8 landscape:p-0 ${
     songData?.color === 'Transparent' && songData?.background_video
       ? 'bg-transparent text-[#B8001F]'
       : 'bg-[#FCFAEE] text-[#B8001F]'
@@ -430,9 +447,32 @@ return (
     primaryColor={primary}
   />
 ) : (
-  <div
+<div
   className="w-full flex justify-center sm:overflow-visible overflow-x-auto"
+  style={{
+    transform:
+      typeof window !== 'undefined' &&
+      window.innerWidth < 768 &&
+      window.innerWidth > window.innerHeight
+        ? 'scale(0.8)' // ⬅️ make it a bit smaller
+        : 'scale(1)',
+    transformOrigin: 'top center',
+    paddingLeft:
+      typeof window !== 'undefined' &&
+      window.innerWidth < 768 &&
+      window.innerWidth > window.innerHeight
+        ? '8px'
+        : undefined,
+    paddingRight:
+      typeof window !== 'undefined' &&
+      window.innerWidth < 768 &&
+      window.innerWidth > window.innerHeight
+        ? '8px'
+        : undefined,
+  }}
 >
+
+
   <div
     className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'} px-2`}
     style={{
@@ -544,70 +584,77 @@ return (
 {/* Varispeed Slider */}
 {songData?.color !== 'Transparent' && (
   <>
-    {/* Landscape & desktop: right side */}
-    <div
-      className={`
-        hidden sm:flex
-        absolute right-4 
-        flex-col items-center
-        ${songData?.title.length > 16 ? 'top-[350px]' : 'top-[260px]'}
-      `}
-    >
-      {bpm !== null && (
-        <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
-          {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-        </div>
-      )}
-      <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
-        VARISPEED
-      </span>
-      <VarispeedSlider
-        value={varispeed}
-        onChange={setVarispeed}
-        isIOS={isIOS}
-        primaryColor={primary}
-      />
-    </div>
-{/* Mobile Portrait Varispeed Layout */}
-<div className="sm:hidden w-full flex justify-center">
+{/* Right-side Varispeed — show on desktop, landscape, or mobile with ≤2 stems */}
+{(!isMobilePortrait || stems.length <= 2) && (
   <div
-    className="relative"
+    className="absolute right-4 flex flex-col items-center"
     style={{
-      marginTop: '12px',
-      width: '350px',
-      height: '140px', // ✅ increased height to allow room for both
+      top: songData?.title.length > 16 ? '350px' : '260px',
     }}
   >
-    {/* Labels */}
-    <div
-      className="absolute top-0 left-0 w-full flex flex-col items-center"
-      style={{ pointerEvents: 'none' }}
-    >
-      <div className="text-xs font-mono mb-1" style={{ color: primary }}>
-        {Math.round(bpm! * (isIOS ? 2 - varispeed : varispeed))} BPM
+    {bpm !== null && (
+      <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
+        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
       </div>
-      <div className="text-sm tracking-wider" style={{ color: primary }}>
-        VARISPEED
-      </div>
-    </div>
+    )}
+    <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
+      VARISPEED
+    </span>
+    <VarispeedSlider
+      value={varispeed}
+      onChange={setVarispeed}
+      isIOS={isIOS}
+      primaryColor={primary}
+    />
+  </div>
+)}
 
-    {/* Slider */}
+{/* Mobile Portrait Varispeed Layout — only show if 3+ stems */}
+{isMobilePortrait && stems.length >= 3 && (
+  <div className="w-full flex justify-center sm:hidden">
     <div
-      className="absolute left-1/2"
+      className="relative"
       style={{
-        transform: 'translateX(-50%) rotate(-90deg)',
-        top: '-96px', // ✅ position below labels
+        marginTop: '12px',
+        width: '350px',
+        height: '140px',
       }}
     >
-      <VarispeedSlider
-        value={varispeed}
-        onChange={setVarispeed}
-        isIOS={isIOS}
-        primaryColor={primary}
-      />
+      {/* Labels */}
+      <div
+        className="absolute top-0 left-0 w-full flex flex-col items-center"
+        style={{ pointerEvents: 'none' }}
+      >
+        {bpm !== null && (
+          <div className="text-xs font-mono mb-1" style={{ color: primary }}>
+            {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+          </div>
+        )}
+        <div className="text-sm tracking-wider" style={{ color: primary }}>
+          VARISPEED
+        </div>
+      </div>
+
+      {/* Slider */}
+      <div
+        className="absolute left-1/2"
+        style={{
+          transform: 'translateX(-50%) rotate(-90deg)',
+          top: '-96px',
+        }}
+      >
+        <VarispeedSlider
+          value={varispeed}
+          onChange={setVarispeed}
+          isIOS={isIOS}
+          primaryColor={primary}
+        />
+      </div>
     </div>
   </div>
-</div>
+)}
+
+
 
 
 
