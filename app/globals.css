@@ -86,14 +86,7 @@ body {
   flex-wrap: wrap;
   justify-content: center;
 }
-.mixer-module {
-  width: 6rem;
-  padding: 1rem;
-  background-color: #B30000;
-  border-radius: 0.5rem;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
-  border: 1px solid #444;
-}
+
 
 /* FLASHY SOLO BUTTON */
 @keyframes flash {
@@ -299,16 +292,6 @@ body.red-theme-video main {
   }
 }
 
-@media screen and (orientation: portrait) {
-  html,
-  body {
-    overscroll-behavior-y: none;
-    height: 100dvh;
-    max-height: 100dvh;
-    overflow-y: hidden;
-    position: fixed;
-  }
-}
 
 html,
 body {

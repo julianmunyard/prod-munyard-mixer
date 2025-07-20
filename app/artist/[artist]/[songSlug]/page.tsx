@@ -70,6 +70,19 @@ export default function MixerPage() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+const [isMobileLandscape, setIsMobileLandscape] = useState(false)
+
+useEffect(() => {
+  const checkOrientation = () => {
+    if (typeof window !== 'undefined') {
+      const landscape = window.innerWidth < 768 && window.innerWidth > window.innerHeight
+      setIsMobileLandscape(landscape)
+    }
+  }
+  checkOrientation()
+  window.addEventListener('resize', checkOrientation)
+  return () => window.removeEventListener('resize', checkOrientation)
+}, [])
 
 
   // -------------------- Device Detection --------------------
@@ -322,7 +335,7 @@ if (!songData) return <div className="p-8 text-white">Loading...</div>
 return (
   <>
 
-  <style>{`
+<style>{`
   input[type="range"]::-webkit-slider-thumb {
     background: ${primary};
   }
@@ -332,7 +345,14 @@ return (
   input[type="range"]::-ms-thumb {
     background: ${primary};
   }
+
+  @media screen and (max-width: 767px) and (orientation: landscape) {
+    .mixer-module {
+      min-height: 220px !important;
+    }
+  }
 `}</style>
+
 
     {/* ✅ Background Video for non-transparent themes */}
 {songData?.background_video &&
@@ -361,11 +381,16 @@ return (
 
 
 <main
-  className={`min-h-screen font-sans relative p-8 landscape:p-0 ${
+  className={`min-h-screen font-sans relative ${
     songData?.color === 'Transparent' && songData?.background_video
       ? 'bg-transparent text-[#B8001F]'
       : 'bg-[#FCFAEE] text-[#B8001F]'
   }`}
+  style={{
+    overflowY: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    position: 'relative',
+  }}
 >
 
       {/* Title */}
@@ -469,23 +494,23 @@ return (
     }}
   >
     {stems.map(({ label }) => (
-      <div
-        key={label}
-        className="mixer-module"
-        style={{
-          width: stems.length >= 6 ? '86px' : '96px',
-          minHeight: '440px',
-          backgroundColor: primary,
-          border: '1px solid #444',
-          boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
-          borderRadius: '10px',
-          padding: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-                <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
+<div
+  key={label}
+  className="mixer-module"
+  style={{
+    width: stems.length >= 6 ? '86px' : '96px',
+    backgroundColor: primary,
+    border: '1px solid #444',
+    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
+    borderRadius: '10px',
+    padding: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+  }}
+>
+
+    <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', fontSize: '10px', color: 'white' }}>
                   <span style={{ marginBottom: '4px' }}>LEVEL</span>
                   <input type="range" min="0" max="1" step="0.01" value={volumes[label]} onChange={(e) => {
