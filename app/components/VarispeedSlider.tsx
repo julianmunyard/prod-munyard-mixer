@@ -42,7 +42,6 @@ export default function VarispeedSlider({
   const isSafari = typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
   const tickLabels = ['+9', '+7', '+5', '+4', '+2', '0', '-2', '-5', '-7', '-9', '-12']
-  
 
   if (horizontal) {
     return (
@@ -79,26 +78,6 @@ export default function VarispeedSlider({
     )
   }
 
-
-<style>{`
-  input[type="range"]::-webkit-slider-runnable-track {
-    background: transparent !important;
-  }
-  input[type="range"]::-moz-range-track {
-    background: transparent !important;
-  }
-  input[type="range"]::-ms-track {
-    background: transparent !important;
-    border-color: transparent;
-    color: transparent;
-  }
-
-  /* Optional: Make sure no fill appears behind the thumb */
-  input[type="range"] {
-    background-color: transparent !important;
-  }
-`}</style>
-  
   return (
     <div
       className="relative flex flex-col items-center rounded-md"
@@ -139,96 +118,92 @@ export default function VarispeedSlider({
       )}
 
       {/* Slider */}
-<input
-  type="range"
-  min="0.5"
-  max="1.5"
-  step="0.01"
-  value={value}
-  onChange={handleChange}
-  className="varispeed-slider w-[6px] absolute top-[8px] bottom-[8px] appearance-none bg-transparent z-10"
-  style={{
-    WebkitAppearance: 'slider-vertical',
-    writingMode: 'vertical-lr',
-    height: 'calc(100% - 16px)',
-    transform: isSafari ? 'none' : 'rotate(180deg)',
-    backgroundColor: 'transparent',
-  }}
-/>
+      <input
+        type="range"
+        min="0.5"
+        max="1.5"
+        step="0.01"
+        value={value}
+        onChange={handleChange}
+        className="varispeed-slider w-[6px] absolute top-[8px] bottom-[8px] appearance-none bg-transparent z-10"
+        style={{
+          WebkitAppearance: 'slider-vertical',
+          writingMode: 'vertical-lr',
+          height: 'calc(100% - 16px)',
+          transform: isSafari ? 'none' : 'rotate(180deg)',
+          backgroundColor: 'transparent',
+        }}
+      />
 
-<style>{`
-  .varispeed-slider {
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    appearance: none !important;
-    background: transparent !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    position: relative;
-    z-index: 10;
-  }
+      {/* Styles */}
+      <style>{`
+        .varispeed-slider {
+          -webkit-appearance: none !important;
+          -moz-appearance: none !important;
+          appearance: none !important;
+          background: transparent !important;
+          border: none !important;
+          outline: none !important;
+          box-shadow: none !important;
+          position: relative;
+          z-index: 10;
+        }
 
-  .varispeed-slider::-webkit-slider-runnable-track {
-    -webkit-appearance: none !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    height: 6px;
-  }
+        .varispeed-slider::-webkit-slider-runnable-track {
+          -webkit-appearance: none !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          height: 6px;
+        }
 
-  .varispeed-slider::-webkit-slider-thumb {
-    -webkit-appearance: none !important;
-    height: 14px;
-    width: 14px;
-    border-radius: 50%;
-    background: #9bd0ff;
-    border: none;
-    margin-top: -4px;
-    position: relative;
-    z-index: 10;
-  }
+        .varispeed-slider::-webkit-slider-thumb {
+          -webkit-appearance: none !important;
+          height: 40px;
+          width: 18px;
+          border-radius: 10px;
+          background: #004d26;
+          border: none;
+          margin-top: -18px;
+          position: relative;
+          z-index: 10;
+        }
 
-  .varispeed-slider::-moz-range-track {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    height: 6px;
-  }
+        .varispeed-slider::-moz-range-track {
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          height: 6px;
+        }
 
-  .varispeed-slider::-moz-range-thumb {
-    height: 14px;
-    width: 14px;
-    border-radius: 50%;
-    background: #9bd0ff;
-    border: none;
-  }
+        .varispeed-slider::-moz-range-thumb {
+          height: 40px;
+          width: 18px;
+          border-radius: 10px;
+          background: #004d26;
+          border: none;
+        }
 
-  .varispeed-slider::-ms-track {
-    background: transparent !important;
-    border-color: transparent !important;
-    color: transparent !important;
-    height: 6px;
-  }
+        .varispeed-slider::-ms-track {
+          background: transparent !important;
+          border-color: transparent !important;
+          color: transparent !important;
+          height: 6px;
+        }
 
-  .varispeed-slider::-ms-thumb {
-    height: 14px;
-    width: 14px;
-    border-radius: 50%;
-    background: #9bd0ff;
-    border: none;
-  }
+        .varispeed-slider::-ms-thumb {
+          height: 40px;
+          width: 18px;
+          border-radius: 10px;
+          background: #004d26;
+          border: none;
+        }
 
-  .varispeed-slider::-ms-fill-lower,
-  .varispeed-slider::-ms-fill-upper {
-    background: transparent !important;
-  }
-`}</style>
-
-
-
-
-
+        .varispeed-slider::-ms-fill-lower,
+        .varispeed-slider::-ms-fill-upper {
+          background: transparent !important;
+        }
+      `}</style>
     </div>
   )
 }
