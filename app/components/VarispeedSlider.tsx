@@ -39,7 +39,9 @@ export default function VarispeedSlider({
     }
   }
 
-  const isSafari = typeof window !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+  const isSafari =
+    typeof window !== 'undefined' &&
+    /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent)
 
   const tickLabels = ['+9', '+7', '+5', '+4', '+2', '0', '-2', '-5', '-7', '-9', '-12']
 
@@ -106,7 +108,7 @@ export default function VarispeedSlider({
       </div>
 
       {/* Live BPM Display */}
-      {bpm && (
+      {bpm != null && (
         <div className="absolute -top-10 flex flex-col items-center">
           <span className="text-[13px] font-mono" style={{ color: primaryColor }}>
             {Math.round(bpm * (isIOS ? 2 - value : value))} BPM
