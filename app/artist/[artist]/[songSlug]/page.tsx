@@ -385,12 +385,13 @@ return (
     songData?.color === 'Transparent' && songData?.background_video
       ? 'bg-transparent text-[#B8001F]'
       : 'bg-[#FCFAEE] text-[#B8001F]'
-  }`}
-  style={{
-    overflowY: 'auto',
-    WebkitOverflowScrolling: 'touch',
-    position: 'relative',
-  }}
+      
+  }`}style={{
+  minHeight: '100dvh',
+  paddingBottom: '80px', // Ensures scroll can reach the bottom
+}}
+
+
 >
 
       {/* Title */}
