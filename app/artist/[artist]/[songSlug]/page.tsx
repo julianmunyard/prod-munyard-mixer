@@ -447,9 +447,19 @@ return (
     primaryColor={primary}
   />
 ) : (
-  <div
+ <div
   className="w-full flex justify-center sm:overflow-visible overflow-x-auto"
+  style={{
+    transform:
+      typeof window !== 'undefined' &&
+      window.innerWidth < 768 &&
+      window.innerWidth > window.innerHeight
+        ? 'scale(0.85)'
+        : 'scale(1)',
+    transformOrigin: 'top center',
+  }}
 >
+
   <div
     className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'} px-2`}
     style={{
