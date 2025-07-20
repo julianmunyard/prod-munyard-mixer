@@ -1,12 +1,8 @@
 'use client'
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import DelayKnob from './DelayKnob'
 import VarispeedSlider from './VarispeedSlider'
 import type { Stem } from '@/app/artist/[artist]/[songSlug]/page'
-import { useEffect, useState } from 'react'
 
 type TransparentMixerLayoutProps = {
   stems: Stem[]
@@ -30,116 +26,50 @@ type TransparentMixerLayoutProps = {
 export default function TransparentMixerLayout({
   stems,
   volumes,
-  setVolumes,
   delays,
-  setDelays,
-  mutes,
-  setMutes,
   solos,
-  setSolos,
+  mutes,
   bpm,
   varispeed,
-  setVarispeed,
   isIOS,
+  setVolumes,
+  setDelays,
+  setMutes,
+  setSolos,
+  setVarispeed,
   delaysRef,
   backgroundVideo,
   primaryColor,
-}: TransparentMixerLayoutProps) {
-  const [isPortrait, setIsPortrait] = useState(true)
 
-  useEffect(() => {
-    const updateOrientation = () => {
-      setIsPortrait(window.innerHeight > window.innerWidth)
-    }
-    updateOrientation()
-    window.addEventListener('resize', updateOrientation)
-    return () => window.removeEventListener('resize', updateOrientation)
-  }, [])
+  
+}: TransparentMixerLayoutProps) {
+  const isMobilePortrait = typeof window !== 'undefined' && window.innerWidth < 768 && window.innerHeight > window.innerWidth
+  const isMobileLandscape = typeof window !== 'undefined' && window.innerWidth < 768 && window.innerWidth > window.innerHeight === false
+  const isCompact = stems.length <= 2
 
   return (
-    <>
-      {backgroundVideo && (
-        <video
-          src={backgroundVideo}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100dvh',
-            objectFit: 'cover',
-            zIndex: -1,
-            pointerEvents: 'none',
-            backgroundColor: 'black',
-          }}
-        />
-      )}
-
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          overflowY: 'auto',
-          padding: '1.5rem',
-          minHeight: '100dvh',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            gap: stems.length >= 6 ? '1rem' : '2rem',
-            overflowX: isPortrait ? 'auto' : 'visible',
-            maxWidth: '100vw',
-            paddingBottom: '1.5rem',
-            paddingInline: isPortrait ? '8px' : undefined, // ✅ helps one-module scroll margin
-          }}
-        >
+    <div className="w-full flex flex-col items-center">
+      <div className="flex overflow-x-auto w-full justify-start px-2 sm:overflow-visible">
+        <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`} style={{ minWidth: stems.length <= 4 ? '100%' : 'max-content', justifyContent: stems.length <= 4 ? 'center' : 'flex-start', margin: '0 auto' }}>
           {stems.map(({ label }) => (
             <div
               key={label}
               className="mixer-module"
               style={{
                 width: stems.length >= 6 ? '86px' : '96px',
-                minWidth: '86px', // ✅ force stable size for one module
-                minHeight: '440px',
                 backgroundColor: 'transparent',
-                border: `2px solid ${primaryColor}`,
+                backdropFilter: 'blur(2px)',
+                border: `1px solid ${primaryColor}`,
+
                 borderRadius: '10px',
                 padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                backdropFilter: 'blur(2px)',
-                flexShrink: 0,
               }}
             >
-              <div
-                style={{
-                  width: '16px',
-                  height: '40px',
-                  backgroundColor: '#15803d',
-                  borderRadius: '2px',
-                  animation: 'pulse 1s infinite',
-                  marginBottom: '18px',
-                }}
-              />
-
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  marginBottom: '30px',
-                  fontSize: '10px',
-                  color: primaryColor,
-                }}
-              >
+              <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', fontSize: '10px', color: 'white' }}>
                 <span style={{ marginBottom: '4px' }}>LEVEL</span>
                 <input
                   type="range"
@@ -147,12 +77,9 @@ export default function TransparentMixerLayout({
                   max="1"
                   step="0.01"
                   value={volumes[label]}
-                  onChange={(e) =>
-                    setVolumes((prev) => ({
-                      ...prev,
-                      [label]: parseFloat(e.target.value),
-                    }))
-                  }
+                  onChange={(e) => {
+                    setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+                  }}
                   className="volume-slider"
                   style={{
                     writingMode: 'bt-lr' as any,
@@ -163,7 +90,6 @@ export default function TransparentMixerLayout({
                   }}
                 />
               </div>
-
               <div style={{ marginBottom: '32px', textAlign: 'center' }}>
                 <DelayKnob
                   value={delays[label]}
@@ -171,21 +97,13 @@ export default function TransparentMixerLayout({
                     setDelays((prev) => ({ ...prev, [label]: val }))
                     delaysRef.current[label] = val
                   }}
-                  color={primaryColor}
                 />
               </div>
-
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <button
                   onClick={() => {
-                    setMutes((prev) => ({
-                      ...prev,
-                      [label]: !prev[label],
-                    }))
-                    setSolos((prev) => ({
-                      ...prev,
-                      [label]: false,
-                    }))
+                    setMutes(prev => ({ ...prev, [label]: !prev[label] }))
+                    setSolos(prev => ({ ...prev, [label]: false }))
                   }}
                   style={{
                     fontSize: '12px',
@@ -203,14 +121,8 @@ export default function TransparentMixerLayout({
 
                 <button
                   onClick={() => {
-                    setSolos((prev) => ({
-                      ...prev,
-                      [label]: !prev[label],
-                    }))
-                    setMutes((prev) => ({
-                      ...prev,
-                      [label]: false,
-                    }))
+                    setSolos(prev => ({ ...prev, [label]: !prev[label] }))
+                    setMutes(prev => ({ ...prev, [label]: false }))
                   }}
                   style={{
                     fontSize: '12px',
@@ -222,69 +134,50 @@ export default function TransparentMixerLayout({
                     border: `1px solid ${primaryColor}`,
                     cursor: 'pointer',
                   }}
+                  className={solos[label] ? 'flash' : ''}
                 >
                   SOLO
                 </button>
 
-                <div
-                  style={{
-                    fontSize: '12px',
-                    padding: '4px 6px',
-                    borderRadius: '4px',
-                    backgroundColor: '#FCFAEE',
-                    color: primaryColor,
-                    marginTop: '6px',
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'center',
-                    whiteSpace: 'normal',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    wordBreak: 'normal',
-                    lineHeight: '1.2',
-                    border: `1px solid ${primaryColor}`,
-                  }}
-                >
+                <div style={{
+                  fontSize: '12px',
+                  padding: '4px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: '#FCFAEE',
+                  color: primaryColor,
+                  marginTop: '6px',
+                  display: 'block',
+                  width: '100%',
+                  maxWidth: '100%',
+                  textAlign: 'center',
+                  whiteSpace: 'normal',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  wordBreak: 'normal',
+                  lineHeight: '1.2',
+                  boxSizing: 'border-box',
+                  border: `1px solid ${primaryColor}`,
+                }}>
                   {label}
                 </div>
               </div>
             </div>
           ))}
         </div>
+      </div>
 
-        {/* Mobile Varispeed (horizontal) */}
-        {bpm !== undefined && isPortrait && (
-          <div className="mt-6 flex flex-col items-center w-full">
+      {/* Varispeed Slider Logic */}
+      {/* Desktop & landscape or ≤2 stems */}
+      {(!isMobilePortrait || stems.length <= 2) && (
+        <div className="absolute right-4 top-[260px] flex flex-col items-center">
+          {bpm !== undefined && (
             <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
               {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
             </div>
-            <span className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
-              VARISPEED
-            </span>
-            <VarispeedSlider
-              value={varispeed}
-              onChange={setVarispeed}
-              isIOS={isIOS}
-              primaryColor={primaryColor}
-              horizontal
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Desktop Varispeed (vertical) */}
-      {bpm !== undefined && !isPortrait && (
-        <div
-          className={`absolute right-4 flex flex-col items-center ${
-            stems.length >= 6 ? 'top-[350px]' : 'top-[260px]'
-          } sm:top-[260px]`}
-        >
-          <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
-            {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-          </div>
-          <span className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
+          )}
+          <div className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
             VARISPEED
-          </span>
+          </div>
           <VarispeedSlider
             value={varispeed}
             onChange={setVarispeed}
@@ -293,6 +186,33 @@ export default function TransparentMixerLayout({
           />
         </div>
       )}
-    </>
+
+      {/* Mobile Portrait with ≥3 stems */}
+      {isMobilePortrait && stems.length >= 3 && (
+        <div className="sm:hidden w-full flex justify-center">
+          <div className="relative" style={{ marginTop: '12px', width: '350px', height: '100px' }}>
+            {/* Labels */}
+            <div className="absolute top-0 left-0 w-full flex flex-col items-center" style={{ pointerEvents: 'none' }}>
+              <div className="text-xs font-mono" style={{ color: primaryColor }}>
+                {Math.round(bpm! * (isIOS ? 2 - varispeed : varispeed))} BPM
+              </div>
+              <div className="text-sm tracking-wider" style={{ color: primaryColor }}>
+                VARISPEED
+              </div>
+            </div>
+
+            {/* Slider */}
+            <div className="absolute left-1/2" style={{ transform: 'translateX(-50%) rotate(-90deg)', top: '-96px' }}>
+              <VarispeedSlider
+                value={varispeed}
+                onChange={setVarispeed}
+                isIOS={isIOS}
+                primaryColor={primaryColor}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
