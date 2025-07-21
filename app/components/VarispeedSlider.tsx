@@ -13,6 +13,7 @@ type Props = {
   primaryColor?: string
   bpm?: number | null
   horizontal?: boolean
+  stemCount?: number       // <-- ADD THIS LINE
 }
 
 export default function VarispeedSlider({
@@ -22,6 +23,7 @@ export default function VarispeedSlider({
   bpm,
   primaryColor = '#B8001F',
   horizontal = false,
+  stemCount = 0,   // <-- add this default
 }: Props) {
   const previousTick = useRef<number | null>(null)
 
@@ -47,7 +49,16 @@ export default function VarispeedSlider({
     typeof window !== 'undefined' &&
     /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent)
 
-  const tickLabels = ['+9', '+7', '+5', '+4', '+2', '0', '-2', '-5', '-7', '-9', '-12']
+const isMobilePortrait = typeof window !== 'undefined' &&
+  window.innerWidth < 768 &&
+  window.innerHeight > window.innerWidth
+
+const shouldFlipLabels = isMobilePortrait && (stemCount ?? 0) >= 3
+
+const tickLabels = shouldFlipLabels
+  ? ['-12', '-9', '-7', '-5', '-2', '0', '+2', '+4', '+5', '+7', '+9']
+  : ['+9', '+7', '+5', '+4', '+2', '0', '-2', '-5', '-7', '-9', '-12']
+
 
   if (horizontal) {
     return (
@@ -163,18 +174,19 @@ export default function VarispeedSlider({
           height: 6px;
         }
 
-        .varispeed-slider::-webkit-slider-thumb {
-          -webkit-appearance: none !important;
-          height: 40px;
-          width: 18px;
-          border-radius: 10px;
-          background: #004d26;
-          border: none;
-          margin-top: -18px;
-          position: relative;
-          z-index: 10;
-        }
-
+.varispeed-slider::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  height: 30px;                  /* Make thumb slightly shorter */
+  width: 18px;
+  border-radius: 10px;
+  background: #004d26;
+  border: none;
+  position: relative;
+  top: 0;                        /* Reset top */
+  transform: translateY(1px);   /* ⬅️ FINAL pixel tweak */
+  z-index: 10;
+}
+  
         .varispeed-slider::-moz-range-track {
           background: transparent !important;
           border: none !important;

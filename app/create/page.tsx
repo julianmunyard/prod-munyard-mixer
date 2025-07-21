@@ -210,7 +210,11 @@ videoPublicUrl = publicUrlData.publicUrl
   user_id: user.id,
   artist_name: artistName,
   title: projectTitle,
-  effects: [effect],
+effects: (
+  effect.includes('Delay') ? 'delay'
+  : effect.includes('Phaser') ? 'phaser'
+  : null
+),
   color,
   primary_color: primaryColor, // ✅ ADD THIS
   stems: uploadedStemUrls,
@@ -618,7 +622,7 @@ videoPublicUrl = publicUrlData.publicUrl
   </div>
 )}
 
-         <div style={{ position: 'relative', width: '100%' }}>
+<div style={{ position: 'relative', width: '100%' }}>
   <label style={{ display: 'block', marginBottom: '0.5rem' }}>Which Effects Do You Want?</label>
   <div
     onClick={() => setShowEffectDropdown((prev) => !prev)}
@@ -640,35 +644,50 @@ videoPublicUrl = publicUrlData.publicUrl
       ▼
     </span>
   </div>
-  {showEffectDropdown && (
+{showEffectDropdown && (
+  <div
+    style={{
+      position: 'absolute',
+      top: '100%',
+      left: 0,
+      width: '100%',
+      backgroundColor: 'white',
+      border: '1px solid #ccc',
+      zIndex: 10,
+      fontSize: '0.9rem',
+    }}
+  >
     <div
+      onClick={() => {
+        setEffect('Delay (1/8 note tape-style echo)')
+        setShowEffectDropdown(false)
+      }}
       style={{
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        width: '100%',
-        backgroundColor: 'white',
-        border: '1px solid #ccc',
-        zIndex: 10,
-        fontSize: '0.9rem',
+        padding: '0.5rem',
+        cursor: 'pointer',
+        backgroundColor: effect === 'Delay (1/8 note tape-style echo)' ? '#f3f3f3' : 'white',
       }}
     >
-      <div
-        onClick={() => {
-          setEffect('Delay (1/8 note tape-style echo)')
-          setShowEffectDropdown(false)
-        }}
-        style={{
-          padding: '0.5rem',
-          cursor: 'pointer',
-          backgroundColor: effect === 'Delay (1/8 note tape-style echo)' ? '#f3f3f3' : 'white',
-        }}
-      >
-        Delay (1/8 note tape-style echo)
-      </div>
+      Delay (1/8 note tape-style echo)
     </div>
+
+    <div
+      onClick={() => {
+        setEffect('Phaser (swooshy phase shifting)')
+        setShowEffectDropdown(false)
+      }}
+      style={{
+        padding: '0.5rem',
+        cursor: 'pointer',
+        backgroundColor: effect === 'Phaser (swooshy phase shifting)' ? '#f3f3f3' : 'white',
+      }}
+    >
+      Phaser (swooshy phase shifting)
+    </div>
+  </div>
   )}
 </div>
+
 
 
           <button

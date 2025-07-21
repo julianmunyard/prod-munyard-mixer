@@ -203,12 +203,13 @@ export default function TransparentMixerLayout({
 
             {/* Slider */}
             <div className="absolute left-1/2" style={{ transform: 'translateX(-50%) rotate(-90deg)', top: '-96px' }}>
-              <VarispeedSlider
-                value={varispeed}
-                onChange={setVarispeed}
-                isIOS={isIOS}
-                primaryColor={primaryColor}
-              />
+<VarispeedSlider
+  value={2 - varispeed}
+  onChange={val => setVarispeed(2 - val)}
+  isIOS={isIOS}
+  primaryColor={primaryColor}
+  stemCount={stems.length} // 👈 pass stem count for correct flipping
+/>
             </div>
           </div>
         </div>
