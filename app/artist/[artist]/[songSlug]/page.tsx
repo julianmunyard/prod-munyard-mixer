@@ -13,6 +13,7 @@ import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import TransparentMixerLayout from '../../../components/TransparentMixerLayout'
 
+
 // ==================== 🧾 Types ====================
 type Song = {
   id: string
@@ -93,6 +94,7 @@ export default function MixerPage() {
 
   // ==================== 🧠 Effects Logic ====================
   useEffect(() => {
+    console.log('artist:', artist, 'songSlug:', songSlug)
     const fetchSong = async () => {
       const { data, error } = await supabase
         .from('songs')
@@ -241,13 +243,26 @@ export default function MixerPage() {
 
     const effect = typeof songData?.effects === 'string' ? songData.effects : songData?.effects?.[0] || ''
 
-    stems.forEach(({ label }) => {
-      const buffer = buffersRef.current[label]
-      const gain = gainNodesRef.current[label]
-      if (!buffer || !gain) return
+const scheduledTime = ctx.currentTime + 0.1; // 100ms in the future for perfect sync
 
-      const node = new AudioWorkletNode(ctx, 'granular-player')
-      node.port.postMessage({ type: 'load', buffer: buffer.getChannelData(0) })
+stems.forEach(({ label }) => {
+  const buffer = buffersRef.current[label]
+  const gain = gainNodesRef.current[label]
+  if (!buffer || !gain) return
+
+  const node = new AudioWorkletNode(ctx, 'granular-player', {
+    outputChannelCount: [2], // STEREO!
+  });
+
+  node.port.postMessage({
+    type: 'load',
+    buffer: [
+      buffer.numberOfChannels > 0 ? buffer.getChannelData(0) : new Float32Array(buffer.length),
+      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0)
+    ],
+    startTime: scheduledTime, // <-- THE KEY LINE FOR SYNC!
+  });
+
       const playbackRate = isIOS ? 2 - varispeed : varispeed
       node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
 

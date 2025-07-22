@@ -8,6 +8,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabaseClient'
+import Link from 'next/link'
+
 
 export default function Dashboard() {
   const [userEmail, setUserEmail] = useState(null)
@@ -201,23 +203,42 @@ if (loading) {
               <strong>{song.title}</strong><br />
               <span>{song.artist_name}</span>
             </div>
-<form onSubmit={(e) => e.preventDefault()}>
-  <button
-    type="button"
-    onClick={() => handleDelete(song.id, song.stems)}
+<div style={{ display: 'flex', gap: '0.5rem' }}>
+  <form onSubmit={(e) => e.preventDefault()}>
+    <button
+      type="button"
+      onClick={() => handleDelete(song.id, song.stems)}
+      style={{
+        backgroundColor: '#B8001F',
+        color: 'black',
+        border: 'none',
+        padding: '0.5rem 1rem',
+        cursor: 'pointer',
+        borderRadius: '4px',
+        fontSize: '0.9rem'
+      }}
+    >
+      Delete
+    </button>
+  </form>
+  <Link
+    href={`/artist/${song.artist_slug}/${song.song_slug}/edit`}
     style={{
       backgroundColor: '#B8001F',
-      color: 'black',
+      color: 'white',
       border: 'none',
       padding: '0.5rem 1rem',
       cursor: 'pointer',
       borderRadius: '4px',
-      fontSize: '0.9rem'
+      fontSize: '0.9rem',
+      textDecoration: 'none',
+      display: 'inline-block',
     }}
   >
-    Delete
-  </button>
-</form>
+    Edit
+  </Link>
+</div>
+
 
           </div>
         </li>
