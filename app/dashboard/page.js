@@ -203,7 +203,7 @@ if (loading) {
               <strong>{song.title}</strong><br />
               <span>{song.artist_name}</span>
             </div>
-<div style={{ display: 'flex', gap: '0.5rem' }}>
+<div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
   <form onSubmit={(e) => e.preventDefault()}>
     <button
       type="button"
@@ -215,7 +215,7 @@ if (loading) {
         padding: '0.5rem 1rem',
         cursor: 'pointer',
         borderRadius: '4px',
-        fontSize: '0.9rem'
+        fontSize: '0.9rem',
       }}
     >
       Delete
@@ -233,11 +233,13 @@ if (loading) {
       fontSize: '0.9rem',
       textDecoration: 'none',
       display: 'inline-block',
+      textAlign: 'center',
     }}
   >
     Edit
   </Link>
 </div>
+
 
 
           </div>
