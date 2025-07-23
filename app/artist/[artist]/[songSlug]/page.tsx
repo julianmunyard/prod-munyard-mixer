@@ -49,9 +49,13 @@ export default function MixerPage() {
   const [loadingStems, setLoadingStems] = useState(true)
   const [allReady, setAllReady] = useState(false)
   const [bpm, setBpm] = useState<number | null>(null)
-  const primary = songData?.primary_color || '#B8001F'
+  const primary = songData?.primary_color || '#B8001F' 
   const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
+
+  // ==================== BROWSER DETECTION ====================
+const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+const isInstagram = ua.includes('Instagram');
 
   // -------------------- 📱 Device Detection --------------------
   useEffect(() => {
@@ -119,7 +123,6 @@ export default function MixerPage() {
       })
 
       setSongData(data)
-      setStems(stemObjs)
       setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])))
       setDelays(Object.fromEntries(stemObjs.map(s => [s.label, 0])))
       setMutes(Object.fromEntries(stemObjs.map(s => [s.label, false])))
@@ -131,6 +134,28 @@ export default function MixerPage() {
 
     if (artist && songSlug) fetchSong()
   }, [artist, songSlug])
+
+  // 🔁 Always keep stems up-to-date with songData.stems
+useEffect(() => {
+  if (!songData?.stems) {
+    setStems([])
+    return
+  }
+  // parse stems and label logic
+  const parsedStems = typeof songData.stems === 'string'
+    ? JSON.parse(songData.stems)
+    : songData.stems
+  const usedLabels = new Set<string>()
+  const stemObjs: Stem[] = parsedStems.map((stem: any, i: number) => {
+    let rawLabel = stem.label?.trim() || stem.file?.split('/').pop() || `Untitled Stem ${i + 1}`
+    rawLabel = rawLabel.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ')
+    let label = rawLabel
+    while (usedLabels.has(label)) label += `_${i}`
+    usedLabels.add(label)
+    return { label, file: stem.file }
+  })
+  setStems(stemObjs)
+}, [songData?.stems])
 
   // -------------------- 🌊 Init Audio & Effects --------------------
   useEffect(() => {
@@ -317,17 +342,17 @@ stems.forEach(({ label }) => {
 
       
     })
+
   }, [volumes, mutes, solos, delays])
-
-  useEffect(() => {
-    const ctx = audioCtxRef.current
-    if (!ctx) return
-    Object.values(nodesRef.current).forEach((node) => {
-      const playbackRate = isIOS ? 2 - varispeed : varispeed
-      node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
-    })
-  }, [varispeed])
-
+  
+useEffect(() => {
+  const ctx = audioCtxRef.current
+  if (!ctx) return
+  Object.values(nodesRef.current).forEach((node) => {
+    const playbackRate = isInstagram ? varispeed : (isIOS ? 2 - varispeed : varispeed)
+    node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
+  })
+}, [varispeed])
    if (!songData) return <div className="p-8 text-white">Loading...</div>
 
   return (

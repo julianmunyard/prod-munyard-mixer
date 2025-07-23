@@ -42,6 +42,13 @@ export default function EditProject() {
   const [showEffectDropdown, setShowEffectDropdown] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [songId, setSongId] = useState<string | null>(null)
+  const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null)
+  const [isVideoUploading, setIsVideoUploading] = useState(false)
+ const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
+
+
+
+
 
   // ✅ Force cream background + body data attribute
   useEffect(() => {
@@ -91,6 +98,7 @@ export default function EditProject() {
       setProjectTitle(songData.title || '')
       setColor(songData.color || 'Red (Classic)')
       setPrimaryColor(songData.primary_color || '#B8001F')
+      setExistingVideoUrl(songData.background_video || null)
       setEffect(
         songData.effects === 'delay' || songData.effects === 'Delay'
           ? 'Delay (1/8 note tape-style echo)'
@@ -175,62 +183,96 @@ export default function EditProject() {
       setIsSubmitting(false)
       return
     }
-    let updatedStems: { label: string; file: string }[] = uploadedStemUrls
-    // If new stems have been added, upload them
-    if (stems && stems.length > 0) {
-      updatedStems = []
-      for (let i = 0; i < stems.length; i++) {
-        const file = stems[i]
-        setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
-        try {
-          const publicUrl = await uploadFileWithProgress(file)
-          updatedStems.push({ label: stemNames[i]?.trim() || file.name, file: publicUrl })
-        } catch (err) {
-          alert('One of your files failed to upload.')
-          setIsSubmitting(false)
-          return
-        }
-      }
-    }
+let updatedStems: { label: string; file: string }[] = []
 
-    let videoPublicUrl: string | null = null
-    if (backgroundVideo) {
-      const videoExt = backgroundVideo.name.split('.').pop()
-      const videoPath = `${user.id}/videos/${uuidv4()}.${videoExt}`
-      const { data: uploadData, error: uploadError } = await supabase
-        .storage
-        .from('videos')
-        .upload(videoPath, backgroundVideo, {
-          contentType: backgroundVideo.type,
-          upsert: false,
-        })
-      if (!uploadError) {
-        const { data: publicUrlData } = supabase.storage.from('videos').getPublicUrl(videoPath)
-        videoPublicUrl = publicUrlData.publicUrl
-      }
+if (stems && stems.length > 0) {
+  // If uploading new stems, use those
+  for (let i = 0; i < stems.length; i++) {
+    const file = stems[i]
+    setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
+    try {
+      const publicUrl = await uploadFileWithProgress(file)
+      updatedStems.push({ label: stemNames[i]?.trim() || file.name, file: publicUrl })
+    } catch (err) {
+      alert('One of your files failed to upload.')
+      setIsSubmitting(false)
+      return
     }
+  }
+} else {
+  // If not uploading new stems, update the labels for the EXISTING stems
+  updatedStems = uploadedStemUrls.map((stem, i) => ({
+    ...stem,
+    label: stemNames[i]?.trim() || stem.label,
+  }))
+}
 
+
+let videoPublicUrl = existingVideoUrl; // Default to the existing video
+
+if (backgroundVideo) {
+  setIsVideoUploading(true)
+  try {
+    const videoExt = backgroundVideo.name.split('.').pop()
+    const videoPath = `${user.id}/videos/${uuidv4()}.${videoExt}`
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('videos')
+      .upload(videoPath, backgroundVideo, {
+        contentType: backgroundVideo.type,
+        upsert: false,
+      })
+    if (!uploadError) {
+      const { data: publicUrlData } = supabase.storage.from('videos').getPublicUrl(videoPath)
+      videoPublicUrl = publicUrlData.publicUrl
+    }
+  } finally {
+    setIsVideoUploading(false)
+  }
+}
+
+
+
+
+    
     // Update the song row
     const artistSlug = toSlug(artistName)
     const newSongSlug = toSlug(projectTitle)
 
-    const { error: updateError } = await supabase.from('songs').update({
-      user_id: user.id,
-      artist_name: artistName,
-      title: projectTitle,
-      effects: (
-        effect.includes('Delay') ? 'delay'
-        : effect.includes('Phaser') ? 'phaser'
-        : null
-      ),
-      color,
-      primary_color: primaryColor,
-      stems: updatedStems,
-      bpm: bpm !== '' ? Number(bpm) : null,
-      artist_slug: artistSlug,
-      song_slug: newSongSlug,
-      background_video: videoPublicUrl,
-    }).eq('id', songId)
+console.log('=== SUBMIT PAYLOAD ===')
+console.log('songId', songId)
+console.log('userId', user.id)
+console.log('artistName', artistName)
+console.log('projectTitle', projectTitle)
+console.log('color', color)
+console.log('primaryColor', primaryColor)
+console.log('effect', effect)
+console.log('updatedStems', updatedStems)
+console.log('bpm', bpm)
+console.log('artistSlug', artistSlug)
+console.log('newSongSlug', newSongSlug)
+console.log('backgroundVideo', backgroundVideo)
+
+// Log right before update
+console.log('About to update song row...', artistSlug, newSongSlug, songId)
+
+const { error: updateError } = await supabase.from('songs').update({
+  user_id: user.id,
+  artist_name: artistName,
+  title: projectTitle,
+  effects: (
+    effect.includes('Delay') ? 'delay'
+    : effect.includes('Phaser') ? 'phaser'
+    : null
+  ),
+  color,
+  primary_color: primaryColor,
+  stems: updatedStems,   // <<< NOT STRINGIFIED!!!
+  bpm: bpm !== '' ? Number(bpm) : null,
+  artist_slug: artistSlug,
+  song_slug: newSongSlug,
+  background_video: videoPublicUrl,
+}).eq('id', songId)
 
     console.log("UPDATED SONG SLUGS:", { artistSlug, newSongSlug })
 console.log("Update error:", updateError)
@@ -239,7 +281,21 @@ console.log("Update error:", updateError)
       alert('Error saving your changes.')
       setIsSubmitting(false)
     } else {
-      router.push(`/artist/${artistSlug}/${newSongSlug}`)
+      // After update, fetch the latest song object from the DB
+const { data: updatedSong, error: fetchError } = await supabase
+  .from('songs')
+  .select('artist_slug, song_slug')
+  .eq('id', songId)
+  .single();
+
+if (fetchError || !updatedSong) {
+  alert('Update succeeded but could not fetch new song slug.');
+  setIsSubmitting(false);
+  return;
+}
+
+router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
+
     }
   }
 
@@ -580,9 +636,16 @@ console.log("Update error:", updateError)
 
 
 {(color === 'Transparent' || color === 'Red (Classic)') && (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
-    <span style={{ fontWeight: 'bold' }}>Optional Background Video (MP4 or WebM)</span>
-    
+  <div style={{
+    position: 'relative',
+    width: '100%',
+    minHeight: '140px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.5rem'
+  }}>
+    <span style={{ fontWeight: 'bold' }}>Optional Background Video (MP4, WebM, MOV)</span>
     <label
       htmlFor="video-upload"
       style={{
@@ -598,23 +661,74 @@ console.log("Update error:", updateError)
     >
       Choose File
     </label>
-
     <span style={{ fontSize: '0.85rem', color: '#aaa' }}>
       This video will loop fullscreen behind the mixer.
     </span>
-
     <input
       id="video-upload"
       type="file"
-      accept="video/mp4,video/webm"
+      accept="video/mp4,video/webm,video/quicktime,.mov"
       onChange={(e) => {
-        const file = e.target.files?.[0]
-        if (file) setBackgroundVideo(file)
+        const file = e.target.files?.[0];
+        if (file) {
+          setBackgroundVideo(file);
+          setVideoPreviewUrl(URL.createObjectURL(file));
+          // show spinner instantly
+          setIsVideoUploading(true);
+        }
       }}
       style={{ display: 'none' }}
     />
+    {(videoPreviewUrl || existingVideoUrl) && (
+      <div style={{
+        position: 'relative',
+        width: '120px',
+        height: '68px',
+        marginTop: '8px',
+        borderRadius: '6px',
+        overflow: 'hidden',
+        border: '1.5px solid #B8001F',
+        background: '#ececec',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <video
+          src={videoPreviewUrl || existingVideoUrl || undefined}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          muted
+          loop
+          autoPlay
+        />
+        {isVideoUploading && (
+          <div style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            background: 'rgba(252,250,238, 0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 2
+          }}>
+            <div style={{
+              width: '30px',
+              height: '30px',
+              border: '4px solid #B8001F',
+              borderTop: '4px solid transparent',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+          </div>
+        )}
+      </div>
+    )}
+    <style>{`
+      @keyframes spin {
+        0% { transform: rotate(0deg);}
+        100% { transform: rotate(360deg);}
+      }
+    `}</style>
   </div>
 )}
+
+
 
 <div style={{ position: 'relative', width: '100%' }}>
   <label style={{ display: 'block', marginBottom: '0.5rem' }}>Which Effects Do You Want?</label>
