@@ -437,7 +437,7 @@ useEffect(() => {
         )}
 
         {/* ▶️ Playback Controls */}
-        <div className="flex justify-center mb-12 gap-8">
+        <div className="flex justify-center mb-9 gap-8">
           <button
             onClick={playAll}
             disabled={!allReady}
@@ -527,8 +527,8 @@ useEffect(() => {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    height: isMobile ? '400px' : undefined, // <--- taller on mobile, auto on desktop
-    justifyContent: 'center',
+    height: isMobile ? '450px' : undefined,
+    justifyContent: 'flex-start', // <-- important!
   }}
 >
   <div style={{ width: '16px', height: isMobile ? '40px' : '40px', marginBottom: isMobile ? '20px' : '18px' }} />
@@ -562,6 +562,7 @@ useEffect(() => {
         width: '4px',
         height: isMobile ? '130px' : '150px', // <--- different on desktop/mobile!
         background: 'transparent',
+      
       }}
                     />
                   </div>
@@ -646,8 +647,11 @@ useEffect(() => {
                 </div>
               ))}
             </div>
+            
           </div>
+          
         )}
+
 
         {/* 🎚️ Varispeed Slider */}
         {songData?.color !== 'Transparent' && (
@@ -688,26 +692,29 @@ useEffect(() => {
                     height: '140px',
                   }}
                 >
-                  <div
-                    className="absolute top-0 left-0 w-full flex flex-col items-center"
-                    style={{ pointerEvents: 'none' }}
-                  >
-                    {bpm !== null && (
-                      <div className="text-xs font-mono mb-1" style={{ color: primary }}>
-                        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-                      </div>
-                    )}
-                    <div className="text-sm tracking-wider" style={{ color: primary }}>
-                      VARISPEED
-                    </div>
-                  </div>
+<div
+  className="absolute top-0 left-0 w-full flex flex-col items-center"
+  style={{
+    pointerEvents: 'none',
+    marginTop: '0px', // <-- move only the text down!
+  }}
+>
+  {bpm !== null && (
+    <div className="text-xs font-mono mb-1" style={{ color: primary }}>
+      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+    </div>
+  )}
+  <div className="text-sm tracking-wider" style={{ color: primary }}>
+    VARISPEED
+  </div>
+</div>
 
                   <div
                     className="absolute left-1/2"
                     style={{
                       transform: 'translateX(-50%) rotate(-90deg)',
 
-                      top: '-96px',
+                      top: '-118px',
                     }}
                   >
 <VarispeedSlider
@@ -717,6 +724,7 @@ useEffect(() => {
   primaryColor={primary}
   stemCount={stems.length} // 👈 pass this in only in the mobile portrait 3+ stems block!
 />
+
 
                   </div>
                 </div>
