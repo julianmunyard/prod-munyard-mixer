@@ -52,6 +52,8 @@ export default function MixerPage() {
   const primary = songData?.primary_color || '#B8001F' 
   const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
 
   // ==================== BROWSER DETECTION ====================
 const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
@@ -344,7 +346,7 @@ stems.forEach(({ label }) => {
     })
 
   }, [volumes, mutes, solos, delays])
-  
+
 useEffect(() => {
   const ctx = audioCtxRef.current
   if (!ctx) return
@@ -512,43 +514,55 @@ useEffect(() => {
               }}
             >
               {stems.map(({ label }) => (
-                <div
-                  key={label}
-                  className="mixer-module"
-                  style={{
-                    width: stems.length >= 6 ? '86px' : '96px',
-                    backgroundColor: primary,
-                    border: '1px solid #444',
-                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
-                    borderRadius: '10px',
-                    padding: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                  }}
-                >
-                  <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
-                  
-                  {/* LEVEL Slider */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', fontSize: '10px', color: 'white' }}>
-                    <span style={{ marginBottom: '4px' }}>LEVEL</span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.01"
-                      value={volumes[label]}
-                      onChange={(e) => {
-                        setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
-                      }}
-                      className="volume-slider"
-                      style={{
-                        writingMode: 'bt-lr' as any,
-                        WebkitAppearance: 'slider-vertical',
-                        width: '4px',
-                        height: '150px',
-                        background: 'transparent',
-                      }}
+<div
+  key={label}
+  className="mixer-module"
+  style={{
+    width: stems.length >= 6 ? '86px' : '96px',
+    backgroundColor: primary,
+    border: '1px solid #444',
+    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
+    borderRadius: '10px',
+    padding: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    height: isMobile ? '400px' : undefined, // <--- taller on mobile, auto on desktop
+    justifyContent: 'center',
+  }}
+>
+  <div style={{ width: '16px', height: isMobile ? '40px' : '40px', marginBottom: isMobile ? '20px' : '18px' }} />
+
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      fontSize: '10px',
+      color: 'white',
+      flexGrow: 1,
+      justifyContent: 'center',
+      marginBottom: isMobile ? '20px' : '30px',
+    }}
+  >
+    <span style={{ marginBottom: '4px' }}>LEVEL</span>
+    <input
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value={volumes[label]}
+      onChange={(e) => {
+        setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+      }}
+      className="volume-slider"
+      style={{
+        writingMode: 'bt-lr' as any,
+        WebkitAppearance: 'slider-vertical',
+        width: '4px',
+        height: isMobile ? '130px' : '150px', // <--- different on desktop/mobile!
+        background: 'transparent',
+      }}
                     />
                   </div>
 
@@ -574,7 +588,7 @@ useEffect(() => {
                         fontSize: '12px',
                         padding: '4px 10px',
                         borderRadius: '4px',
-                        marginBottom: '8px',
+                        marginBottom: isMobile ? '14px' : '8px', //
                         backgroundColor: mutes[label] ? '#FFD700' : '#FCFAEE',
                         color: mutes[label] ? 'black' : primary,
                         border: `1px solid ${primary}`,
