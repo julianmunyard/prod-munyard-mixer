@@ -666,7 +666,7 @@ useEffect(() => {
               >
                 {bpm !== null && (
                   <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
-                    {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+                    {Math.round(bpm * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))} BPM
                   </div>
                 )}
                 <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
@@ -701,7 +701,7 @@ useEffect(() => {
 >
   {bpm !== null && (
     <div className="text-xs font-mono mb-1" style={{ color: primary }}>
-      {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+      {Math.round(bpm * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))} BPM
     </div>
   )}
   <div className="text-sm tracking-wider" style={{ color: primary }}>
