@@ -4,6 +4,9 @@ import DelayKnob from './DelayKnob'
 import VarispeedSlider from './VarispeedSlider'
 import type { Stem } from '@/app/artist/[artist]/[songSlug]/page'
 
+const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
+
 type TransparentMixerLayoutProps = {
   stems: Stem[]
   volumes: Record<string, number>
@@ -52,42 +55,56 @@ export default function TransparentMixerLayout({
       <div className="flex overflow-x-auto w-full justify-start px-2 sm:overflow-visible">
         <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`} style={{ minWidth: stems.length <= 4 ? '100%' : 'max-content', justifyContent: stems.length <= 4 ? 'center' : 'flex-start', margin: '0 auto' }}>
           {stems.map(({ label }) => (
-            <div
-              key={label}
-              className="mixer-module"
-              style={{
-                width: stems.length >= 6 ? '86px' : '96px',
-                backgroundColor: 'transparent',
-                backdropFilter: 'blur(2px)',
-                border: `1px solid ${primaryColor}`,
+<div
+  key={label}
+  className="mixer-module"
+  style={{
+    width: stems.length >= 6 ? '86px' : '96px',
+    backgroundColor: 'transparent',
+    backdropFilter: 'blur(2px)',
+    border: `1px solid ${primaryColor}`,
+    borderRadius: '10px',
+    padding: '16px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    height: isMobile ? '450px' : undefined, // <<<< this matches main
+    justifyContent: 'flex-start',
+  }}
+>
 
-                borderRadius: '10px',
-                padding: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-              }}
-            >
-              <div style={{ width: '16px', height: '40px', backgroundColor: '#15803d', borderRadius: '2px', animation: 'pulse 1s infinite', marginBottom: '18px' }} />
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '30px', fontSize: '10px', color: 'white' }}>
-                <span style={{ marginBottom: '4px' }}>LEVEL</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={volumes[label]}
-                  onChange={(e) => {
-                    setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
-                  }}
-                  className="volume-slider"
-                  style={{
-                    writingMode: 'bt-lr' as any,
-                    WebkitAppearance: 'slider-vertical',
-                    width: '4px',
-                    height: '150px',
-                    background: 'transparent',
-                  }}
+
+  {/* Level Slider */}
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      fontSize: '10px',
+      color: 'white',
+      flexGrow: 1,
+      justifyContent: 'center',
+      marginBottom: isMobile ? '20px' : '30px', // <<<< matches main
+    }}
+  >
+    <span style={{ marginBottom: '4px' }}>LEVEL</span>
+    <input
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value={volumes[label]}
+      onChange={(e) => {
+        setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+      }}
+      className="volume-slider"
+      style={{
+        writingMode: 'bt-lr' as any,
+        WebkitAppearance: 'slider-vertical',
+        width: '4px',
+        height: isMobile ? '150px' : '150px', // <<<< matches main
+        background: 'transparent',
+      }}
                 />
               </div>
               <div style={{ marginBottom: '32px', textAlign: 'center' }}>
@@ -165,55 +182,54 @@ export default function TransparentMixerLayout({
           ))}
         </div>
       </div>
+{/* Varispeed Slider Logic */}
+{/* Desktop & landscape or ≤2 stems */}
+{(!isMobilePortrait || stems.length <= 2) && (
+  <div className="absolute right-4 top-[260px] flex flex-col items-center">
+    {bpm !== undefined && (
+      <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
+        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+      </div>
+    )}
+    <div className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
+      VARISPEED
+    </div>
+    <VarispeedSlider
+      value={varispeed}
+      onChange={setVarispeed}
+      isIOS={isIOS}
+      primaryColor={primaryColor}
+    />
+  </div>
+)}
 
-      {/* Varispeed Slider Logic */}
-      {/* Desktop & landscape or ≤2 stems */}
-      {(!isMobilePortrait || stems.length <= 2) && (
-        <div className="absolute right-4 top-[260px] flex flex-col items-center">
-          {bpm !== undefined && (
-            <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
-              {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
-            </div>
-          )}
-          <div className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
-            VARISPEED
-          </div>
-          <VarispeedSlider
-            value={varispeed}
-            onChange={setVarispeed}
-            isIOS={isIOS}
-            primaryColor={primaryColor}
-          />
+{/* Mobile Portrait with ≥3 stems */}
+{isMobilePortrait && stems.length >= 3 && (
+  <div className="sm:hidden w-full flex justify-center">
+    <div className="relative" style={{ marginTop: '12px', width: '350px', height: '140px' }}>
+      {/* Labels */}
+      <div className="absolute top-0 left-0 w-full flex flex-col items-center" style={{ pointerEvents: 'none' }}>
+        <div className="text-xs font-mono" style={{ color: primaryColor }}>
+          {Math.round(bpm! * (isIOS ? 2 - varispeed : varispeed))} BPM
         </div>
-      )}
-
-      {/* Mobile Portrait with ≥3 stems */}
-      {isMobilePortrait && stems.length >= 3 && (
-        <div className="sm:hidden w-full flex justify-center">
-          <div className="relative" style={{ marginTop: '12px', width: '350px', height: '100px' }}>
-            {/* Labels */}
-            <div className="absolute top-0 left-0 w-full flex flex-col items-center" style={{ pointerEvents: 'none' }}>
-              <div className="text-xs font-mono" style={{ color: primaryColor }}>
-                {Math.round(bpm! * (isIOS ? 2 - varispeed : varispeed))} BPM
-              </div>
-              <div className="text-sm tracking-wider" style={{ color: primaryColor }}>
-                VARISPEED
-              </div>
-            </div>
-
-            {/* Slider */}
-            <div className="absolute left-1/2" style={{ transform: 'translateX(-50%) rotate(-90deg)', top: '-96px' }}>
-<VarispeedSlider
-  value={2 - varispeed}
-  onChange={val => setVarispeed(2 - val)}
-  isIOS={isIOS}
-  primaryColor={primaryColor}
-  stemCount={stems.length} // 👈 pass stem count for correct flipping
-/>
-            </div>
-          </div>
+        <div className="text-sm tracking-wider" style={{ color: primaryColor }}>
+          VARISPEED
         </div>
-      )}
+      </div>
+      {/* Slider */}
+      <div className="absolute left-1/2" style={{ transform: 'translateX(-50%) rotate(-90deg)', top: '-118px' }}>
+        <VarispeedSlider
+          value={2 - varispeed}
+          onChange={val => setVarispeed(2 - val)}
+          isIOS={isIOS}
+          primaryColor={primaryColor}
+          stemCount={stems.length}
+        />
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   )
 }
