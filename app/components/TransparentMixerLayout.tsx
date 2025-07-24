@@ -5,7 +5,8 @@ import VarispeedSlider from './VarispeedSlider'
 import type { Stem } from '@/app/artist/[artist]/[songSlug]/page'
 
 const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-
+const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+const isInstagram = ua.includes('Instagram');
 
 type TransparentMixerLayoutProps = {
   stems: Stem[]
@@ -188,7 +189,7 @@ export default function TransparentMixerLayout({
   <div className="absolute right-4 top-[260px] flex flex-col items-center">
     {bpm !== undefined && (
       <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
-        {Math.round(bpm * (isIOS ? 2 - varispeed : varispeed))} BPM
+        {Math.round(bpm! * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))}
       </div>
     )}
     <div className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
@@ -210,7 +211,7 @@ export default function TransparentMixerLayout({
       {/* Labels */}
       <div className="absolute top-0 left-0 w-full flex flex-col items-center" style={{ pointerEvents: 'none' }}>
         <div className="text-xs font-mono" style={{ color: primaryColor }}>
-          {Math.round(bpm! * (isIOS ? 2 - varispeed : varispeed))} BPM
+          {Math.round(bpm! * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))}
         </div>
         <div className="text-sm tracking-wider" style={{ color: primaryColor }}>
           VARISPEED
