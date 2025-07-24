@@ -560,7 +560,7 @@ useEffect(() => {
         writingMode: 'bt-lr' as any,
         WebkitAppearance: 'slider-vertical',
         width: '4px',
-        height: isMobile ? '130px' : '150px', // <--- different on desktop/mobile!
+        height: isMobile ? '150px' : '150px', // <--- different on desktop/mobile!
         background: 'transparent',
       
       }}
