@@ -620,28 +620,28 @@ useEffect(() => {
                     </button>
 
                     {/* Label */}
-                    <div
-                      style={{
-                        fontSize: '12px',
-                        padding: '4px 6px',
-                        borderRadius: '4px',
-                        backgroundColor: '#FCFAEE',
-                        color: primary,
-                        marginTop: '6px',
-                        display: 'block',
-                        width: '100%',
-                        maxWidth: '100%',
-                        textAlign: 'center',
-                        whiteSpace: 'normal',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        wordBreak: 'normal',
-                        lineHeight: '1.2',
-                        boxSizing: 'border-box',
-                        border: `1px solid ${primary}`,
-                      }}
-                    >
-                      {label}
+<div
+  style={{
+    fontSize: '12px',
+    padding: '4px 6px',
+    borderRadius: '4px',
+    backgroundColor: '#FCFAEE',
+    color: primary,
+    marginTop: '6px',
+    display: 'block',
+    width: '100%',
+    minHeight: '34px', // <-- Reserve enough vertical space for 2 lines
+    maxHeight: '34px', // <-- Prevents label from getting taller than this
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'normal',
+    wordBreak: 'break-word',
+    lineHeight: '1.2',
+    boxSizing: 'border-box',
+    border: `1px solid ${primary}`,
+  }}
+>
+  {label}
                     </div>
                   </div>
                 </div>
