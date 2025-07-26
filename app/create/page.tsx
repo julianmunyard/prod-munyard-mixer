@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid'
 import axios, { AxiosProgressEvent } from 'axios'
 import { HexColorPicker } from 'react-colorful'
 import MiniMixerPreview from '../components/MiniMixerPreview'
-
+import { convertToMp3 } from '@/lib/convertToMp3'
 
 
 
@@ -144,41 +144,62 @@ const uploadFileWithProgress = async (file: File): Promise<string> => {
 
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (!user || authError) {
-      alert('You must be logged in.')
-      setIsSubmitting(false)
-      return
-    }
-    if (!userEmail) {
-      alert('Missing user email. Please log in again.')
-      setIsSubmitting(false)
-      return
-    }
-    if (!artistName.trim() || !projectTitle.trim()) {
-      alert('Please enter both an artist name and a project title.')
-      setIsSubmitting(false)
-      return
-    }
-    let uploadedStemUrls: { label: string; file: string }[] = []
-    if (stems && stems.length > 0) {
-      for (let i = 0; i < stems.length; i++) {
-        const file = stems[i]
-        setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setIsSubmitting(true)
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (!user || authError) {
+    alert('You must be logged in.')
+    setIsSubmitting(false)
+    return
+  }
+
+  if (!userEmail) {
+    alert('Missing user email. Please log in again.')
+    setIsSubmitting(false)
+    return
+  }
+
+  if (!artistName.trim() || !projectTitle.trim()) {
+    alert('Please enter both an artist name and a project title.')
+    setIsSubmitting(false)
+    return
+  }
+
+  let uploadedStemUrls: { label: string; file: string }[] = []
+
+  if (stems && stems.length > 0) {
+    for (let i = 0; i < stems.length; i++) {
+      const file = stems[i]
+      setUploadProgress(prev => ({ ...prev, [file.name]: 0 }))
+
+      let processedFile = file
+
+      if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
         try {
-          const publicUrl = await uploadFileWithProgress(file)
-          uploadedStemUrls.push({ label: stemNames[i]?.trim() || file.name, file: publicUrl })
+          console.log(`🎛 Converting ${file.name} to MP3...`)
+          processedFile = await convertToMp3(file)
+          console.log('✅ Conversion complete:', processedFile.name)
         } catch (err) {
-          console.error('Upload failed:', err)
-          alert('One of your files failed to upload.')
+          console.error('❌ MP3 conversion failed:', err)
+          alert('Failed to convert WAV to MP3.')
           setIsSubmitting(false)
           return
         }
       }
+
+      try {
+        const publicUrl = await uploadFileWithProgress(processedFile)
+        uploadedStemUrls.push({ label: stemNames[i]?.trim() || processedFile.name, file: publicUrl })
+      } catch (err) {
+        console.error('Upload failed:', err)
+        alert('One of your files failed to upload.')
+        setIsSubmitting(false)
+        return
+      }
     }
+  }
 
 let videoPublicUrl: string | null = null
 if (backgroundVideo) {

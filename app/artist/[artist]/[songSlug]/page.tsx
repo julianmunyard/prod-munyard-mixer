@@ -173,75 +173,85 @@ useEffect(() => {
   if (buf) setDuration(buf.duration);
 }, [stems, loadingStems]);
 
-useEffect(() => {
-  if (!stems.length) return;
+  // -------------------- 🌊 Init Audio & Effects --------------------
+  useEffect(() => {
+    if (!stems.length) return
+    const init = async () => {
+      setLoadingStems(true)
+      setAllReady(false)
 
-  const preloadStems = async () => {
-    setLoadingStems(true);
-    setAllReady(false);
+      if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+        const ctx = new AudioContext()
+        await ctx.audioWorklet.addModule('/granular-processor.js')
+        audioCtxRef.current = ctx
+      }
 
-    let ctx = audioCtxRef.current;
-    if (!ctx || ctx.state === 'closed') {
-      ctx = new AudioContext();
-      await ctx.audioWorklet.addModule('/granular-processor.js');
-      audioCtxRef.current = ctx;
+      const ctx = audioCtxRef.current!
+      let loadedCount = 0
+      const effect = typeof songData?.effects === 'string' ? songData.effects : songData?.effects?.[0] || ''
+
+      for (const { label, file } of stems) {
+        try {
+          const res = await fetch(file)
+          const arrayBuffer = await res.arrayBuffer()
+          const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+          buffersRef.current[label] = audioBuffer
+
+          const gain = ctx.createGain()
+
+          if (effect === 'phaser') {
+            const dry = ctx.createGain()
+            const wet = ctx.createGain()
+            const filter = ctx.createBiquadFilter()
+            const lfo = ctx.createOscillator()
+            const lfoGain = ctx.createGain()
+
+            filter.type = 'allpass'
+            filter.frequency.value = 1000
+            filter.Q.value = 1
+
+            lfo.type = 'sine'
+            lfo.frequency.value = 0.5
+            lfoGain.gain.value = 500
+            lfo.connect(lfoGain).connect(filter.frequency)
+            lfo.start()
+
+            filter.connect(wet).connect(gain)
+            phaserWetRef.current[label] = wet
+            phaserDryRef.current[label] = dry
+
+            dry.connect(gain)
+            gain.connect(ctx.destination)
+
+            gainNodesRef.current[label] = gain
+          } else {
+            const delay = ctx.createDelay(5.0)
+            const feedback = ctx.createGain()
+            delay.delayTime.value = 60 / 120 / 2
+            feedback.gain.value = delaysRef.current[label] || 0
+            delay.connect(feedback).connect(delay)
+            delay.connect(gain).connect(ctx.destination)
+            gainNodesRef.current[label] = gain
+            delayNodesRef.current[label] = delay
+            feedbackGainsRef.current[label] = feedback
+          }
+
+          loadedCount++
+          if (loadedCount === stems.length) {
+            setLoadingStems(false)
+            setAllReady(true)
+          }
+        } catch (err) {
+          console.error(`❌ Failed to decode stem: ${label}`, err)
+          alert(`Couldn’t load "${label}". Try trimming it to 5 minutes or less.`)
+          setLoadingStems(false)
+          return
+        }
+      }
     }
 
-    const effect = typeof songData?.effects === 'string' ? songData.effects : songData?.effects?.[0] || '';
-
-    await Promise.all(stems.map(async ({ label, file }) => {
-      if (buffersRef.current[label]) return; // avoid duplicate loads
-      const res = await fetch(file);
-      const arrayBuffer = await res.arrayBuffer();
-      buffersRef.current[label] = await ctx.decodeAudioData(arrayBuffer);
-
-      const gain = ctx.createGain();
-
-      if (effect === 'phaser') {
-        const dry = ctx.createGain();
-        const wet = ctx.createGain();
-        const filter = ctx.createBiquadFilter();
-        const lfo = ctx.createOscillator();
-        const lfoGain = ctx.createGain();
-
-        filter.type = 'allpass';
-        filter.frequency.value = 1000;
-        filter.Q.value = 1;
-
-        lfo.type = 'sine';
-        lfo.frequency.value = 0.5;
-        lfoGain.gain.value = 500;
-        lfo.connect(lfoGain).connect(filter.frequency);
-        lfo.start();
-
-        filter.connect(wet).connect(gain);
-        phaserWetRef.current[label] = wet;
-        phaserDryRef.current[label] = dry;
-
-        dry.connect(gain);
-        gain.connect(ctx.destination);
-
-        gainNodesRef.current[label] = gain;
-      } else {
-        const delay = ctx.createDelay(5.0);
-        const feedback = ctx.createGain();
-        delay.delayTime.value = 60 / 120 / 2;
-        feedback.gain.value = delaysRef.current[label] || 0;
-        delay.connect(feedback).connect(delay);
-        delay.connect(gain).connect(ctx.destination);
-        gainNodesRef.current[label] = gain;
-        delayNodesRef.current[label] = delay;
-        feedbackGainsRef.current[label] = feedback;
-      }
-    }));
-
-    setLoadingStems(false);
-    setAllReady(true);
-  };
-
-  preloadStems();
-}, [stems]);
-
+    init()
+  }, [stems])
 
 // ==================== ▶️ Playback Logic ====================
 const stopAll = () => {
@@ -249,7 +259,7 @@ const stopAll = () => {
     const node = nodesRef.current[label];
     if (!node) return;
     // Ask processor for its current position
-    node.port.postMessage({ type: 'getPosition' }); 
+    node.port.postMessage({ type: 'getPosition' });
     node.port.onmessage = (e) => {
       if (e.data.type === 'position') {
         positionsRef.current[label] = e.data.position;

@@ -1,10 +1,23 @@
-import type { NextConfig } from "next"
+import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  /* your other config options */
+
+  async headers() {
+    return [
+      {
+        source: '/ffmpeg/:path*.wasm', // only apply to .wasm
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/wasm',
+          },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig
