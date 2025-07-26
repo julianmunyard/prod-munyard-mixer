@@ -12,6 +12,7 @@ import DelayKnob from '../../../components/DelayKnob'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import TransparentMixerLayout from '../../../components/TransparentMixerLayout'
+import WaveformScrubber from '../../../components/WaveformScrubber'
 
 
 // ==================== 🧾 Types ====================
@@ -53,11 +54,16 @@ export default function MixerPage() {
   const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const [isPlaying, setIsPlaying] = useState(false)
+  const isPlayingRef = useRef(false) // <-- Track current playback sync
+  const positionsRef = useRef<Record<string, number>>({});
+  const [scrubPosition, setScrubPosition] = useState(0); // in seconds
+  const [duration, setDuration] = useState(0); // in seconds. 
 
 
   // ==================== BROWSER DETECTION ====================
-const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-const isInstagram = ua.includes('Instagram');
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  const isInstagram = ua.includes('Instagram');
 
   // -------------------- 📱 Device Detection --------------------
   useEffect(() => {
@@ -100,7 +106,6 @@ const isInstagram = ua.includes('Instagram');
 
   // ==================== 🧠 Effects Logic ====================
   useEffect(() => {
-    console.log('artist:', artist, 'songSlug:', songSlug)
     const fetchSong = async () => {
       const { data, error } = await supabase
         .from('songs')
@@ -138,26 +143,35 @@ const isInstagram = ua.includes('Instagram');
   }, [artist, songSlug])
 
   // 🔁 Always keep stems up-to-date with songData.stems
+  useEffect(() => {
+    if (!songData?.stems) {
+      setStems([])
+      return
+    }
+    // parse stems and label logic
+    const parsedStems = typeof songData.stems === 'string'
+      ? JSON.parse(songData.stems)
+      : songData.stems
+    const usedLabels = new Set<string>()
+    const stemObjs: Stem[] = parsedStems.map((stem: any, i: number) => {
+      let rawLabel = stem.label?.trim() || stem.file?.split('/').pop() || `Untitled Stem ${i + 1}`
+      rawLabel = rawLabel.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ')
+      let label = rawLabel
+      while (usedLabels.has(label)) label += `_${i}`
+      usedLabels.add(label)
+      return { label, file: stem.file }
+    })
+    setStems(stemObjs)
+  }, [songData?.stems])
+
+
+// Set duration based on the first loaded buffer
 useEffect(() => {
-  if (!songData?.stems) {
-    setStems([])
-    return
-  }
-  // parse stems and label logic
-  const parsedStems = typeof songData.stems === 'string'
-    ? JSON.parse(songData.stems)
-    : songData.stems
-  const usedLabels = new Set<string>()
-  const stemObjs: Stem[] = parsedStems.map((stem: any, i: number) => {
-    let rawLabel = stem.label?.trim() || stem.file?.split('/').pop() || `Untitled Stem ${i + 1}`
-    rawLabel = rawLabel.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ')
-    let label = rawLabel
-    while (usedLabels.has(label)) label += `_${i}`
-    usedLabels.add(label)
-    return { label, file: stem.file }
-  })
-  setStems(stemObjs)
-}, [songData?.stems])
+  if (!stems.length) return;
+  const firstLabel = stems[0]?.label;
+  const buf = buffersRef.current[firstLabel];
+  if (buf) setDuration(buf.duration);
+}, [stems, loadingStems]);
 
   // -------------------- 🌊 Init Audio & Effects --------------------
   useEffect(() => {
@@ -239,17 +253,108 @@ useEffect(() => {
     init()
   }, [stems])
 
-  // ==================== ▶️ Playback Logic ====================
-  const stopAll = () => {
-    Object.values(nodesRef.current).forEach((node) => {
-      try {
-        node.port.postMessage({ type: 'stop' })
-        node.disconnect()
-      } catch {}
-    })
-    nodesRef.current = {}
+// ==================== ▶️ Playback Logic ====================
+const stopAll = () => {
+  stems.forEach(({ label }) => {
+    const node = nodesRef.current[label];
+    if (!node) return;
+    // Ask processor for its current position
+    node.port.postMessage({ type: 'getPosition' }); 
+    node.port.onmessage = (e) => {
+      if (e.data.type === 'position') {
+        positionsRef.current[label] = e.data.position;
+      }
+    };
+    try {
+      node.disconnect();
+    } catch {}
+  });
+  nodesRef.current = {};
+  setIsPlaying(false);
+  isPlayingRef.current = false;
+};
+
+const playAll = async () => {
+  let ctx = audioCtxRef.current;
+  if (!ctx || ctx.state === 'closed') {
+    ctx = new AudioContext();
+    await ctx.audioWorklet.addModule('/granular-processor.js');
+    audioCtxRef.current = ctx;
   }
 
+  if (ctx.state === 'suspended') await ctx.resume();
+  stopAll();
+
+  
+
+  const effect = typeof songData?.effects === 'string' ? songData.effects : songData?.effects?.[0] || '';
+  const scheduledTime = ctx.currentTime + 0.1; // 100ms in the future for perfect sync
+
+  let nodeCount = 0; // <--- Track how many nodes are created
+
+  stems.forEach(({ label }) => {
+    const buffer = buffersRef.current[label];
+    const gain = gainNodesRef.current[label];
+    if (!buffer || !gain) return;
+
+    const node = new AudioWorkletNode(ctx, 'granular-player', {
+      outputChannelCount: [2], // STEREO!
+    });
+
+node.port.onmessage = (e) => {
+  if (e.data.type === 'position') {
+    positionsRef.current[label] = e.data.position;
+  }
+};
+
+node.port.postMessage({
+  type: 'load',
+  buffer: [
+    buffer.numberOfChannels > 0 ? buffer.getChannelData(0) : new Float32Array(buffer.length),
+    buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0)
+  ],
+  startTime: scheduledTime,
+  startPosition: positionsRef.current[label] || 0, // <--- THIS LINE!
+});
+
+    const playbackRate = isIOS ? 2 - varispeed : varispeed;
+    node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime);
+
+    const soloed = Object.values(solos).some(Boolean)
+    const shouldPlay = soloed ? solos[label] : !mutes[label]
+    gain.gain.value = shouldPlay ? volumes[label] : 0
+
+    if (shouldPlay) nodeCount++; // <--- Only count nodes that actually play
+
+    if (effect === 'phaser') {
+      const wet = phaserWetRef.current[label]
+      const dry = phaserDryRef.current[label]
+      if (!wet || !dry) return
+      wet.gain.value = delays[label]
+      dry.gain.value = 1 - delays[label]
+      node.connect(dry)
+      node.connect(wet)
+    } else {
+      const delay = delayNodesRef.current[label]
+      if (!delay) return
+      node.connect(delay)
+    }
+
+    nodesRef.current[label] = node
+  });
+
+  // Only set playing state if there are active nodes!
+  if (nodeCount > 0) {
+    setIsPlaying(true);
+    isPlayingRef.current = true;
+  } else {
+    setIsPlaying(false);
+    isPlayingRef.current = false;
+  }
+}
+
+
+  // Cleanup when component unmounts
   useEffect(() => {
     return () => {
       stopAll()
@@ -257,64 +362,7 @@ useEffect(() => {
     }
   }, [])
 
-  const playAll = async () => {
-    let ctx = audioCtxRef.current
-    if (!ctx || ctx.state === 'closed') {
-      ctx = new AudioContext()
-      await ctx.audioWorklet.addModule('/granular-processor.js')
-      audioCtxRef.current = ctx
-    }
-
-    if (ctx.state === 'suspended') await ctx.resume()
-    stopAll()
-
-    const effect = typeof songData?.effects === 'string' ? songData.effects : songData?.effects?.[0] || ''
-
-const scheduledTime = ctx.currentTime + 0.1; // 100ms in the future for perfect sync
-
-stems.forEach(({ label }) => {
-  const buffer = buffersRef.current[label]
-  const gain = gainNodesRef.current[label]
-  if (!buffer || !gain) return
-
-  const node = new AudioWorkletNode(ctx, 'granular-player', {
-    outputChannelCount: [2], // STEREO!
-  });
-
-  node.port.postMessage({
-    type: 'load',
-    buffer: [
-      buffer.numberOfChannels > 0 ? buffer.getChannelData(0) : new Float32Array(buffer.length),
-      buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0)
-    ],
-    startTime: scheduledTime, // <-- THE KEY LINE FOR SYNC!
-  });
-
-      const playbackRate = isIOS ? 2 - varispeed : varispeed
-      node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
-
-      const soloed = Object.values(solos).some(Boolean)
-      const shouldPlay = soloed ? solos[label] : !mutes[label]
-      gain.gain.value = shouldPlay ? volumes[label] : 0
-
-      if (effect === 'phaser') {
-        const wet = phaserWetRef.current[label]
-        const dry = phaserDryRef.current[label]
-        if (!wet || !dry) return
-        wet.gain.value = delays[label] // use knob as wet mix
-        dry.gain.value = 1 - delays[label]
-        node.connect(dry)
-        node.connect(wet)
-      } else {
-        const delay = delayNodesRef.current[label]
-        if (!delay) return
-        node.connect(delay)
-      }
-
-      nodesRef.current[label] = node
-    })
-  }
-
+  // Playback volume, delay, and wet/dry value sync
   useEffect(() => {
     const ctx = audioCtxRef.current
     if (!ctx) return
@@ -341,24 +389,88 @@ stems.forEach(({ label }) => {
         wet.gain.value = delays[label]
         dry.gain.value = 1 - delays[label]
       }
-
-      
     })
 
   }, [volumes, mutes, solos, delays])
 
-useEffect(() => {
-  const ctx = audioCtxRef.current
-  if (!ctx) return
-  Object.values(nodesRef.current).forEach((node) => {
-    const playbackRate = isInstagram ? varispeed : (isIOS ? 2 - varispeed : varispeed)
-    node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
-  })
-}, [varispeed])
-   if (!songData) return <div className="p-8 text-white">Loading...</div>
+  // Varispeed sync
+  useEffect(() => {
+    const ctx = audioCtxRef.current
+    if (!ctx) return
+    Object.values(nodesRef.current).forEach((node) => {
+      const playbackRate = isInstagram ? varispeed : (isIOS ? 2 - varispeed : varispeed)
+      node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
+    })
+  }, [varispeed])
 
-  return (
-    <>
+// ==================== ⌨️ Space Bar Play/Stop (Robust with isPlaying) ====================
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // ...
+    if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
+      e.preventDefault();
+      if (!allReady) return;
+      if (isPlaying) {
+        stopAll();
+      } else {
+        playAll();
+      }
+    }
+  };
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [allReady, isPlaying]);
+
+
+
+
+useEffect(() => {
+  if (!isPlaying) return;
+  let raf: number;
+  const update = () => {
+    const label = stems[0]?.label;
+    const buf = buffersRef.current[label];
+    if (buf) {
+      setScrubPosition((positionsRef.current[label] || 0) / buf.sampleRate);
+    }
+    raf = requestAnimationFrame(update);
+  };
+  update();
+  return () => {
+    cancelAnimationFrame(raf);
+  };
+}, [isPlaying, stems.length]);
+
+
+// Helper to format seconds as mm:ss
+function formatTime(secs: number) {
+  if (!secs || isNaN(secs)) return "0:00";
+  const m = Math.floor(secs / 60);
+  const s = Math.floor(secs % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+// Handle user scrub (seek)
+function handleScrub(newPos: number) {
+  // 1. Stop playback, update positions, then restart
+  const wasPlaying = isPlaying; // track current playing state
+  stopAll();
+  stems.forEach(({ label }) => {
+    positionsRef.current[label] = newPos * (buffersRef.current[label]?.sampleRate || 44100);
+  });
+  setScrubPosition(newPos);
+  if (wasPlaying) {
+    playAll();
+  }
+}
+
+
+return (
+  <>
+    {!songData ? (
+      <div className="p-8 text-white">Loading...</div>
+    ) : (
+      <>
       {/* 🎨 Global Inline Styles */}
       <style>{`
         input[type="range"]::-webkit-slider-thumb {
@@ -370,7 +482,6 @@ useEffect(() => {
         input[type="range"]::-ms-thumb {
           background: ${primary};
         }
-
         @media screen and (max-width: 767px) and (orientation: landscape) {
           .mixer-module {
             min-height: 220px !important;
@@ -437,7 +548,7 @@ useEffect(() => {
         )}
 
         {/* ▶️ Playback Controls */}
-        <div className="flex justify-center mb-9 gap-8">
+        <div className="flex justify-center mb-2 gap-8">
           <button
             onClick={playAll}
             disabled={!allReady}
@@ -471,6 +582,19 @@ useEffect(() => {
             UNSOLO
           </button>
         </div>
+
+{/* === SCRUBBER / TIMELINE === */}
+{duration > 0 && (
+<WaveformScrubber
+  buffer={buffersRef.current[stems[0]?.label]}
+  scrubPosition={scrubPosition}
+  duration={duration}
+  primary={primary}
+  onScrub={handleScrub}
+/>
+)}
+
+
 
         {/* 🎚️ Mixer Modules */}
         {songData?.color === 'Transparent' ? (
@@ -514,56 +638,55 @@ useEffect(() => {
               }}
             >
               {stems.map(({ label }) => (
-<div
-  key={label}
-  className="mixer-module"
-  style={{
-    width: stems.length >= 6 ? '86px' : '96px',
-    backgroundColor: primary,
-    border: '1px solid #444',
-    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
-    borderRadius: '10px',
-    padding: '16px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    height: isMobile ? '450px' : undefined,
-    justifyContent: 'flex-start', // <-- important!
-  }}
->
-  <div style={{ width: '16px', height: isMobile ? '40px' : '40px', marginBottom: isMobile ? '20px' : '18px' }} />
+                <div
+                  key={label}
+                  className="mixer-module"
+                  style={{
+                    width: stems.length >= 6 ? '86px' : '96px',
+                    backgroundColor: primary,
+                    border: '1px solid #444',
+                    boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
+                    borderRadius: '10px',
+                    padding: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    height: isMobile ? '450px' : undefined,
+                    justifyContent: 'flex-start',
+                  }}
+                >
+                  <div style={{ width: '16px', height: isMobile ? '40px' : '40px', marginBottom: isMobile ? '20px' : '18px' }} />
 
-  <div
-    style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      fontSize: '10px',
-      color: 'white',
-      flexGrow: 1,
-      justifyContent: 'center',
-      marginBottom: isMobile ? '20px' : '30px',
-    }}
-  >
-    <span style={{ marginBottom: '4px' }}>LEVEL</span>
-    <input
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      value={volumes[label]}
-      onChange={(e) => {
-        setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
-      }}
-      className="volume-slider"
-      style={{
-        writingMode: 'bt-lr' as any,
-        WebkitAppearance: 'slider-vertical',
-        width: '4px',
-        height: isMobile ? '150px' : '150px', // <--- different on desktop/mobile!
-        background: 'transparent',
-      
-      }}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      fontSize: '10px',
+                      color: 'white',
+                      flexGrow: 1,
+                      justifyContent: 'center',
+                      marginBottom: isMobile ? '20px' : '30px',
+                    }}
+                  >
+                    <span style={{ marginBottom: '4px' }}>LEVEL</span>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={volumes[label]}
+                      onChange={(e) => {
+                        setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+                      }}
+                      className="volume-slider"
+                      style={{
+                        writingMode: 'bt-lr' as any,
+                        WebkitAppearance: 'slider-vertical',
+                        width: '4px',
+                        height: isMobile ? '150px' : '150px',
+                        background: 'transparent',
+                      }}
                     />
                   </div>
 
@@ -589,7 +712,7 @@ useEffect(() => {
                         fontSize: '12px',
                         padding: '4px 10px',
                         borderRadius: '4px',
-                        marginBottom: isMobile ? '14px' : '8px', //
+                        marginBottom: isMobile ? '14px' : '8px',
                         backgroundColor: mutes[label] ? '#FFD700' : '#FCFAEE',
                         color: mutes[label] ? 'black' : primary,
                         border: `1px solid ${primary}`,
@@ -620,119 +743,117 @@ useEffect(() => {
                     </button>
 
                     {/* Label */}
-<div
-  style={{
-    fontSize: '12px',
-    padding: '4px 6px',
-    borderRadius: '4px',
-    backgroundColor: '#FCFAEE',
-    color: primary,
-    marginTop: '6px',
-    display: 'block',
-    width: '100%',
-    minHeight: '34px', // <-- Reserve enough vertical space for 2 lines
-    maxHeight: '34px', // <-- Prevents label from getting taller than this
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'normal',
-    wordBreak: 'break-word',
-    lineHeight: '1.2',
-    boxSizing: 'border-box',
-    border: `1px solid ${primary}`,
-  }}
->
-  {label}
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        padding: '4px 6px',
+                        borderRadius: '4px',
+                        backgroundColor: '#FCFAEE',
+                        color: primary,
+                        marginTop: '6px',
+                        display: 'block',
+                        width: '100%',
+                        minHeight: '34px', // Reserve enough vertical space for 2 lines
+                        maxHeight: '34px', // Prevents label from getting taller than this
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'normal',
+                        wordBreak: 'break-word',
+                        lineHeight: '1.2',
+                        boxSizing: 'border-box',
+                        border: `1px solid ${primary}`,
+                      }}
+                    >
+                      {label}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            
           </div>
-          
         )}
 
-
         {/* 🎚️ Varispeed Slider */}
-        {songData?.color !== 'Transparent' && (
-          <>
-            {/* Desktop / Landscape */}
-            {(!isMobilePortrait || stems.length <= 2) && (
-              <div
-                className="absolute right-4 flex flex-col items-center"
-                style={{
-                  top: songData?.title.length > 16 ? '350px' : '260px',
-                }}
-              >
-                {bpm !== null && (
-                  <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
-                    {Math.round(bpm * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))} BPM
-                  </div>
-                )}
-                <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
-                  VARISPEED
-                </span>
-                <VarispeedSlider
-                  value={varispeed}
-                  onChange={setVarispeed}
-                  isIOS={isIOS}
-                  primaryColor={primary}
-                />
+{songData?.color !== 'Transparent' && (
+  <>
+    {/* Desktop / Landscape */}
+    {(!isMobilePortrait || stems.length <= 2) && (
+      <div
+        className="absolute right-4 flex flex-col items-center"
+        style={{
+          top: songData?.title.length > 16 ? '350px' : '260px',
+        }}
+      >
+        {bpm !== null && (
+          <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
+            {Math.round(bpm * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))} BPM
+          </div>
+        )}
+        <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
+          VARISPEED
+        </span>
+        {/* DESKTOP/LANDSCAPE: use varispeed as-is */}
+        <VarispeedSlider
+          value={varispeed}
+          onChange={setVarispeed}
+          isIOS={isIOS}
+          primaryColor={primary}
+        />
+      </div>
+    )}
+
+    {/* Mobile Portrait w/ 3+ stems */}
+    {isMobilePortrait && stems.length >= 3 && (
+      <div className="w-full flex justify-center sm:hidden">
+        <div
+          className="relative"
+          style={{
+            marginTop: '12px',
+            width: '350px',
+            height: '140px',
+          }}
+        >
+          <div
+            className="absolute top-0 left-0 w-full flex flex-col items-center"
+            style={{
+              pointerEvents: 'none',
+              marginTop: '0px',
+            }}
+          >
+            {bpm !== null && (
+              <div className="text-xs font-mono mb-1" style={{ color: primary }}>
+                {Math.round(bpm * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))} BPM
               </div>
             )}
+            <div className="text-sm tracking-wider" style={{ color: primary }}>
+              VARISPEED
+            </div>
+          </div>
 
-            {/* Mobile Portrait w/ 3+ stems */}
-            {isMobilePortrait && stems.length >= 3 && (
-              <div className="w-full flex justify-center sm:hidden">
-                <div
-                  className="relative"
-                  style={{
-                    marginTop: '12px',
-                    width: '350px',
-                    height: '140px',
-                  }}
-                >
-<div
-  className="absolute top-0 left-0 w-full flex flex-col items-center"
-  style={{
-    pointerEvents: 'none',
-    marginTop: '0px', // <-- move only the text down!
-  }}
->
-  {bpm !== null && (
-    <div className="text-xs font-mono mb-1" style={{ color: primary }}>
-      {Math.round(bpm * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))} BPM
-    </div>
-  )}
-  <div className="text-sm tracking-wider" style={{ color: primary }}>
-    VARISPEED
-  </div>
-</div>
-
-                  <div
-                    className="absolute left-1/2"
-                    style={{
-                      transform: 'translateX(-50%) rotate(-90deg)',
-
-                      top: '-118px',
-                    }}
-                  >
-<VarispeedSlider
-  value={2 - varispeed}
-  onChange={(val) => setVarispeed(2 - val)}
-  isIOS={isIOS}
-  primaryColor={primary}
-  stemCount={stems.length} // 👈 pass this in only in the mobile portrait 3+ stems block!
-/>
-
-
+          <div
+            className="absolute left-1/2"
+            style={{
+              transform: 'translateX(-50%) rotate(-90deg)',
+              top: '-118px',
+            }}
+          >
+            {/* MOBILE PORTRAIT: invert value and onChange */}
+            <VarispeedSlider
+              value={2 - varispeed}
+              onChange={val => setVarispeed(2 - val)}
+              isIOS={isIOS}
+              primaryColor={primary}
+              stemCount={stems.length}
+            />
                   </div>
                 </div>
               </div>
             )}
           </>
         )}
-      </main>
+      </main> 
     </>
-  )
+  )}
+</>
+)
 }
