@@ -35,11 +35,21 @@ export async function convertToMp3(file: File): Promise<File> {
 
     // Run the conversion
     console.log(`🎛️ Converting ${inputName} to MP3`)
-    await ffmpeg.run('-i', inputName, '-codec:a', 'libmp3lame', '-b:a', '192k', outputName)
+    await ffmpeg.run('-i', inputName, outputName)
+
 
     // Read the output file
     console.log(`📤 Reading output ${outputName} from FFmpeg`)
-    const data = ffmpeg.FS('readFile', outputName)
+    
+// Check what files are in FS after running ffmpeg
+const files = ffmpeg.FS('readdir', '/')
+console.log('📂 FFmpeg FS contents:', files)
+
+if (!files.includes(outputName)) {
+  throw new Error(`FFmpeg did not produce output: ${outputName}`)
+}
+
+const data = ffmpeg.FS('readFile', outputName)
 
     // Clean up input/output files from FS (optional but safe)
     ffmpeg.FS('unlink', inputName)
