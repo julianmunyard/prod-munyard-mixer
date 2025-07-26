@@ -48,6 +48,7 @@ export default function Create() {
   const [showThemeDropdown, setShowThemeDropdown] = useState(false)
   const [showEffectDropdown, setShowEffectDropdown] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [hasWavs, setHasWavs] = useState(false)
 
 
 
@@ -85,6 +86,34 @@ useEffect(() => {
 
 
   
+const handleConvertAllToMp3 = async () => {
+  if (!stems) return
+
+  const convertedFiles: File[] = []
+
+  for (let i = 0; i < stems.length; i++) {
+    const file = stems[i]
+    if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
+      try {
+        const mp3 = await convertToMp3(file)
+        convertedFiles.push(mp3)
+      } catch (err) {
+        console.error(`Failed to convert ${file.name}:`, err)
+        alert(`Conversion failed for ${file.name}`)
+        return
+      }
+    } else {
+      convertedFiles.push(file)
+    }
+  }
+
+  const newFileList = new DataTransfer()
+  convertedFiles.forEach((f) => newFileList.items.add(f))
+  setStems(newFileList.files)
+  setUploadedFiles(Array.from(newFileList.files).map((f) => f.name))
+  setHasWavs(false)
+}
+
 
 const uploadFileWithProgress = async (file: File): Promise<string> => {
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
@@ -110,6 +139,7 @@ const uploadFileWithProgress = async (file: File): Promise<string> => {
     throw new Error('Failed to get signed URL')
   }
 
+  
   try {
     await axios.put(signed.signedUrl, file, {
       headers: {
@@ -127,7 +157,7 @@ const uploadFileWithProgress = async (file: File): Promise<string> => {
     setUploadError('File too large or upload rejected. Try converting to MP3.')
     throw error
   }
-
+  
   // Ensure final 100%
   setUploadProgress(prev => ({ ...prev, [file.name]: 100 }))
 
@@ -370,10 +400,16 @@ effects: (
               ref={fileInputRef}
               onChange={(e) => {
                 const selected = e.target.files
-                if (selected) {
-                  setStems(selected)
-                  setUploadedFiles(Array.from(selected).map((file) => file.name))
-                }
+if (selected) {
+  setStems(selected)
+  setUploadedFiles(Array.from(selected).map((file) => file.name))
+
+  // Check for .wav files
+  const wavDetected = Array.from(selected).some((file) =>
+    file.name.toLowerCase().endsWith('.wav') || file.type === 'audio/wav'
+  )
+  setHasWavs(wavDetected)
+}
               }}
               style={{ display: 'none' }}
             />
@@ -384,6 +420,27 @@ effects: (
             )}
           </label>
 
+          {hasWavs && (
+  <button
+    type="button"
+    onClick={handleConvertAllToMp3}
+    style={{
+      marginTop: '1rem',
+      padding: '0.6rem 1rem',
+      backgroundColor: '#B8001F',
+      color: 'white',
+      border: 'none',
+      fontSize: '1rem',
+      borderRadius: '4px',
+      cursor: 'pointer',
+    }}
+  >
+    Convert WAVs to MP3
+  </button>
+)}
+
+          
+
           {uploadedFiles.length > 0 && (
             <div style={{ width: '100%' }}>
               <label style={{ fontWeight: 'bold', marginBottom: '0.5rem', display: 'block' }}>
@@ -393,6 +450,8 @@ effects: (
                 {uploadedFiles.map((file, i) => (
                   <div key={i} style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ flexGrow: 1 }}>
+
+                      
 
 {editingIndex === i ? (
   <input
