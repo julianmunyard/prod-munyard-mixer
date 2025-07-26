@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: '/static/ffmpeg/:path*',
+        source: '/_next/static/ffmpeg/:path*',
         headers: [
           { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
@@ -16,13 +16,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: '/static/ffmpeg/:file*.wasm',
+        source: '/_next/static/ffmpeg/:file*.wasm',
         headers: [
           { key: 'Content-Type', value: 'application/wasm' },
         ],
       },
       {
-        source: '/static/ffmpeg/:file*.worker.js',
+        source: '/_next/static/ffmpeg/:file*.worker.js',
         headers: [
           { key: 'Content-Type', value: 'application/javascript' },
         ],

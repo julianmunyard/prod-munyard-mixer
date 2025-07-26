@@ -2,11 +2,11 @@ import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg'
 
 const ffmpeg = createFFmpeg({
   log: true,
-  corePath: '/static/ffmpeg/ffmpeg-core.js',
-  // @ts-ignore - not in types but valid for browser path override
-  wasmURL: '/static/ffmpeg/ffmpeg-core.wasm',
-  // @ts-ignore - not in types but valid for browser path override
-  workerURL: '/static/ffmpeg/ffmpeg-core.worker.js',
+  corePath: '/_next/static/ffmpeg/ffmpeg-core.js',
+  // @ts-ignore
+  wasmURL: '/_next/static/ffmpeg/ffmpeg-core.wasm',
+  // @ts-ignore
+  workerURL: '/_next/static/ffmpeg/ffmpeg-core.worker.js',
 })
 
 export async function convertToMp3(file: File): Promise<File> {
