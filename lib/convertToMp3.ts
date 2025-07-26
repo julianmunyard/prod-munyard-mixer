@@ -35,7 +35,9 @@ const data = ffmpeg.FS('readFile', outputName)
 return new File([new Uint8Array(data.buffer)], outputName, { type: 'audio/mpeg' })
 
   } catch (err) {
-    console.error('❌ MP3 conversion failed:', err)
-    throw new Error('MP3 conversion failed')
+console.error('❌ MP3 conversion failed:', err)
+alert(`MP3 conversion failed: ${err instanceof Error ? err.message : String(err)}`)
+throw err
+
   }
 }
