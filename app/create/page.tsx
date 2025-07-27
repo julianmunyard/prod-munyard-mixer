@@ -17,6 +17,7 @@ import { convertToMp3 } from '@/lib/convertToMp3'
 
 
 
+
 function toSlug(input: string) {
   return input
     .trim()
@@ -435,7 +436,7 @@ if (selected) {
       cursor: 'pointer',
     }}
   >
-    Convert WAVs to MP3
+    UPLOAD
   </button>
 )}
 
