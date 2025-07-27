@@ -2,7 +2,10 @@ import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg'
 
 const ffmpeg = createFFmpeg({
   log: true,
-  corePath: `${location.origin}/ffmpeg/ffmpeg-core.js`, // ✅ fixed
+  corePath:
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/ffmpeg/ffmpeg-core.js`
+      : '/ffmpeg/ffmpeg-core.js',
 });
 
 export async function convertToMp3(file: File): Promise<File> {
