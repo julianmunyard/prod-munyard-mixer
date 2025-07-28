@@ -14,6 +14,26 @@ import VarispeedSlider from '../../../components/VarispeedSlider'
 import TransparentMixerLayout from '../../../components/TransparentMixerLayout'
 import WaveformScrubber from '../../../components/WaveformScrubber'
 
+function trimMp3EncoderDelay(buffer: AudioBuffer, ctx: AudioContext): AudioBuffer {
+  const OFFSET = 528;
+  const sampleRate = buffer.sampleRate;
+  const length = buffer.length - OFFSET;
+
+  const trimmed = ctx.createBuffer(
+    buffer.numberOfChannels,
+    length,
+    sampleRate
+  );
+
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    trimmed.copyToChannel(
+      buffer.getChannelData(ch).slice(OFFSET),
+      ch
+    );
+  }
+
+  return trimmed;
+}
 
 // ==================== 🧾 Types ====================
 type Song = {
@@ -59,6 +79,34 @@ export default function MixerPage() {
   const positionsRef = useRef<Record<string, number>>({});
   const [scrubPosition, setScrubPosition] = useState(0); // in seconds
   const [duration, setDuration] = useState(0); // in seconds. 
+  let lastToggleTime = 0;
+
+  
+
+
+function trimLeadingSilence(buffer: AudioBuffer, threshold = 0.00005): AudioBuffer {
+  const sampleRate = buffer.sampleRate;
+  let firstSample = 0;
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    if (Math.abs(data[i]) > threshold) {
+      firstSample = i;
+      break;
+    }
+  }
+
+  const trimmedLength = buffer.length - firstSample;
+  const trimmed = new AudioContext().createBuffer(buffer.numberOfChannels, trimmedLength, sampleRate);
+
+  for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+    const sliced = buffer.getChannelData(ch).slice(firstSample);
+    trimmed.copyToChannel(sliced, ch);
+  }
+
+  return trimmed;
+}
+
+
 
 
   // ==================== BROWSER DETECTION ====================
@@ -194,8 +242,10 @@ useEffect(() => {
         try {
           const res = await fetch(file)
           const arrayBuffer = await res.arrayBuffer()
-          const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
-          buffersRef.current[label] = audioBuffer
+
+const audioBuffer = await ctx.decodeAudioData(arrayBuffer)
+const trimmed = trimMp3EncoderDelay(audioBuffer, ctx);
+buffersRef.current[label] = trimmed;
 
           const gain = ctx.createGain()
 
@@ -252,106 +302,166 @@ useEffect(() => {
 
     init()
   }, [stems])
+const stopAll = async () => {
+  const ctx = audioCtxRef.current;
+  if (!ctx) return;
 
-// ==================== ▶️ Playback Logic ====================
-const stopAll = () => {
-  stems.forEach(({ label }) => {
-    const node = nodesRef.current[label];
-    if (!node) return;
-    // Ask processor for its current position
-    node.port.postMessage({ type: 'getPosition' });
-    node.port.onmessage = (e) => {
-      if (e.data.type === 'position') {
-        positionsRef.current[label] = e.data.position;
-      }
-    };
-    try {
-      node.disconnect();
-    } catch {}
+  const promises = stems.map(({ label }) => {
+    return new Promise<void>((resolve) => {
+      const node = nodesRef.current[label];
+      if (!node) return resolve();
+
+      const handle = (e: MessageEvent) => {
+        if (e.data.type === 'position') {
+          positionsRef.current[label] = e.data.position;
+          node.port.removeEventListener('message', handle);
+          resolve();
+        }
+      };
+
+      node.port.addEventListener('message', handle);
+      node.port.postMessage({ type: 'getPosition' });
+
+      setTimeout(() => {
+        node.port.removeEventListener('message', handle);
+        resolve();
+      }, 500);
+
+      try {
+        node.disconnect();
+      } catch {}
+    });
   });
+
+  await Promise.all(promises);
   nodesRef.current = {};
   setIsPlaying(false);
   isPlayingRef.current = false;
+  setAllReady(false);
 };
+
+interface CustomWorkletNode extends AudioWorkletNode {
+  started?: boolean;
+  label?: string;
+}
 
 const playAll = async () => {
   let ctx = audioCtxRef.current;
   if (!ctx || ctx.state === 'closed') {
     ctx = new AudioContext();
-    await ctx.audioWorklet.addModule('/granular-processor.js');
+    await ctx.audioWorklet.addModule(`/granular-processor.js?v=${Date.now()}`);
     audioCtxRef.current = ctx;
   }
 
   if (ctx.state === 'suspended') await ctx.resume();
-  stopAll();
+  await stopAll();
 
-  
-
+  const startDelay = 0.3;
+  const sharedStartTime = ctx.currentTime + startDelay;
+  const sharedPositions = { ...positionsRef.current };
+  const playbackRate = isIOS ? 2 - varispeed : varispeed;
   const effect = typeof songData?.effects === 'string' ? songData.effects : songData?.effects?.[0] || '';
-  const scheduledTime = ctx.currentTime + 0.1; // 100ms in the future for perfect sync
 
-  let nodeCount = 0; // <--- Track how many nodes are created
+  const scheduled: { node: CustomWorkletNode; label: string }[] = [];
 
-  stems.forEach(({ label }) => {
-    const buffer = buffersRef.current[label];
+  const minLength = Math.min(...stems.map(s => buffersRef.current[s.label]?.length || Infinity));
+
+  for (const { label } of stems) {
     const gain = gainNodesRef.current[label];
-    if (!buffer || !gain) return;
+    let buffer = buffersRef.current[label];
+    if (!gain || !buffer) continue;
+
+    // Trim to shortest
+    if (buffer.length > minLength) {
+      const trimmed = ctx.createBuffer(buffer.numberOfChannels, minLength, buffer.sampleRate);
+      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+        trimmed.copyToChannel(buffer.getChannelData(ch).slice(0, minLength), ch);
+      }
+      buffer = trimmed;
+    }
 
     const node = new AudioWorkletNode(ctx, 'granular-player', {
-      outputChannelCount: [2], // STEREO!
-    });
+      outputChannelCount: [2],
+    }) as CustomWorkletNode;
 
-node.port.onmessage = (e) => {
+    node.port.onmessage = (e) => {
   if (e.data.type === 'position') {
     positionsRef.current[label] = e.data.position;
+  }
+  if (e.data.type === 'desync') {
+    console.warn(`[${label}] ❌ DESYNC by ${e.data.delta.toFixed(3)}s`);
+  }
+};
+
+    node.label = label;
+    node.started = false;
+
+    // Set playback rate right now
+    node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime);
+
+    // Load buffer + start config
+node.port.onmessage = (e) => {
+  if (e.data.type === 'ready') {
+    node.port.postMessage({
+      type: 'scrub',
+      newPosition: sharedPositions[label] || 0,
+    });
+  }
+  if (e.data.type === 'position') {
+    positionsRef.current[label] = e.data.position;
+  }
+  if (e.data.type === 'desync') {
+    console.warn(`[${label}] ❌ DESYNC by ${e.data.delta.toFixed(3)}s`);
   }
 };
 
 node.port.postMessage({
   type: 'load',
   buffer: [
-    buffer.numberOfChannels > 0 ? buffer.getChannelData(0) : new Float32Array(buffer.length),
-    buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0)
+    buffer.getChannelData(0),
+    buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0),
   ],
-  startTime: scheduledTime,
-  startPosition: positionsRef.current[label] || 0, // <--- THIS LINE!
+  absoluteStartTime: sharedStartTime,
+  startPosition: sharedPositions[label] || 0,
 });
 
-    const playbackRate = isIOS ? 2 - varispeed : varispeed;
-    node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime);
+// ✅ Force immediate position sync
+node.port.postMessage({
+  type: 'scrub',
+  newPosition: sharedPositions[label] || 0,
+});
+    // Hook port for scrubbing only
+    node.port.onmessage = (e) => {
+      if (e.data.type === 'position') {
+        positionsRef.current[label] = e.data.position;
+      }
+    };
 
-    const soloed = Object.values(solos).some(Boolean)
-    const shouldPlay = soloed ? solos[label] : !mutes[label]
-    gain.gain.value = shouldPlay ? volumes[label] : 0
-
-    if (shouldPlay) nodeCount++; // <--- Only count nodes that actually play
+    // Wire audio routing BEFORE the scheduled time
+    const soloed = Object.values(solos).some(Boolean);
+    const shouldPlay = soloed ? solos[label] : !mutes[label];
+    gain.gain.setValueAtTime(shouldPlay ? volumes[label] : 0, ctx.currentTime);
 
     if (effect === 'phaser') {
-      const wet = phaserWetRef.current[label]
-      const dry = phaserDryRef.current[label]
-      if (!wet || !dry) return
-      wet.gain.value = delays[label]
-      dry.gain.value = 1 - delays[label]
-      node.connect(dry)
-      node.connect(wet)
+      node.connect(phaserWetRef.current[label]);
+      node.connect(phaserDryRef.current[label]);
     } else {
-      const delay = delayNodesRef.current[label]
-      if (!delay) return
-      node.connect(delay)
+      node.connect(delayNodesRef.current[label]);
     }
 
-    nodesRef.current[label] = node
-  });
-
-  // Only set playing state if there are active nodes!
-  if (nodeCount > 0) {
-    setIsPlaying(true);
-    isPlayingRef.current = true;
-  } else {
-    setIsPlaying(false);
-    isPlayingRef.current = false;
+    nodesRef.current[label] = node;
+    scheduled.push({ node, label });
   }
-}
+
+  // No need to wait for .ready — launch is hard scheduled
+  setIsPlaying(true);
+  isPlayingRef.current = true;
+  setAllReady(true);
+};
+
+
+
+
 
 
   // Cleanup when component unmounts
@@ -406,20 +516,26 @@ node.port.postMessage({
 // ==================== ⌨️ Space Bar Play/Stop (Robust with isPlaying) ====================
 useEffect(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
-    // ...
     if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
       e.preventDefault();
-      if (!allReady) return;
-      if (isPlaying) {
+
+      const now = Date.now();
+      if (now - lastToggleTime < 400) return; // debounce: block rapid toggle
+      lastToggleTime = now;
+
+      if (!allReady && !isPlayingRef.current) return;
+
+      if (isPlayingRef.current) {
         stopAll();
       } else {
         playAll();
       }
     }
   };
+
   window.addEventListener('keydown', handleKeyDown);
   return () => window.removeEventListener('keydown', handleKeyDown);
-}, [allReady, isPlaying]);
+}, [allReady]);
 
 
 
@@ -452,16 +568,22 @@ function formatTime(secs: number) {
 
 // Handle user scrub (seek)
 function handleScrub(newPos: number) {
-  // 1. Stop playback, update positions, then restart
-  const wasPlaying = isPlaying; // track current playing state
-  stopAll();
+  const sampleRate = buffersRef.current[stems[0]?.label!]?.sampleRate || 44100;
+  const newPosition = newPos * sampleRate;
+
   stems.forEach(({ label }) => {
-    positionsRef.current[label] = newPos * (buffersRef.current[label]?.sampleRate || 44100);
+    const node = nodesRef.current[label];
+    const buffer = buffersRef.current[label];
+    if (!node || !buffer) return;
+
+    // Update local position
+    positionsRef.current[label] = newPosition;
+
+    // Send scrub command to processor
+    node.port.postMessage({ type: 'scrub', newPosition });
   });
+
   setScrubPosition(newPos);
-  if (wasPlaying) {
-    playAll();
-  }
 }
 
 

@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid'
 import axios, { AxiosProgressEvent } from 'axios'
 import { HexColorPicker } from 'react-colorful'
 import MiniMixerPreview from '../components/MiniMixerPreview'
-import { convertToMp3 } from '@/lib/convertToMp3'
+import { convertToOgg } from '@/lib/convertToOgg';
 
 
 
@@ -50,6 +50,8 @@ export default function Create() {
   const [showEffectDropdown, setShowEffectDropdown] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [hasWavs, setHasWavs] = useState(false)
+  const [convertStatus, setConvertStatus] = useState<'idle' | 'uploading' | 'done'>('idle')
+  const [dotCount, setDotCount] = useState(0)
 
 
 
@@ -86,9 +88,17 @@ useEffect(() => {
   }, [])
 
 
+
   
 const handleConvertAllToMp3 = async () => {
   if (!stems) return
+
+  setConvertStatus('uploading')
+  setDotCount(0)
+
+  const interval = setInterval(() => {
+    setDotCount((prev) => (prev >= 3 ? 0 : prev + 1))
+  }, 500)
 
   const convertedFiles: File[] = []
 
@@ -96,11 +106,14 @@ const handleConvertAllToMp3 = async () => {
     const file = stems[i]
     if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
       try {
-        const mp3 = await convertToMp3(file)
-        convertedFiles.push(mp3)
+const ogg = await convertToOgg(file)
+convertedFiles.push(ogg)
       } catch (err) {
+        clearInterval(interval)
+        setDotCount(0) // ✅ fix: reset dots on error too
         console.error(`Failed to convert ${file.name}:`, err)
         alert(`Conversion failed for ${file.name}`)
+        setConvertStatus('idle')
         return
       }
     } else {
@@ -108,12 +121,24 @@ const handleConvertAllToMp3 = async () => {
     }
   }
 
+  clearInterval(interval)
+  setConvertStatus('done')
+
+  // Replace WAVs with converted MP3s
   const newFileList = new DataTransfer()
   convertedFiles.forEach((f) => newFileList.items.add(f))
   setStems(newFileList.files)
   setUploadedFiles(Array.from(newFileList.files).map((f) => f.name))
-  setHasWavs(false)
+
+  // ✅ Wait 3 seconds before hiding the button
+  setTimeout(() => {
+    setConvertStatus('idle')
+    setDotCount(0)
+    setHasWavs(false)
+  }, 3000)
 }
+
+
 
 
 const uploadFileWithProgress = async (file: File): Promise<string> => {
@@ -207,18 +232,18 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       let processedFile = file
 
-      if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
-        try {
-          console.log(`🎛 Converting ${file.name} to MP3...`)
-          processedFile = await convertToMp3(file)
-          console.log('✅ Conversion complete:', processedFile.name)
-        } catch (err) {
-          console.error('❌ MP3 conversion failed:', err)
-          alert('Failed to convert WAV to MP3.')
-          setIsSubmitting(false)
-          return
-        }
-      }
+ if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
+  try {
+    console.log(`🎛 Converting ${file.name} to OGG...`)
+    processedFile = await convertToOgg(file)
+    console.log('✅ Conversion complete:', processedFile.name)
+  } catch (err) {
+    console.error('❌ OGG conversion failed:', err)
+    alert('Failed to convert WAV to OGG.')
+    setIsSubmitting(false)
+    return
+  }
+}
 
       try {
         const publicUrl = await uploadFileWithProgress(processedFile)
@@ -421,24 +446,7 @@ if (selected) {
             )}
           </label>
 
-          {hasWavs && (
-  <button
-    type="button"
-    onClick={handleConvertAllToMp3}
-    style={{
-      marginTop: '1rem',
-      padding: '0.6rem 1rem',
-      backgroundColor: '#B8001F',
-      color: 'white',
-      border: 'none',
-      fontSize: '1rem',
-      borderRadius: '4px',
-      cursor: 'pointer',
-    }}
-  >
-    UPLOAD
-  </button>
-)}
+
 
           
 
@@ -548,6 +556,29 @@ if (selected) {
               </div>
             </div>
           )}
+
+
+{hasWavs && (
+  <button
+    type="button"
+    onClick={handleConvertAllToMp3}
+    disabled={convertStatus === 'uploading'}
+    style={{
+      marginTop: '1rem',
+      padding: '0.6rem 1rem',
+      backgroundColor: '#B8001F',
+      color: 'white',
+      border: 'none',
+      fontSize: '1rem',
+      borderRadius: '4px',
+      cursor: convertStatus === 'uploading' ? 'not-allowed' : 'pointer',
+    }}
+  >
+    {convertStatus === 'idle' && 'UPLOAD'}
+    {convertStatus === 'uploading' && (dotCount === 0 ? 'UPLOADING' : `UPLOADING ${'.'.repeat(dotCount)}`)}
+    {convertStatus === 'done' && 'DONE!'}
+  </button>
+)}
 
 <div style={{ position: 'relative', width: '100%' }}>
   <label style={{ display: 'block', marginBottom: '0.5rem' }}>Choose Your Mixer Theme</label>

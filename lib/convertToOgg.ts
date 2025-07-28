@@ -1,4 +1,4 @@
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg'
+import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 
 const ffmpeg = createFFmpeg({
   log: true,
@@ -8,7 +8,7 @@ const ffmpeg = createFFmpeg({
       : '/ffmpeg/ffmpeg-core.js',
 });
 
-export async function convertToMp3(file: File): Promise<File> {
+export async function convertToOgg(file: File): Promise<File> {
   if (!file.type.startsWith('audio/')) {
     throw new Error('Invalid audio file type');
   }
@@ -25,22 +25,23 @@ export async function convertToMp3(file: File): Promise<File> {
     }
 
     const inputName = file.name;
-    const outputName = inputName.replace(/\.[^/.]+$/, '.mp3');
+    const outputName = inputName.replace(/\.[^/.]+$/, '.ogg');
 
-    // Safety: Remove old files if still in FS
+    // Clean up previous files
     try { ffmpeg.FS('unlink', inputName); } catch {}
     try { ffmpeg.FS('unlink', outputName); } catch {}
 
     console.log(`📥 Writing ${inputName} to FFmpeg`);
     ffmpeg.FS('writeFile', inputName, await fetchFile(file));
 
-    console.log(`🎛️ Converting ${inputName} to MP3`);
+    console.log(`🎛️ Converting ${inputName} to OGG`);
     await ffmpeg.run(
       '-i', inputName,
-      '-ac', '2',             // 🔊 stereo
-      '-ar', '44100',         // 🎚️ standard sample rate
-      '-b:a', '192k',         // 🎧 bitrate (customizable)
-      '-c:a', 'libmp3lame',   // 🧠 encoder
+      '-af', 'atrim=start=0',
+      '-ac', '2',
+      '-ar', '44100',
+      '-c:a', 'libvorbis',
+      '-qscale:a', '5',
       outputName
     );
 
@@ -53,29 +54,29 @@ export async function convertToMp3(file: File): Promise<File> {
 
     const data = ffmpeg.FS('readFile', outputName);
 
-    // Clean up
+    // Cleanup
     ffmpeg.FS('unlink', inputName);
     ffmpeg.FS('unlink', outputName);
 
-    console.log(`✅ MP3 conversion complete: ${outputName}`);
-    return new File([data], outputName, { type: 'audio/mp3' });
+    console.log(`✅ OGG conversion complete: ${outputName}`);
+    return new File([data], outputName, { type: 'audio/ogg' });
 
   } catch (err) {
-    console.error('❌ MP3 conversion failed:', err);
-    alert(`MP3 conversion failed: ${err instanceof Error ? err.message : String(err)}`);
+    console.error('❌ OGG conversion failed:', err);
+    alert(`OGG conversion failed: ${err instanceof Error ? err.message : String(err)}`);
     throw err;
   }
 }
 
-export async function convertAllToMp3(files: File[]): Promise<File[]> {
+export async function convertAllToOgg(files: File[]): Promise<File[]> {
   const converted: File[] = [];
 
   for (const file of files) {
-    console.log(`🎧 Starting MP3 conversion for: ${file.name}`);
-    const mp3 = await convertToMp3(file);
-    converted.push(mp3);
+    console.log(`🎧 Starting OGG conversion for: ${file.name}`);
+    const ogg = await convertToOgg(file);
+    converted.push(ogg);
   }
 
-  console.log('✅ All stems converted to MP3');
+  console.log('✅ All stems converted to OGG');
   return converted;
 }
