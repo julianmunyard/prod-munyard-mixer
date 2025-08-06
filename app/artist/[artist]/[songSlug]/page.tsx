@@ -12,7 +12,12 @@ import DelayKnob from '../../../components/DelayKnob'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import TransparentMixerLayout from '../../../components/TransparentMixerLayout'
-import WaveformScrubber from '../../../components/WaveformScrubber'
+import FullWaveformScrubber from '../../../components/FullWaveformScrubber';
+
+
+
+
+
 
 function trimMp3EncoderDelay(buffer: AudioBuffer, ctx: AudioContext): AudioBuffer {
   const OFFSET = 528;
@@ -80,6 +85,13 @@ export default function MixerPage() {
   const [scrubPosition, setScrubPosition] = useState(0); // in seconds
   const [duration, setDuration] = useState(0); // in seconds. 
   let lastToggleTime = 0;
+  const cycleWaveformBufferRef = useRef<AudioBuffer | null>(null);
+  const [cycleReady, setCycleReady] = useState(false);
+  const lastStartSampleRef = useRef<Record<string, number>>({});
+const lastChunkEndSampleRef = useRef<Record<string, number>>({});
+ 
+
+
 
   
 
@@ -106,7 +118,12 @@ function trimLeadingSilence(buffer: AudioBuffer, threshold = 0.00005): AudioBuff
   return trimmed;
 }
 
-
+function mergeFloat32Arrays(a: Float32Array, b: Float32Array): Float32Array {
+  const result = new Float32Array(a.length + b.length);
+  result.set(a, 0);
+  result.set(b, a.length);
+  return result;
+}
 
 
   // ==================== BROWSER DETECTION ====================
@@ -341,11 +358,61 @@ const stopAll = async () => {
 };
 
 interface CustomWorkletNode extends AudioWorkletNode {
-  started?: boolean;
   label?: string;
+  started?: boolean;
+  appending?: boolean; // ✅ Add this line
 }
 
+
+const cycleStartBar = useRef<number>(0);
+
+// 🔁 Decoder thing
+const combinedWaveformBufferRef = useRef<AudioBuffer | null>(null);
+
+useEffect(() => {
+  const ctx = new AudioContext();
+
+  const generateCombinedWaveform = async () => {
+    if (stems.length === 0) return;
+
+    try {
+      const decodedStems = await Promise.all(
+        stems.map(async ({ file }) => {
+          const res = await fetch(file);
+          const buffer = await res.arrayBuffer();
+          return await ctx.decodeAudioData(buffer);
+        })
+      );
+
+      const minLength = Math.min(...decodedStems.map(b => b.length));
+      const sampleRate = decodedStems[0].sampleRate;
+      const output = ctx.createBuffer(1, minLength, sampleRate);
+      const out = output.getChannelData(0);
+
+      for (let i = 0; i < minLength; i++) {
+        let sum = 0;
+        for (const b of decodedStems) {
+          const ch = b.numberOfChannels > 1 ? b.getChannelData(0)[i] : 0;
+          sum += ch;
+        }
+        out[i] = sum / decodedStems.length;
+      }
+
+      combinedWaveformBufferRef.current = output;
+      console.log('✅ Combined waveform ready');
+    } catch (err) {
+      console.error('❌ Failed to generate waveform buffer', err);
+    }
+  };
+
+  generateCombinedWaveform();
+}, [stems]);
+
+//PLAY ALL//
+
 const playAll = async () => {
+  if (!songData || stems.length === 0) return;
+
   let ctx = audioCtxRef.current;
   if (!ctx || ctx.state === 'closed') {
     ctx = new AudioContext();
@@ -356,88 +423,109 @@ const playAll = async () => {
   if (ctx.state === 'suspended') await ctx.resume();
   await stopAll();
 
-  const startDelay = 0.3;
-  const sharedStartTime = ctx.currentTime + startDelay;
-  const sharedPositions = { ...positionsRef.current };
+  const sharedStartTime = ctx.currentTime + 0.3;
   const playbackRate = isIOS ? 2 - varispeed : varispeed;
-  const effect = typeof songData?.effects === 'string' ? songData.effects : songData?.effects?.[0] || '';
+  const bpm = songData.bpm || 120;
+  const chunkSec = (60 / bpm) * 16;
 
-  const scheduled: { node: CustomWorkletNode; label: string }[] = [];
-
-  const minLength = Math.min(...stems.map(s => buffersRef.current[s.label]?.length || Infinity));
+  const effect = typeof songData.effects === 'string'
+    ? songData.effects
+    : songData.effects?.[0] || '';
 
   for (const { label } of stems) {
     const gain = gainNodesRef.current[label];
-    let buffer = buffersRef.current[label];
+    const buffer = buffersRef.current[label];
     if (!gain || !buffer) continue;
 
-    // Trim to shortest
-    if (buffer.length > minLength) {
-      const trimmed = ctx.createBuffer(buffer.numberOfChannels, minLength, buffer.sampleRate);
+    const sampleRate = buffer.sampleRate;
+    const chunkSamples = Math.floor(chunkSec * sampleRate);
+    const resumeSample = lastStartSampleRef.current[label] || 0;
+
+    const makeChunk = (start: number, end: number) => {
+      const len = end - start;
+      const chunk = ctx.createBuffer(buffer.numberOfChannels, len, sampleRate);
       for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-        trimmed.copyToChannel(buffer.getChannelData(ch).slice(0, minLength), ch);
+        chunk.copyToChannel(buffer.getChannelData(ch).slice(start, end), ch);
       }
-      buffer = trimmed;
-    }
+      return chunk;
+    };
+
+    const appendChunk = (node: AudioWorkletNode) => {
+      const nextStart = lastChunkEndSampleRef.current[label];
+      const nextEnd = Math.min(nextStart + chunkSamples, buffer.length);
+      if (nextEnd <= nextStart) return;
+
+      const chunk = makeChunk(nextStart, nextEnd);
+      console.log(`[${label}] 🔁 Appending chunk: ${nextStart} → ${nextEnd}`);
+
+      node.port.postMessage({
+        type: 'appendBuffer',
+        buffer: [
+          chunk.getChannelData(0),
+          chunk.numberOfChannels > 1 ? chunk.getChannelData(1) : chunk.getChannelData(0),
+        ],
+      });
+
+      lastChunkEndSampleRef.current[label] = nextEnd;
+    };
+
+    const firstEnd = Math.min(resumeSample + chunkSamples, buffer.length);
+    const firstChunk = makeChunk(resumeSample, firstEnd);
 
     const node = new AudioWorkletNode(ctx, 'granular-player', {
       outputChannelCount: [2],
     }) as CustomWorkletNode;
 
-    node.port.onmessage = (e) => {
-  if (e.data.type === 'position') {
-    positionsRef.current[label] = e.data.position;
-  }
-  if (e.data.type === 'desync') {
-    console.warn(`[${label}] ❌ DESYNC by ${e.data.delta.toFixed(3)}s`);
-  }
-};
-
     node.label = label;
     node.started = false;
-
-    // Set playback rate right now
     node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime);
+    lastChunkEndSampleRef.current[label] = firstEnd;
 
-    // Load buffer + start config
-node.port.onmessage = (e) => {
-  if (e.data.type === 'ready') {
-    node.port.postMessage({
-      type: 'scrub',
-      newPosition: sharedPositions[label] || 0,
-    });
-  }
-  if (e.data.type === 'position') {
-    positionsRef.current[label] = e.data.position;
-  }
-  if (e.data.type === 'desync') {
-    console.warn(`[${label}] ❌ DESYNC by ${e.data.delta.toFixed(3)}s`);
-  }
-};
-
-node.port.postMessage({
-  type: 'load',
-  buffer: [
-    buffer.getChannelData(0),
-    buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : buffer.getChannelData(0),
-  ],
-  absoluteStartTime: sharedStartTime,
-  startPosition: sharedPositions[label] || 0,
-});
-
-// ✅ Force immediate position sync
-node.port.postMessage({
-  type: 'scrub',
-  newPosition: sharedPositions[label] || 0,
-});
-    // Hook port for scrubbing only
+    // Position + buffer tracking
     node.port.onmessage = (e) => {
       if (e.data.type === 'position') {
-        positionsRef.current[label] = e.data.position;
+        const pos = e.data.position;
+        positionsRef.current[label] = pos;
+        lastStartSampleRef.current[label] = pos;
+
+        const remaining = lastChunkEndSampleRef.current[label] - pos;
+        const secLeft = remaining / sampleRate;
+
+        console.log(`[${label}] pos: ${pos}, remaining: ${secLeft.toFixed(2)}s`);
+
+        if (secLeft < 2.0) {
+          appendChunk(node);
+        }
+      }
+
+      if (e.data.type === 'endOfBuffer') {
+        console.log(`[${label}] ⛔️ Reached end of buffer — trying to append`);
+        appendChunk(node);
       }
     };
 
-    // Wire audio routing BEFORE the scheduled time
+    // Start polling loop
+    const startPolling = () => {
+      if (!isPlayingRef.current) return;
+      node.port.postMessage({ type: 'getPosition' });
+      setTimeout(startPolling, 250);
+    };
+
+    // Initial load
+    node.port.postMessage({
+      type: 'load',
+      buffer: [
+        firstChunk.getChannelData(0),
+        firstChunk.numberOfChannels > 1 ? firstChunk.getChannelData(1) : firstChunk.getChannelData(0),
+      ],
+      absoluteStartTime: sharedStartTime,
+      startPosition: resumeSample,
+    });
+
+    node.port.postMessage({ type: 'scrub', newPosition: resumeSample });
+    startPolling();
+
+    // Routing
     const soloed = Object.values(solos).some(Boolean);
     const shouldPlay = soloed ? solos[label] : !mutes[label];
     gain.gain.setValueAtTime(shouldPlay ? volumes[label] : 0, ctx.currentTime);
@@ -450,10 +538,8 @@ node.port.postMessage({
     }
 
     nodesRef.current[label] = node;
-    scheduled.push({ node, label });
   }
 
-  // No need to wait for .ready — launch is hard scheduled
   setIsPlaying(true);
   isPlayingRef.current = true;
   setAllReady(true);
@@ -463,68 +549,63 @@ node.port.postMessage({
 
 
 
+useEffect(() => {
+  return () => {
+    stopAll();
+    audioCtxRef.current?.close();
+  };
+}, []);
 
-  // Cleanup when component unmounts
-  useEffect(() => {
-    return () => {
-      stopAll()
-      audioCtxRef.current?.close()
+useEffect(() => {
+  const ctx = audioCtxRef.current;
+  if (!ctx) return;
+  const eighth = 60 / 120 / 2;
+
+  stems.forEach(({ label }) => {
+    const gain = gainNodesRef.current[label];
+    const delay = delayNodesRef.current[label];
+    const feedback = feedbackGainsRef.current[label];
+    if (!gain) return;
+
+    const soloed = Object.values(solos).some(Boolean);
+    const shouldPlay = soloed ? solos[label] : !mutes[label];
+    gain.gain.value = shouldPlay ? volumes[label] : 0;
+
+    if (delay && feedback) {
+      delay.delayTime.value = eighth;
+      feedback.gain.setTargetAtTime(delays[label] || 0, ctx.currentTime, 2.5);
     }
-  }, [])
 
-  // Playback volume, delay, and wet/dry value sync
-  useEffect(() => {
-    const ctx = audioCtxRef.current
-    if (!ctx) return
-    const eighth = 60 / 120 / 2
+    const wet = phaserWetRef.current[label];
+    const dry = phaserDryRef.current[label];
+    if (wet && dry) {
+      wet.gain.value = delays[label];
+      dry.gain.value = 1 - delays[label];
+    }
+  });
+}, [volumes, mutes, solos, delays]);
 
-    stems.forEach(({ label }) => {
-      const gain = gainNodesRef.current[label]
-      const delay = delayNodesRef.current[label]
-      const feedback = feedbackGainsRef.current[label]
-      if (!gain) return
+useEffect(() => {
+  const ctx = audioCtxRef.current;
+  if (!ctx) return;
+  Object.values(nodesRef.current).forEach((node) => {
+    const playbackRate = isInstagram
+      ? varispeed
+      : isIOS
+      ? 2 - varispeed
+      : varispeed;
+    node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime);
+  });
+}, [varispeed]);
 
-      const soloed = Object.values(solos).some(Boolean)
-      const shouldPlay = soloed ? solos[label] : !mutes[label]
-      gain.gain.value = shouldPlay ? volumes[label] : 0
-
-      if (delay && feedback) {
-        delay.delayTime.value = eighth
-        feedback.gain.setTargetAtTime(delays[label] || 0, ctx.currentTime, 2.5)
-      }
-
-      const wet = phaserWetRef.current[label]
-      const dry = phaserDryRef.current[label]
-      if (wet && dry) {
-        wet.gain.value = delays[label]
-        dry.gain.value = 1 - delays[label]
-      }
-    })
-
-  }, [volumes, mutes, solos, delays])
-
-  // Varispeed sync
-  useEffect(() => {
-    const ctx = audioCtxRef.current
-    if (!ctx) return
-    Object.values(nodesRef.current).forEach((node) => {
-      const playbackRate = isInstagram ? varispeed : (isIOS ? 2 - varispeed : varispeed)
-      node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime)
-    })
-  }, [varispeed])
-
-// ==================== ⌨️ Space Bar Play/Stop (Robust with isPlaying) ====================
 useEffect(() => {
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
       e.preventDefault();
-
       const now = Date.now();
-      if (now - lastToggleTime < 400) return; // debounce: block rapid toggle
+      if (now - lastToggleTime < 400) return;
       lastToggleTime = now;
-
       if (!allReady && !isPlayingRef.current) return;
-
       if (isPlayingRef.current) {
         stopAll();
       } else {
@@ -532,21 +613,17 @@ useEffect(() => {
       }
     }
   };
-
   window.addEventListener('keydown', handleKeyDown);
   return () => window.removeEventListener('keydown', handleKeyDown);
 }, [allReady]);
 
-
-
-
 useEffect(() => {
-  if (!isPlaying) return;
+  if (!isPlaying || stems.length === 0) return;
   let raf: number;
   const update = () => {
     const label = stems[0]?.label;
     const buf = buffersRef.current[label];
-    if (buf) {
+    if (label && buf) {
       setScrubPosition((positionsRef.current[label] || 0) / buf.sampleRate);
     }
     raf = requestAnimationFrame(update);
@@ -557,18 +634,19 @@ useEffect(() => {
   };
 }, [isPlaying, stems.length]);
 
-
-// Helper to format seconds as mm:ss
 function formatTime(secs: number) {
-  if (!secs || isNaN(secs)) return "0:00";
+  if (!secs || isNaN(secs)) return '0:00';
   const m = Math.floor(secs / 60);
   const s = Math.floor(secs % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-// Handle user scrub (seek)
 function handleScrub(newPos: number) {
-  const sampleRate = buffersRef.current[stems[0]?.label!]?.sampleRate || 44100;
+  const label = stems[0]?.label;
+  const sampleRate = label
+    ? buffersRef.current[label]?.sampleRate || 44100
+    : 44100;
+
   const newPosition = newPos * sampleRate;
 
   stems.forEach(({ label }) => {
@@ -576,10 +654,7 @@ function handleScrub(newPos: number) {
     const buffer = buffersRef.current[label];
     if (!node || !buffer) return;
 
-    // Update local position
     positionsRef.current[label] = newPosition;
-
-    // Send scrub command to processor
     node.port.postMessage({ type: 'scrub', newPosition });
   });
 
@@ -705,16 +780,33 @@ return (
           </button>
         </div>
 
-{/* === SCRUBBER / TIMELINE === */}
-{duration > 0 && (
-<WaveformScrubber
-  buffer={buffersRef.current[stems[0]?.label]}
-  scrubPosition={scrubPosition}
-  duration={duration}
-  primary={primary}
-  onScrub={handleScrub}
-/>
-)}
+{(() => {
+  const label = stems?.[0]?.label || '';
+  const buffer = buffersRef.current[label];
+  const sampleRate = buffer?.sampleRate || 44100;
+
+  return (
+    <FullWaveformScrubber
+      buffer={
+        buffer ?? new AudioContext().createBuffer(1, 44100, 44100)
+      }
+      duration={buffer?.duration ?? 30}
+      position={
+        (positionsRef.current[label] ?? 0) / sampleRate
+      }
+      bpm={songData?.bpm ?? 120}
+      onScrub={(newSeconds: number) => {
+        const newSamples = Math.floor(newSeconds * sampleRate);
+        stems.forEach(({ label }) => {
+          positionsRef.current[label] = newSamples;
+        });
+        playAll();
+      }}
+    />
+  );
+})()}
+
+
 
 
 
