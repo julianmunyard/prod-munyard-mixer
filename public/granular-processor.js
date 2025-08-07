@@ -8,6 +8,7 @@ class GranularProcessor extends AudioWorkletProcessor {
     this.absoluteStartTime = 0;
     this.startPosition = 0;
     this.hasStarted = false;
+    this.warnedLowBuffer = false; // ✅ NEW
 
     this.port.onmessage = (e) => {
       switch (e.data.type) {
@@ -18,6 +19,7 @@ class GranularProcessor extends AudioWorkletProcessor {
           this.absoluteStartTime = e.data.absoluteStartTime || 0;
           this.position = this.startPosition;
           this.hasStarted = false;
+          this.warnedLowBuffer = false; // ✅ RESET
           this.port.postMessage({ type: 'ready' });
           break;
         }
@@ -33,6 +35,7 @@ class GranularProcessor extends AudioWorkletProcessor {
           const newOffset = lastOffset + lastLength;
           this.buffers.push(e.data.buffer);
           this.bufferOffsets.push(newOffset);
+          this.warnedLowBuffer = false; // ✅ RESET when buffer added
           break;
         }
 
@@ -69,77 +72,89 @@ class GranularProcessor extends AudioWorkletProcessor {
     ];
   }
 
-process(inputs, outputs, parameters) {
-  const output = outputs[0];
-  const leftOut = output[0];
-  const rightOut = output[1] || leftOut;
-  const rateParam = parameters.playbackRate;
-  const rate = rateParam.length === 1 ? rateParam[0] : this.playbackRate;
+  process(inputs, outputs, parameters) {
+    const output = outputs[0];
+    const leftOut = output[0];
+    const rightOut = output[1] || leftOut;
+    const rateParam = parameters.playbackRate;
+    const rate = rateParam.length === 1 ? rateParam[0] : this.playbackRate;
 
-  const now = currentFrame / sampleRate;
+    const now = currentFrame / sampleRate;
 
-  if (now < this.absoluteStartTime) {
-    leftOut.fill(0);
-    rightOut.fill(0);
-    return true;
-  }
-
-  if (!this.hasStarted) {
-    this.position = this.startPosition;
-    this.hasStarted = true;
-
-    const delta = now - this.absoluteStartTime;
-    if (delta > 0.002) {
-      this.port.postMessage({ type: 'desync', delta });
+    if (now < this.absoluteStartTime) {
+      leftOut.fill(0);
+      rightOut.fill(0);
+      return true;
     }
-  }
 
-  let sentEnd = false;
+    if (!this.hasStarted) {
+      this.position = this.startPosition;
+      this.hasStarted = true;
 
-  for (let i = 0; i < leftOut.length; i++) {
-    const globalIdx = this.position;
-    let sample = [0, 0];
-    let found = false;
-
-    for (let b = 0; b < this.buffers.length; b++) {
-      const offset = this.bufferOffsets[b];
-      const leftBuf = this.buffers[b][0];
-      const rightBuf = this.buffers[b][1] || leftBuf;
-
-      const localIdx = globalIdx - offset;
-      if (localIdx >= 0 && localIdx < leftBuf.length - 1) {
-        const i0 = Math.floor(localIdx);
-        const i1 = i0 + 1;
-        const frac = localIdx - i0;
-
-        const leftSample = (1 - frac) * leftBuf[i0] + frac * (leftBuf[i1] || 0);
-        const rightSample = (1 - frac) * rightBuf[i0] + frac * (rightBuf[i1] || 0);
-        sample = [leftSample, rightSample];
-        found = true;
-        break;
+      const delta = now - this.absoluteStartTime;
+      if (delta > 0.002) {
+        this.port.postMessage({ type: 'desync', delta });
       }
     }
 
-if (found) {
-  leftOut[i] = sample[0];
-  rightOut[i] = sample[1];
-} else {
-  leftOut[i] = 0;
-  rightOut[i] = 0;
+    // ✅ EARLY BUFFER WARNING (NEW)
+    const bufferEnd = this.bufferOffsets.length
+      ? this.bufferOffsets[this.bufferOffsets.length - 1] +
+        (this.buffers[this.buffers.length - 1]?.[0]?.length || 0)
+      : 0;
+    const samplesLeft = bufferEnd - this.position;
+    const secondsLeft = samplesLeft / sampleRate;
 
-  if (!sentEnd) {
-    console.log(`[Worklet] Hit end of buffer at ${this.position.toFixed(2)}`); // ← DEBUG LINE
-    this.port.postMessage({ type: 'endOfBuffer' });
-    sentEnd = true;
+    if (secondsLeft < 2.0 && !this.warnedLowBuffer) {
+      this.port.postMessage({ type: 'endOfBuffer' }); // early request
+      this.warnedLowBuffer = true;
+    }
+
+    let sentEnd = false;
+
+    for (let i = 0; i < leftOut.length; i++) {
+      const globalIdx = this.position;
+      let sample = [0, 0];
+      let found = false;
+
+      for (let b = 0; b < this.buffers.length; b++) {
+        const offset = this.bufferOffsets[b];
+        const leftBuf = this.buffers[b][0];
+        const rightBuf = this.buffers[b][1] || leftBuf;
+
+        const localIdx = globalIdx - offset;
+        if (localIdx >= 0 && localIdx < leftBuf.length - 1) {
+          const i0 = Math.floor(localIdx);
+          const i1 = i0 + 1;
+          const frac = localIdx - i0;
+
+          const leftSample = (1 - frac) * leftBuf[i0] + frac * (leftBuf[i1] || 0);
+          const rightSample = (1 - frac) * rightBuf[i0] + frac * (rightBuf[i1] || 0);
+          sample = [leftSample, rightSample];
+          found = true;
+          break;
+        }
+      }
+
+      if (found) {
+        leftOut[i] = sample[0];
+        rightOut[i] = sample[1];
+      } else {
+        leftOut[i] = 0;
+        rightOut[i] = 0;
+
+        if (!sentEnd) {
+          this.port.postMessage({ type: 'endOfBuffer' });
+          sentEnd = true;
+        }
+      }
+
+      const step = rateParam.length > 1 ? rateParam[i] : rate;
+      this.position += step;
+    }
+
+    return true;
   }
-}
-
-    const step = rateParam.length > 1 ? rateParam[i] : rate;
-    this.position += step;
-  }
-
-  return true;
-}
 }
 
 registerProcessor('granular-player', GranularProcessor);

@@ -423,54 +423,57 @@ const playAll = async () => {
   if (ctx.state === 'suspended') await ctx.resume();
   await stopAll();
 
-  const sharedStartTime = ctx.currentTime + 0.3;
   const playbackRate = isIOS ? 2 - varispeed : varispeed;
   const bpm = songData.bpm || 120;
   const chunkSec = (60 / bpm) * 16;
+  const sampleRate = 44100;
+  const chunkSamples = Math.floor(chunkSec * sampleRate);
+  const bytesPerSample = 2;
+  const channels = 2;
 
   const effect = typeof songData.effects === 'string'
     ? songData.effects
     : songData.effects?.[0] || '';
 
-  for (const { label } of stems) {
-    const gain = gainNodesRef.current[label];
-    const buffer = buffersRef.current[label];
-    if (!gain || !buffer) continue;
+  // Step 1: Decode first + second chunk of all stems BEFORE starting
+  const firstChunks = await Promise.all(
+    stems.map(async ({ label, file }) => {
+      const resumeSample = lastStartSampleRef.current[label] || 0;
+      const firstEnd = resumeSample + chunkSamples;
+      lastChunkEndSampleRef.current[label] = firstEnd;
 
-    const sampleRate = buffer.sampleRate;
-    const chunkSamples = Math.floor(chunkSec * sampleRate);
-    const resumeSample = lastStartSampleRef.current[label] || 0;
+      const byteStart1 = resumeSample * bytesPerSample * channels;
+      const byteEnd1 = firstEnd * bytesPerSample * channels - 1;
 
-    const makeChunk = (start: number, end: number) => {
-      const len = end - start;
-      const chunk = ctx.createBuffer(buffer.numberOfChannels, len, sampleRate);
-      for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
-        chunk.copyToChannel(buffer.getChannelData(ch).slice(start, end), ch);
-      }
-      return chunk;
-    };
-
-    const appendChunk = (node: AudioWorkletNode) => {
-      const nextStart = lastChunkEndSampleRef.current[label];
-      const nextEnd = Math.min(nextStart + chunkSamples, buffer.length);
-      if (nextEnd <= nextStart) return;
-
-      const chunk = makeChunk(nextStart, nextEnd);
-      console.log(`[${label}] 🔁 Appending chunk: ${nextStart} → ${nextEnd}`);
-
-      node.port.postMessage({
-        type: 'appendBuffer',
-        buffer: [
-          chunk.getChannelData(0),
-          chunk.numberOfChannels > 1 ? chunk.getChannelData(1) : chunk.getChannelData(0),
-        ],
+      const res1 = await fetch(file, {
+        headers: { Range: `bytes=${byteStart1}-${byteEnd1}` },
       });
+      const arrayBuffer1 = await res1.arrayBuffer();
+      const buffer1 = await ctx.decodeAudioData(arrayBuffer1);
 
-      lastChunkEndSampleRef.current[label] = nextEnd;
-    };
+      // Decode second chunk
+      const preloadStart = firstEnd;
+      const preloadEnd = preloadStart + chunkSamples;
+      const byteStart2 = preloadStart * bytesPerSample * channels;
+      const byteEnd2 = preloadEnd * bytesPerSample * channels - 1;
 
-    const firstEnd = Math.min(resumeSample + chunkSamples, buffer.length);
-    const firstChunk = makeChunk(resumeSample, firstEnd);
+      const res2 = await fetch(file, {
+        headers: { Range: `bytes=${byteStart2}-${byteEnd2}` },
+      });
+      const arrayBuffer2 = await res2.arrayBuffer();
+      const buffer2 = await ctx.decodeAudioData(arrayBuffer2);
+
+      lastChunkEndSampleRef.current[label] = preloadEnd;
+
+      return { label, file, resumeSample, buffer1, buffer2 };
+    })
+  );
+
+  const sharedStartTime = ctx.currentTime + 2.0;
+
+  for (const { label, file, resumeSample, buffer1, buffer2 } of firstChunks) {
+    const gain = gainNodesRef.current[label];
+    if (!gain || !buffer1 || !buffer2) continue;
 
     const node = new AudioWorkletNode(ctx, 'granular-player', {
       outputChannelCount: [2],
@@ -479,9 +482,38 @@ const playAll = async () => {
     node.label = label;
     node.started = false;
     node.parameters.get('playbackRate')?.setValueAtTime(playbackRate, ctx.currentTime);
-    lastChunkEndSampleRef.current[label] = firstEnd;
+    nodesRef.current[label] = node;
 
-    // Position + buffer tracking
+    // Set up polling
+    const appendChunk = async () => {
+      const start = lastChunkEndSampleRef.current[label];
+      const end = start + chunkSamples;
+
+      const byteStart = start * bytesPerSample * channels;
+      const byteEnd = end * bytesPerSample * channels - 1;
+
+      try {
+        const res = await fetch(file, {
+          headers: { Range: `bytes=${byteStart}-${byteEnd}` },
+        });
+        const arrayBuffer = await res.arrayBuffer();
+        const chunk = await ctx.decodeAudioData(arrayBuffer);
+
+        node.port.postMessage({
+          type: 'appendBuffer',
+          buffer: [
+            chunk.getChannelData(0),
+            chunk.numberOfChannels > 1 ? chunk.getChannelData(1) : chunk.getChannelData(0),
+          ],
+        });
+
+        lastChunkEndSampleRef.current[label] = end;
+        console.log(`[${label}] ✅ Appended chunk ${start} → ${end}`);
+      } catch (err) {
+        console.warn(`[${label}] ❌ Chunk append failed`, err);
+      }
+    };
+
     node.port.onmessage = (e) => {
       if (e.data.type === 'position') {
         const pos = e.data.position;
@@ -490,42 +522,40 @@ const playAll = async () => {
 
         const remaining = lastChunkEndSampleRef.current[label] - pos;
         const secLeft = remaining / sampleRate;
-
-        console.log(`[${label}] pos: ${pos}, remaining: ${secLeft.toFixed(2)}s`);
-
-        if (secLeft < 2.0) {
-          appendChunk(node);
-        }
+        if (secLeft < 2.0) appendChunk();
       }
 
       if (e.data.type === 'endOfBuffer') {
-        console.log(`[${label}] ⛔️ Reached end of buffer — trying to append`);
-        appendChunk(node);
+        appendChunk();
       }
     };
 
-    // Start polling loop
     const startPolling = () => {
       if (!isPlayingRef.current) return;
       node.port.postMessage({ type: 'getPosition' });
       setTimeout(startPolling, 250);
     };
+    startPolling();
 
-    // Initial load
+    // Post both chunks only AFTER they're ready
     node.port.postMessage({
       type: 'load',
       buffer: [
-        firstChunk.getChannelData(0),
-        firstChunk.numberOfChannels > 1 ? firstChunk.getChannelData(1) : firstChunk.getChannelData(0),
+        buffer1.getChannelData(0),
+        buffer1.numberOfChannels > 1 ? buffer1.getChannelData(1) : buffer1.getChannelData(0),
       ],
       absoluteStartTime: sharedStartTime,
       startPosition: resumeSample,
     });
 
-    node.port.postMessage({ type: 'scrub', newPosition: resumeSample });
-    startPolling();
+    node.port.postMessage({
+      type: 'appendBuffer',
+      buffer: [
+        buffer2.getChannelData(0),
+        buffer2.numberOfChannels > 1 ? buffer2.getChannelData(1) : buffer2.getChannelData(0),
+      ],
+    });
 
-    // Routing
     const soloed = Object.values(solos).some(Boolean);
     const shouldPlay = soloed ? solos[label] : !mutes[label];
     gain.gain.setValueAtTime(shouldPlay ? volumes[label] : 0, ctx.currentTime);
@@ -536,8 +566,6 @@ const playAll = async () => {
     } else {
       node.connect(delayNodesRef.current[label]);
     }
-
-    nodesRef.current[label] = node;
   }
 
   setIsPlaying(true);
