@@ -1,590 +1,553 @@
-// src/lib/streamingAudio.ts
-// 🛡️ BULLETPROOF MOBILE STREAMING AUDIO SYSTEM
+// src/lib/simpleStreamingAudio.ts
+// 🎵 TINY CHUNKS - Actually works on mobile!
 
-// ==================== 📱 MOBILE DETECTION & OPTIMIZATION ====================
+// ==================== 📱 MOBILE DETECTION ====================
 
 const isMobile = (): boolean => {
   if (typeof window === 'undefined') return false;
   return window.innerWidth < 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 };
 
-const isIOS = (): boolean => {
-  if (typeof navigator === 'undefined') return false;
-  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+// ==================== ⚙️ MOBILE-FIRST CONFIG ====================
+
+const CONFIG = {
+  chunkDuration: isMobile() ? 2 : 3, // TINY chunks for mobile
+  maxActiveChunks: 3, // 3 chunks max = 6 seconds in memory
+  preloadAhead: 2, // Always have 2 chunks ready
+  maxMemoryMB: isMobile() ? 15 : 30, // Very conservative
+  scheduleAhead: 0.1,
+  crossfade: 0.01, // Tiny crossfade
 };
 
-const isInstagram = (): boolean => {
-  if (typeof navigator === 'undefined') return false;
-  return navigator.userAgent.includes('Instagram');
-};
+// ==================== 🧠 TINY CACHE ====================
 
-// Mobile-specific configuration
-const MOBILE_CONFIG = {
-  maxMemoryMB: isMobile() ? 80 : 200,        // Conservative memory limit
-  chunkSizeSeconds: isMobile() ? 4 : 8,      // Smaller chunks on mobile
-  maxCachedChunks: isMobile() ? 2 : 4,       // Fewer cached chunks
-  preloadBuffer: isMobile() ? 1 : 2,         // Less preloading
-  gcInterval: isMobile() ? 3000 : 10000,     // More frequent cleanup
-  maxConcurrentLoads: isMobile() ? 2 : 4,    // Limit concurrent downloads
-};
+class TinyCache {
+  private static instance: TinyCache;
+  private chunks = new Map<string, AudioBuffer>();
+  private memoryUsed = 0;
+  private maxMemory = CONFIG.maxMemoryMB * 1024 * 1024;
 
-// ==================== 🧠 MEMORY MANAGER ====================
-
-class MemoryManager {
-  private static instance: MemoryManager;
-  private memoryUsage: number = 0;
-  private maxMemory: number = MOBILE_CONFIG.maxMemoryMB * 1024 * 1024; // Convert to bytes
-  private gcTimer: number | null = null;
-  private cleanupCallbacks: Set<() => void> = new Set();
-
-  static getInstance(): MemoryManager {
-    if (!MemoryManager.instance) {
-      MemoryManager.instance = new MemoryManager();
+  static getInstance(): TinyCache {
+    if (!TinyCache.instance) {
+      TinyCache.instance = new TinyCache();
     }
-    return MemoryManager.instance;
+    return TinyCache.instance;
   }
 
-  constructor() {
-    this.startMemoryMonitoring();
+  store(key: string, buffer: AudioBuffer): void {
+    // Remove old version
+    this.remove(key);
+    
+    const size = buffer.length * buffer.numberOfChannels * 4;
+    
+    // Aggressive cleanup to stay under limit
+    while (this.memoryUsed + size > this.maxMemory && this.chunks.size > 0) {
+      const oldestKey = this.chunks.keys().next().value;
+      if (oldestKey) this.remove(oldestKey);
+    }
+    
+    this.chunks.set(key, buffer);
+    this.memoryUsed += size;
   }
 
-  private startMemoryMonitoring(): void {
-    if (this.gcTimer) return;
+  get(key: string): AudioBuffer | null {
+    return this.chunks.get(key) || null;
+  }
 
-    this.gcTimer = window.setInterval(() => {
-      this.checkMemoryPressure();
-    }, MOBILE_CONFIG.gcInterval);
-
-    // Listen for mobile memory warnings
-    if ('onmemorywarning' in window) {
-      (window as any).addEventListener('memorywarning', () => {
-        console.warn('📱 Mobile memory warning detected');
-        this.forceCleanup();
-      });
+  remove(key: string): void {
+    const buffer = this.chunks.get(key);
+    if (buffer) {
+      const size = buffer.length * buffer.numberOfChannels * 4;
+      this.chunks.delete(key);
+      this.memoryUsed -= size;
     }
   }
 
-  private checkMemoryPressure(): void {
-    // Check JS heap memory if available
-    if ('memory' in performance) {
-      const memInfo = (performance as any).memory;
-      if (memInfo) {
-        const usageRatio = memInfo.usedJSHeapSize / memInfo.totalJSHeapSize;
-        if (usageRatio > 0.75) {
-          console.warn(`⚠️ High memory usage: ${(usageRatio * 100).toFixed(1)}%`);
-          this.forceCleanup();
-        }
-      }
-    }
-
-    // Check our tracked memory usage
-    if (this.memoryUsage > this.maxMemory * 0.8) {
-      console.warn(`⚠️ Approaching memory limit: ${(this.memoryUsage / 1024 / 1024).toFixed(1)}MB`);
-      this.forceCleanup();
-    }
+  clear(): void {
+    this.chunks.clear();
+    this.memoryUsed = 0;
   }
 
-  addMemoryUsage(bytes: number): void {
-    this.memoryUsage += bytes;
-  }
-
-  removeMemoryUsage(bytes: number): void {
-    this.memoryUsage = Math.max(0, this.memoryUsage - bytes);
-  }
-
-  registerCleanupCallback(callback: () => void): void {
-    this.cleanupCallbacks.add(callback);
-  }
-
-  unregisterCleanupCallback(callback: () => void): void {
-    this.cleanupCallbacks.delete(callback);
-  }
-
-  private forceCleanup(): void {
-    console.log('🧹 Forcing memory cleanup...');
-    this.cleanupCallbacks.forEach(callback => {
-      try {
-        callback();
-      } catch (error) {
-        console.error('Cleanup callback failed:', error);
-      }
-    });
-
-    // Force garbage collection if available
-    if ('gc' in window) {
-      (window as any).gc();
-    }
-  }
-
-  destroy(): void {
-    if (this.gcTimer) {
-      clearInterval(this.gcTimer);
-      this.gcTimer = null;
-    }
-    this.cleanupCallbacks.clear();
+  getMemoryMB(): number {
+    return this.memoryUsed / 1024 / 1024;
   }
 }
 
-// ==================== 🎵 BULLETPROOF STREAMING AUDIO MANAGER ====================
+// ==================== 🎵 MOBILE STEM ====================
 
-export class StreamingAudioManager {
-  private ctx: AudioContext;
-  private stems: Map<string, BulletproofStemPlayer> = new Map();
-  private isPlaying: boolean = false;
-  private startTime: number = 0;
-  private pausedAt: number = 0;
-  private masterGain: GainNode;
-  private memoryManager: MemoryManager;
-  private syncTimer: number | null = null;
-  private positionTimer: number | null = null;
-
-  constructor(audioContext: AudioContext) {
-    this.ctx = audioContext;
-    this.memoryManager = MemoryManager.getInstance();
-    
-    // Create master gain with conservative volume
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = isMobile() ? 0.4 : 0.6; // Lower volume on mobile
-    this.masterGain.connect(this.ctx.destination);
-
-    // Register cleanup callback
-    this.memoryManager.registerCleanupCallback(() => this.performCleanup());
-  }
-
-  async addStem(label: string, url: string, options: any = {}): Promise<BulletproofStemPlayer> {
-    const stem = new BulletproofStemPlayer(this.ctx, url, label, {
-      ...options,
-      memoryManager: this.memoryManager
-    });
-    
-    await stem.initialize();
-    stem.connect(this.masterGain);
-    this.stems.set(label, stem);
-    
-    console.log(`✅ Added stem: ${label}`);
-    return stem;
-  }
-
-  async playAll(): Promise<void> {
-    if (this.isPlaying) return;
-    
-    console.log(`🎵 Starting synchronized playback from ${this.pausedAt.toFixed(1)}s...`);
-    
-    const currentTime = this.pausedAt || 0;
-    this.startTime = this.ctx.currentTime - currentTime;
-    this.isPlaying = true;
-
-    // Start all stems with tight synchronization
-    const syncTime = this.ctx.currentTime + 0.1; // Small buffer for sync
-    const playPromises = Array.from(this.stems.values()).map(stem => 
-      stem.play(currentTime, syncTime)
-    );
-    
-    await Promise.all(playPromises);
-    
-    // Start monitoring
-    this.startSyncMonitoring();
-    this.startPositionTracking();
-  }
-
-  private startSyncMonitoring(): void {
-    if (this.syncTimer) return;
-    
-    this.syncTimer = window.setInterval(() => {
-      if (!this.isPlaying) return;
-      
-      // Check if all stems are still in sync
-      const positions = Array.from(this.stems.values()).map(stem => stem.getCurrentPosition());
-      const maxDrift = Math.max(...positions) - Math.min(...positions);
-      
-      if (maxDrift > 0.1) { // 100ms drift tolerance
-        console.warn(`⚠️ Sync drift detected: ${(maxDrift * 1000).toFixed(0)}ms`);
-      }
-    }, 1000);
-  }
-
-  private startPositionTracking(): void {
-    if (this.positionTimer) return;
-    
-    this.positionTimer = window.setInterval(() => {
-      if (!this.isPlaying) return;
-      
-      // Update positions of all stems based on current time
-      const currentTime = this.getCurrentTime();
-      this.stems.forEach(stem => {
-        stem.updateCurrentPosition(currentTime);
-      });
-    }, 100); // Update every 100ms for smooth tracking
-  }
-
-  async stopAll(): Promise<void> {
-    console.log('⏹️ Stopping all stems...');
-    
-    this.isPlaying = false;
-    this.pausedAt = this.getCurrentTime();
-    
-    if (this.syncTimer) {
-      clearInterval(this.syncTimer);
-      this.syncTimer = null;
-    }
-    
-    if (this.positionTimer) {
-      clearInterval(this.positionTimer);
-      this.positionTimer = null;
-    }
-    
-    const stopPromises = Array.from(this.stems.values()).map(stem => stem.stop());
-    await Promise.all(stopPromises);
-    
-    console.log(`💾 Paused at ${this.pausedAt.toFixed(1)}s`);
-  }
-
-  seekTo(seconds: number): void {
-    console.log(`🎯 Seeking to ${seconds.toFixed(1)}s`);
-    this.pausedAt = Math.max(0, seconds);
-    
-    // Update all stem positions immediately
-    this.stems.forEach(stem => {
-      stem.updateCurrentPosition(this.pausedAt);
-    });
-    
-    if (this.isPlaying) {
-      this.stopAll().then(() => this.playAll());
-    }
-  }
-
-  getCurrentTime(): number {
-    if (!this.isPlaying) return this.pausedAt;
-    return Math.max(0, this.ctx.currentTime - this.startTime);
-  }
-
-  getStem(label: string): BulletproofStemPlayer | undefined {
-    return this.stems.get(label);
-  }
-
-  private performCleanup(): void {
-    console.log('🧹 Performing audio cleanup...');
-    this.stems.forEach(stem => stem.performCleanup());
-  }
-
-  dispose(): void {
-    console.log('🗑️ Disposing audio manager...');
-    
-    this.stopAll();
-    
-    if (this.syncTimer) {
-      clearInterval(this.syncTimer);
-      this.syncTimer = null;
-    }
-    
-    if (this.positionTimer) {
-      clearInterval(this.positionTimer);
-      this.positionTimer = null;
-    }
-    
-    this.stems.forEach(stem => stem.dispose());
-    this.stems.clear();
-    
-    this.memoryManager.unregisterCleanupCallback(() => this.performCleanup());
-    this.masterGain.disconnect();
-  }
-}
-
-// ==================== 🛡️ BULLETPROOF STEM PLAYER ====================
-
-class BulletproofStemPlayer {
+// Fixed MobileStem class with proper varispeed timing
+class MobileStem {
   private ctx: AudioContext;
   private url: string;
   private label: string;
-  private options: any;
-  private memoryManager: MemoryManager;
-
+  private cache = TinyCache.getInstance();
+  
   // Audio nodes
   public gainNode: GainNode;
   public delayNode: DelayNode;
   public feedbackGain: GainNode;
   
-  // File properties
-  private fileSize: number = 0;
-  private actualBytesPerSecond: number = 0;
+  // Track info
+  private fullBuffer: AudioBuffer | null = null;
+  private duration = 0;
+  private isLoaded = false;
   
-  // Streaming state
-  private chunks: Map<number, AudioBuffer> = new Map();
-  private chunkSizes: Map<number, number> = new Map();
-  private loadingChunks: Set<number> = new Set();
-  private currentSources: AudioBufferSourceNode[] = [];
-  private isPlaying: boolean = false;
-  private currentPosition: number = 0;
-  private duration: number = 0;
-  private sampleRate: number = 44100;
-  private totalChunks: number = 0;
-  private chunkDuration: number = MOBILE_CONFIG.chunkSizeSeconds;
-  private playbackRate: number = 1.0;
+  // 🔥 FIXED: Proper varispeed timing tracking
+  private isPlaying = false;
+  private playbackRate = 1.0;
+  private audioStartTime = 0; // When audio position 0 should have started
+  private realStartTime = 0;   // Actual ctx.currentTime when we started
+  private pausedAudioTime = 0; // Where we paused in audio timeline
   
-  // Mobile optimization
-  private loadQueue: number[] = [];
-  private lastCleanupTime: number = 0;
+  // Tiny chunking
+  private chunkDuration = CONFIG.chunkDuration;
+  private totalChunks = 0;
+  private activeSources = new Map<number, AudioBufferSourceNode>();
+  private scheduler: number | null = null;
+  
+  // 🔥 NEW: Dynamic scheduling state
+  private lastScheduleCheck = 0;
+  private scheduledUpToChunk = -1;
 
-  constructor(audioContext: AudioContext, url: string, label: string, options: any = {}) {
+  constructor(audioContext: AudioContext, url: string, label: string) {
     this.ctx = audioContext;
     this.url = url;
     this.label = label;
-    this.options = options;
-    this.memoryManager = options.memoryManager || MemoryManager.getInstance();
-
-    // Setup audio nodes with mobile-optimized settings
+    
+    // Simple audio chain
     this.gainNode = this.ctx.createGain();
     this.gainNode.gain.value = 0.8;
     
-    this.delayNode = this.ctx.createDelay(2.0); // Shorter max delay on mobile
+    this.delayNode = this.ctx.createDelay(1.0);
     this.delayNode.delayTime.value = 0;
     
     this.feedbackGain = this.ctx.createGain();
     this.feedbackGain.gain.value = 0;
-    
-    // Clean audio chain
-    this.gainNode.connect(this.delayNode);
-    this.delayNode.connect(this.feedbackGain);
-    this.feedbackGain.connect(this.delayNode);
   }
 
   async initialize(): Promise<void> {
+    if (this.isLoaded) return;
+    
     try {
-      console.log(`[${this.label}] 🔍 Analyzing audio file...`);
+      console.log(`[${this.label}] 📱 Loading for mobile...`);
       
-      // Get file metadata without loading the whole file
-      const headResponse = await fetch(this.url, { method: 'HEAD' });
-      if (!headResponse.ok) {
-        throw new Error(`Failed to access ${this.url}: ${headResponse.status}`);
+      const response = await fetch(this.url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const arrayBuffer = await response.arrayBuffer();
+      
+      // Mobile file size check
+      const sizeMB = arrayBuffer.byteLength / 1024 / 1024;
+      if (isMobile() && sizeMB > 20) {
+        console.warn(`[${this.label}] ⚠️ Large file (${sizeMB.toFixed(1)}MB) on mobile`);
       }
       
-      this.fileSize = parseInt(headResponse.headers.get('content-length') || '0');
-      
-      // Load a small sample to get audio properties
-      const sampleSize = Math.min(1024 * 1024, this.fileSize); // 1MB or file size
-      const sampleResponse = await fetch(this.url, {
-        headers: { 'Range': `bytes=0-${sampleSize - 1}` }
-      });
-      
-      const sampleBuffer = await sampleResponse.arrayBuffer();
-      const sampleAudio = await this.ctx.decodeAudioData(sampleBuffer);
-      
-      // Calculate file properties
-      this.sampleRate = sampleAudio.sampleRate;
-      this.actualBytesPerSecond = this.estimateBytesPerSecond(sampleAudio, sampleSize);
-      this.duration = this.fileSize / this.actualBytesPerSecond;
-      
-      // Calculate chunking strategy
+      this.fullBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+      this.duration = this.fullBuffer.duration;
       this.totalChunks = Math.ceil(this.duration / this.chunkDuration);
+      this.isLoaded = true;
       
-      console.log(`[${this.label}] ✅ Ready: ${this.duration.toFixed(1)}s, ${this.totalChunks} chunks, ${this.fileSize} bytes`);
-      
-      // Cache the first chunk
-      await this.loadChunk(0);
+      console.log(`[${this.label}] ✅ ${this.duration.toFixed(1)}s → ${this.totalChunks} tiny chunks`);
       
     } catch (error) {
-      console.error(`[${this.label}] ❌ Initialization failed:`, error);
+      console.error(`[${this.label}] ❌ Failed:`, error);
       throw error;
     }
   }
 
-  private estimateBytesPerSecond(buffer: AudioBuffer, bufferBytes: number): number {
-    const bufferDuration = buffer.duration;
-    return bufferBytes / bufferDuration;
-  }
-
-  private async loadChunk(chunkIndex: number): Promise<AudioBuffer | null> {
-    if (chunkIndex >= this.totalChunks) return null;
-    if (this.chunks.has(chunkIndex)) return this.chunks.get(chunkIndex)!;
-    if (this.loadingChunks.has(chunkIndex)) return null;
-
-    // Check concurrent load limit
-    if (this.loadingChunks.size >= MOBILE_CONFIG.maxConcurrentLoads) {
-      this.loadQueue.push(chunkIndex);
-      return null;
-    }
-
-    this.loadingChunks.add(chunkIndex);
-
+  private createChunk(chunkIndex: number): AudioBuffer | null {
+    if (!this.fullBuffer) return null;
+    
+    const chunkKey = `${this.label}_${chunkIndex}`;
+    
+    // Check cache
+    let chunk = this.cache.get(chunkKey);
+    if (chunk) return chunk;
+    
     try {
-      // ✅ FIXED: Use time-based calculation with actual file properties
-      const startTime = chunkIndex * this.chunkDuration;
-      const endTime = Math.min((chunkIndex + 1) * this.chunkDuration, this.duration);
-      
-      // ✅ FIXED: Calculate proper byte ranges based on actual file properties
-      const bytesPerSecond = this.actualBytesPerSecond || 176400; // Use calculated or fallback
-      const startByte = Math.floor(startTime * bytesPerSecond);
-      const endByte = Math.min(
-        Math.floor(endTime * bytesPerSecond), 
-        this.fileSize - 1 // ✅ Never exceed actual file size
+      // Calculate sample range
+      const sampleRate = this.fullBuffer.sampleRate;
+      const startSample = Math.floor(chunkIndex * this.chunkDuration * sampleRate);
+      const endSample = Math.min(
+        startSample + Math.floor(this.chunkDuration * sampleRate),
+        this.fullBuffer.length
       );
       
-      // ✅ SAFETY CHECK: Ensure valid range
-      if (startByte >= this.fileSize || startByte > endByte) {
-        console.warn(`[${this.label}] Invalid range: ${startByte}-${endByte} (file size: ${this.fileSize})`);
-        this.loadingChunks.delete(chunkIndex);
-        return null;
-      }
+      const chunkLength = endSample - startSample;
+      if (chunkLength <= 0) return null;
       
-      console.log(`[${this.label}] Loading chunk ${chunkIndex}: bytes ${startByte}-${endByte}`);
+      // Create chunk
+      chunk = this.ctx.createBuffer(
+        this.fullBuffer.numberOfChannels,
+        chunkLength,
+        sampleRate
+      );
       
-      const response = await fetch(this.url, {
-        headers: { 'Range': `bytes=${startByte}-${endByte}` }
-      });
-
-      if (!response.ok) {
-        if (response.status === 416) {
-          console.warn(`[${this.label}] Range not satisfiable for chunk ${chunkIndex}, trying smaller range`);
-          // ✅ FALLBACK: Try loading just the remaining bytes
-          const fallbackEnd = Math.min(startByte + 100000, this.fileSize - 1); // 100KB fallback
-          const fallbackResponse = await fetch(this.url, {
-            headers: { 'Range': `bytes=${startByte}-${fallbackEnd}` }
-          });
-          if (!fallbackResponse.ok) throw new Error(`HTTP ${fallbackResponse.status}`);
-          const arrayBuffer = await fallbackResponse.arrayBuffer();
-          const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
-          
-          // Store with tracking
-          const bufferSize = arrayBuffer.byteLength;
-          this.memoryManager.addMemoryUsage(bufferSize);
-          this.chunkSizes.set(chunkIndex, bufferSize);
-          this.chunks.set(chunkIndex, audioBuffer);
-          this.loadingChunks.delete(chunkIndex);
-          
-          return audioBuffer;
+      // Copy data
+      for (let ch = 0; ch < this.fullBuffer.numberOfChannels; ch++) {
+        const srcData = this.fullBuffer.getChannelData(ch);
+        const chunkData = chunk.getChannelData(ch);
+        
+        for (let i = 0; i < chunkLength; i++) {
+          chunkData[i] = srcData[startSample + i] || 0;
         }
-        throw new Error(`HTTP ${response.status}`);
       }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
       
-      // Track memory usage
-      const bufferSize = arrayBuffer.byteLength;
-      this.memoryManager.addMemoryUsage(bufferSize);
-      this.chunkSizes.set(chunkIndex, bufferSize);
-      
-      // Store chunk
-      this.chunks.set(chunkIndex, audioBuffer);
-      this.loadingChunks.delete(chunkIndex);
-      
-      // Process load queue
-      this.processLoadQueue();
-      
-      // Cleanup old chunks if needed
-      this.cleanupOldChunks(chunkIndex);
-      
-      console.log(`[${this.label}] ✅ Loaded chunk ${chunkIndex + 1}/${this.totalChunks}`);
-      return audioBuffer;
+      // Cache tiny chunk
+      this.cache.store(chunkKey, chunk);
+      return chunk;
       
     } catch (error) {
-      console.error(`[${this.label}] ❌ Failed to load chunk ${chunkIndex}:`, error);
-      this.loadingChunks.delete(chunkIndex);
-      this.processLoadQueue();
+      console.error(`[${this.label}] Chunk ${chunkIndex} failed:`, error);
       return null;
     }
   }
 
-  private processLoadQueue(): void {
-    if (this.loadQueue.length === 0) return;
-    if (this.loadingChunks.size >= MOBILE_CONFIG.maxConcurrentLoads) return;
+  async play(startPosition = 0, syncTime?: number): Promise<void> {
+    if (!this.isLoaded || this.isPlaying) return;
     
-    const nextChunk = this.loadQueue.shift();
-    if (nextChunk !== undefined) {
-      this.loadChunk(nextChunk);
-    }
+    this.isPlaying = true;
+    this.pausedAudioTime = Math.max(0, Math.min(startPosition, this.duration));
+    
+    // 🔥 SINGLE CHUNK: Simple timing setup
+    const when = syncTime || this.ctx.currentTime + CONFIG.scheduleAhead;
+    this.realStartTime = when;
+    this.audioStartTime = when - this.pausedAudioTime;
+    
+    console.log(`[${this.label}] ▶️ SINGLE CHUNK play from ${startPosition.toFixed(1)}s`);
+    
+    // 🔥 SINGLE CHUNK: Start with just one chunk
+    this.startDynamicScheduler();
   }
 
-  private cleanupOldChunks(currentChunk: number): void {
-    const now = Date.now();
-    if (now - this.lastCleanupTime < 5000) return; // Cleanup every 5 seconds max
+  // 🔥 HYBRID SCHEDULER: Single chunk + smooth continuity
+  private startDynamicScheduler(): void {
+    // Kill any existing scheduler
+    if (this.scheduler) {
+      clearInterval(this.scheduler);
+      this.scheduler = null;
+    }
     
-    this.lastCleanupTime = now;
+    // 🔥 HYBRID: Start with current chunk (single chunk approach)
+    const currentChunk = Math.floor(this.pausedAudioTime / this.chunkDuration);
+    const chunkStartTime = currentChunk * this.chunkDuration;
+    const offset = Math.max(0, this.pausedAudioTime - chunkStartTime);
     
-    // Keep only chunks around current position
-    const keepRange = MOBILE_CONFIG.maxCachedChunks;
-    const chunksToDelete: number[] = [];
+    this.scheduleSingleChunk(currentChunk, offset);
     
-    for (const [chunkIndex] of this.chunks) {
-      if (Math.abs(chunkIndex - currentChunk) > keepRange) {
-        chunksToDelete.push(chunkIndex);
+    // 🔥 HYBRID: Safety net to ensure continuous playback
+    this.scheduler = window.setInterval(() => {
+      if (!this.isPlaying) return;
+      
+      // Only intervene if no chunks are playing (safety net)
+      if (this.activeSources.size === 0) {
+        console.log(`[${this.label}] 🚨 HYBRID: Safety restart`);
+        const currentPos = this.getCurrentPosition();
+        const currentChunk = Math.floor(currentPos / this.chunkDuration);
+        const chunkStartTime = currentChunk * this.chunkDuration;
+        const offset = Math.max(0, currentPos - chunkStartTime);
+        this.scheduleSingleChunk(currentChunk, offset);
+      }
+      
+    }, 200); // Slower check - only for safety
+  }
+
+  // 🔥 NUCLEAR CHUNK SCHEDULING: Aggressive immediate scheduling
+  private scheduleNeededChunks(): void {
+    if (!this.isPlaying) return;
+    
+    const now = this.ctx.currentTime;
+    const currentAudioPosition = this.getCurrentPosition();
+    const currentChunk = Math.floor(currentAudioPosition / this.chunkDuration);
+    
+    // 🔥 NUCLEAR: Aggressive scheduling - always schedule enough chunks
+    const chunksToSchedule = Math.max(4, Math.ceil(this.playbackRate * 2)); // More chunks for fast speeds
+    const endChunk = Math.min(currentChunk + chunksToSchedule, this.totalChunks - 1);
+    
+    // 🔥 NUCLEAR: Schedule from current chunk forward
+    for (let chunkIndex = currentChunk; chunkIndex <= endChunk; chunkIndex++) {
+      if (!this.activeSources.has(chunkIndex)) {
+        this.scheduleChunk(chunkIndex);
       }
     }
     
-    // Delete old chunks
-    chunksToDelete.forEach(chunkIndex => {
-      const size = this.chunkSizes.get(chunkIndex) || 0;
-      this.memoryManager.removeMemoryUsage(size);
-      this.chunks.delete(chunkIndex);
-      this.chunkSizes.delete(chunkIndex);
+    // 🔥 NUCLEAR: Remove any chunks that are too far behind or ahead
+    const toRemove: number[] = [];
+    this.activeSources.forEach((source, chunkIndex) => {
+      if (chunkIndex < currentChunk - 1 || chunkIndex > currentChunk + chunksToSchedule + 2) {
+        toRemove.push(chunkIndex);
+      }
     });
     
-    if (chunksToDelete.length > 0) {
-      console.log(`[${this.label}] 🧹 Cleaned ${chunksToDelete.length} old chunks`);
-    }
+    toRemove.forEach(chunkIndex => {
+      const source = this.activeSources.get(chunkIndex);
+      if (source) {
+        try {
+          source.stop();
+          source.disconnect();
+        } catch (e) {}
+        this.activeSources.delete(chunkIndex);
+      }
+    });
   }
 
-  async play(startTime: number = 0, syncTime?: number): Promise<void> {
-    if (this.isPlaying) return;
+  // 🔥 EXTREME CHUNK SCHEDULING: Perfect for drastic speed changes
+  private scheduleChunk(chunkIndex: number): void {
+    if (this.activeSources.has(chunkIndex)) return;
     
-    this.isPlaying = true;
-    this.currentPosition = startTime;
+    const chunk = this.createChunk(chunkIndex);
+    if (!chunk) return;
     
-    const startChunk = Math.floor(startTime / this.chunkDuration);
-    await this.scheduleChunks(startChunk, syncTime);
-  }
-
-  private async scheduleChunks(startChunk: number, syncTime?: number): Promise<void> {
-    const when = syncTime || this.ctx.currentTime + 0.01;
-    let currentTime = when;
-    
-    // Preload next few chunks
-    const chunksToPreload = Math.min(MOBILE_CONFIG.preloadBuffer, this.totalChunks - startChunk);
-    for (let i = 0; i < chunksToPreload; i++) {
-      this.loadChunk(startChunk + i);
-    }
-    
-    // Schedule initial chunks
-    for (let chunkIndex = startChunk; chunkIndex < this.totalChunks && this.isPlaying; chunkIndex++) {
-      const buffer = await this.loadChunk(chunkIndex);
-      if (!buffer || !this.isPlaying) break;
-      
+    try {
       const source = this.ctx.createBufferSource();
-      source.buffer = buffer;
+      source.buffer = chunk;
       source.playbackRate.value = this.playbackRate;
       source.connect(this.gainNode);
       
-      const chunkStartTime = chunkIndex * this.chunkDuration;
-      const offset = chunkIndex === startChunk ? (this.currentPosition - chunkStartTime) : 0;
-      const duration = buffer.duration - offset;
+      // 🔥 EXTREME: Ultra-precise timing for any speed
+      const now = this.ctx.currentTime;
+      const currentAudioPos = this.getCurrentPosition();
+      const chunkAudioStartTime = chunkIndex * this.chunkDuration;
+      const chunkAudioEndTime = (chunkIndex + 1) * this.chunkDuration;
       
-      if (duration > 0) {
-        source.start(currentTime, offset, duration);
-        this.currentSources.push(source);
-        currentTime += duration / this.playbackRate;
+      let scheduleTime, offset = 0;
+      
+      // 🔥 EXTREME: Handle timing for ANY speed change
+      if (currentAudioPos <= chunkAudioStartTime) {
+        // Future chunk - calculate exact timing
+        const audioTimeToWait = chunkAudioStartTime - currentAudioPos;
+        const realTimeToWait = audioTimeToWait / this.playbackRate;
+        scheduleTime = now + Math.max(realTimeToWait, 0.0005); // Minimum 0.5ms buffer
+      } else if (currentAudioPos < chunkAudioEndTime) {
+        // Current chunk - start immediately with precise offset
+        offset = Math.max(0, currentAudioPos - chunkAudioStartTime);
+        scheduleTime = now + 0.0005; // 0.5ms buffer for immediate start
+      } else {
+        // Past chunk - skip completely
+        return;
       }
       
-      // Preload next chunk
-      if (chunkIndex + MOBILE_CONFIG.preloadBuffer < this.totalChunks) {
-        this.loadChunk(chunkIndex + MOBILE_CONFIG.preloadBuffer);
+      // 🔥 EXTREME: Validate with tight tolerances
+      if (scheduleTime < now - 0.0005) {
+        return; // Too late
       }
+      
+      const duration = Math.max(0, chunk.duration - offset);
+      if (duration <= 0.0005) return; // Too short
+      
+      // 🔥 EXTREME: Clamp schedule time to prevent audio engine errors
+      const safescheduleTime = Math.max(scheduleTime, now + 0.0001);
+      
+      // Mark as active BEFORE starting
+      this.activeSources.set(chunkIndex, source);
+      
+      // 🔥 EXTREME: Start with microsecond precision
+      source.start(safescheduleTime, offset, duration);
+      
+      // Immediate cleanup registration
+      source.onended = () => {
+        this.activeSources.delete(chunkIndex);
+      };
+      
+      // 🔥 EXTREME: High-precision debug for drastic changes
+      if (Math.abs(this.playbackRate - 1.0) > 0.2) {
+        console.log(`[${this.label}] 💥 EXTREME Chunk ${chunkIndex}: schedule=${safescheduleTime.toFixed(6)}s, offset=${offset.toFixed(6)}s, rate=${this.playbackRate.toFixed(3)}x, pos=${currentAudioPos.toFixed(3)}s`);
+      }
+      
+    } catch (error) {
+      console.error(`[${this.label}] EXTREME schedule failed:`, error);
+      this.activeSources.delete(chunkIndex);
     }
   }
 
+  private cleanupOldChunks(): void {
+    const currentAudioPos = this.getCurrentPosition();
+    const currentChunk = Math.floor(currentAudioPos / this.chunkDuration);
+    const toRemove: number[] = [];
+    
+    this.activeSources.forEach((source, chunkIndex) => {
+      // Remove chunks that are far behind current position
+      if (chunkIndex < currentChunk - 2) {
+        try {
+          source.stop();
+          source.disconnect();
+        } catch (e) {
+          // Already stopped
+        }
+        toRemove.push(chunkIndex);
+      }
+    });
+    
+    toRemove.forEach(index => {
+      this.activeSources.delete(index);
+    });
+  }
+
   async stop(): Promise<void> {
+    if (!this.isPlaying) return;
+    
+    // 🔥 FIXED: Save current position before stopping
+    this.pausedAudioTime = this.getCurrentPosition();
     this.isPlaying = false;
     
+    // Stop scheduler
+    if (this.scheduler) {
+      clearInterval(this.scheduler);
+      this.scheduler = null;
+    }
+    
     // Stop all sources
-    this.currentSources.forEach(source => {
+    this.activeSources.forEach(source => {
       try {
         source.stop();
         source.disconnect();
       } catch (e) {
-        // Source might already be stopped
+        // Already stopped
+      }
+    });
+    this.activeSources.clear();
+    
+    console.log(`[${this.label}] ⏹️ Mobile stop at ${this.pausedAudioTime.toFixed(1)}s`);
+  }
+
+  seekTo(seconds: number): void {
+    const target = Math.max(0, Math.min(seconds, this.duration));
+    const wasPlaying = this.isPlaying;
+    
+    console.log(`[${this.label}] 🎯 Mobile seek ${target.toFixed(1)}s`);
+    
+    // Stop all current sources
+    this.activeSources.forEach(source => {
+      try { source.stop(); } catch (e) {}
+    });
+    this.activeSources.clear();
+    
+    // 🔥 FIXED: Update timing properly for seek
+    this.pausedAudioTime = target;
+    this.scheduledUpToChunk = -1;
+    
+    if (wasPlaying) {
+      // Recalculate timing for new position
+      const now = this.ctx.currentTime;
+      this.audioStartTime = now - (target / this.playbackRate);
+      this.realStartTime = now;
+      this.lastScheduleCheck = now;
+      
+      // Restart scheduling from new position
+      this.scheduleNeededChunks();
+    }
+  }
+
+  // 🔥 SIMPLIFIED: Let Web Audio handle position tracking
+  getCurrentPosition(): number {
+    if (!this.isPlaying) return this.pausedAudioTime;
+    
+    // 🔥 SIMPLIFIED: Just use basic elapsed time calculation
+    // Let the Web Audio API handle the complexity of playback rate changes
+    const now = this.ctx.currentTime;
+    const elapsedRealTime = now - this.realStartTime;
+    const elapsedAudioTime = elapsedRealTime * this.playbackRate;
+    const currentPos = this.pausedAudioTime + elapsedAudioTime;
+    
+    return Math.max(0, Math.min(currentPos, this.duration));
+  }
+
+  // 🔥 PERFECT HYBRID: Single chunk timing + smooth varispeed
+  setPlaybackRate(rate: number): void {
+    const newRate = Math.max(0.5, Math.min(2.0, rate));
+    
+    if (Math.abs(this.playbackRate - newRate) < 0.001) return;
+    
+    console.log(`[${this.label}] 🎯 HYBRID: ${this.playbackRate.toFixed(3)}x → ${newRate.toFixed(3)}x`);
+    
+    // 🔥 HYBRID: Update rate on current chunk for SMOOTH transition
+    this.activeSources.forEach(source => {
+      try {
+        // 🔥 SMOOTH: Instant smooth rate change like a turntable
+        source.playbackRate.value = newRate;
+      } catch (e) {
+        // Source might be stopped
       }
     });
     
-    this.currentSources = [];
+    // 🔥 HYBRID: Update internal rate for future chunks
+    this.playbackRate = newRate;
+    
+    // 🔥 HYBRID: Update timing for accurate position tracking
+    if (this.isPlaying) {
+      const now = this.ctx.currentTime;
+      const currentPos = this.getCurrentPosition();
+      this.realStartTime = now;
+      this.audioStartTime = now - (currentPos / newRate);
+      this.pausedAudioTime = currentPos;
+    }
+  }
+
+  // 🔥 SMOOTH CHUNK: Schedule with smooth transitions
+  private scheduleSingleChunk(chunkIndex: number, offset: number): void {
+    const chunk = this.createChunk(chunkIndex);
+    if (!chunk) return;
+    
+    try {
+      const source = this.ctx.createBufferSource();
+      source.buffer = chunk;
+      source.playbackRate.value = this.playbackRate;
+      source.connect(this.gainNode);
+      
+      const now = this.ctx.currentTime;
+      const duration = Math.max(0, chunk.duration - offset);
+      
+      if (duration > 0.001) {
+        this.activeSources.set(chunkIndex, source);
+        source.start(now + 0.001, offset, duration);
+        
+        // 🔥 SMOOTH: When chunk ends, smoothly schedule next chunk
+        source.onended = () => {
+          this.activeSources.delete(chunkIndex);
+          if (this.isPlaying && chunkIndex + 1 < this.totalChunks) {
+            // 🔥 SMOOTH: No gap between chunks
+            setTimeout(() => {
+              this.scheduleSingleChunk(chunkIndex + 1, 0);
+            }, 1); // 1ms delay for smooth transition
+          }
+        };
+        
+        console.log(`[${this.label}] 🎵 SMOOTH Chunk ${chunkIndex}: offset=${offset.toFixed(3)}s, rate=${this.playbackRate.toFixed(3)}x`);
+      }
+      
+    } catch (error) {
+      console.error(`[${this.label}] Smooth chunk failed:`, error);
+      this.activeSources.delete(chunkIndex);
+    }
+  }
+
+  setVolume(volume: number): void {
+    const safe = Math.max(0, Math.min(1, volume));
+    this.gainNode.gain.setTargetAtTime(safe, this.ctx.currentTime, 0.01);
+  }
+
+  setDelay(amount: number): void {
+    const delay = Math.max(0, Math.min(0.3, amount * 0.3));
+    const feedback = Math.max(0, Math.min(0.2, amount * 0.1));
+    
+    this.delayNode.delayTime.setTargetAtTime(delay, this.ctx.currentTime, 0.1);
+    this.feedbackGain.gain.setTargetAtTime(feedback, this.ctx.currentTime, 0.1);
+    
+    if (delay > 0.01) {
+      try {
+        this.delayNode.connect(this.feedbackGain);
+        this.feedbackGain.connect(this.delayNode);
+      } catch (e) {}
+    } else {
+      try {
+        this.delayNode.disconnect(this.feedbackGain);
+        this.feedbackGain.disconnect(this.delayNode);
+      } catch (e) {}
+    }
+  }
+
+  getDuration(): number {
+    return this.duration;
   }
 
   connect(destination: AudioNode): void {
@@ -592,88 +555,131 @@ class BulletproofStemPlayer {
   }
 
   disconnect(): void {
-    this.gainNode.disconnect();
-  }
-
-  setVolume(volume: number): void {
-    const safeVolume = Math.max(0, Math.min(1, volume));
-    this.gainNode.gain.setTargetAtTime(safeVolume, this.ctx.currentTime, 0.01);
-  }
-
-  setDelay(amount: number): void {
-    const maxDelay = isMobile() ? 0.2 : 0.5; // Shorter delays on mobile
-    const delayTime = Math.max(0, Math.min(maxDelay, amount * maxDelay));
-    const feedbackAmount = Math.max(0, Math.min(0.4, amount * 0.15)); // Very conservative feedback
-    
-    this.delayNode.delayTime.setTargetAtTime(delayTime, this.ctx.currentTime, 0.1);
-    this.feedbackGain.gain.setTargetAtTime(feedbackAmount, this.ctx.currentTime, 0.1);
-  }
-
-  setPlaybackRate(rate: number): void {
-    this.playbackRate = Math.max(0.25, Math.min(4.0, rate));
-    this.currentSources.forEach(source => {
-      try {
-        source.playbackRate.setTargetAtTime(this.playbackRate, this.ctx.currentTime, 0.01);
-      } catch (e) {
-        // Source might be stopped
-      }
-    });
-  }
-
-  getCurrentPosition(): number {
-    return this.currentPosition;
-  }
-
-  updateCurrentPosition(newPosition: number): void {
-    this.currentPosition = newPosition;
-  }
-
-  getDuration(): number {
-    return this.duration;
-  }
-
-  performCleanup(): void {
-    // Aggressive cleanup - keep only current chunk
-    const currentChunk = Math.floor(this.currentPosition / this.chunkDuration);
-    const chunksToDelete: number[] = [];
-    
-    for (const [chunkIndex] of this.chunks) {
-      if (Math.abs(chunkIndex - currentChunk) > 1) {
-        chunksToDelete.push(chunkIndex);
-      }
-    }
-    
-    chunksToDelete.forEach(chunkIndex => {
-      const size = this.chunkSizes.get(chunkIndex) || 0;
-      this.memoryManager.removeMemoryUsage(size);
-      this.chunks.delete(chunkIndex);
-      this.chunkSizes.delete(chunkIndex);
-    });
-    
-    console.log(`[${this.label}] 🧹 Emergency cleanup: removed ${chunksToDelete.length} chunks`);
+    try {
+      this.gainNode.disconnect();
+      this.delayNode.disconnect();
+      this.feedbackGain.disconnect();
+    } catch (e) {}
   }
 
   dispose(): void {
     this.stop();
     
-    // Clean up all chunks
-    this.chunks.forEach((_, chunkIndex) => {
-      const size = this.chunkSizes.get(chunkIndex) || 0;
-      this.memoryManager.removeMemoryUsage(size);
-    });
+    // Clear cache for this stem
+    for (let i = 0; i < this.totalChunks; i++) {
+      this.cache.remove(`${this.label}_${i}`);
+    }
     
-    this.chunks.clear();
-    this.chunkSizes.clear();
-    this.loadingChunks.clear();
-    this.loadQueue = [];
-    
-    this.gainNode.disconnect();
-    this.delayNode.disconnect();
-    this.feedbackGain.disconnect();
+    this.fullBuffer = null;
+    this.disconnect();
   }
 }
 
-// ==================== 🔧 INTEGRATION FUNCTIONS ====================
+// ==================== 🎵 MOBILE MANAGER ====================
+
+export class StreamingAudioManager {
+  private ctx: AudioContext;
+  private stems = new Map<string, MobileStem>();
+  private masterGain: GainNode;
+  private cache = TinyCache.getInstance();
+  
+  private isPlaying = false;
+  private pausedAt = 0;
+
+  constructor(audioContext: AudioContext) {
+    this.ctx = audioContext;
+    
+    this.masterGain = this.ctx.createGain();
+    this.masterGain.gain.value = 0.7;
+    this.masterGain.connect(this.ctx.destination);
+    
+    // Mobile memory monitoring
+    if (isMobile()) {
+      setInterval(() => {
+        const memMB = this.cache.getMemoryMB();
+        if (memMB > CONFIG.maxMemoryMB * 0.8) {
+          console.warn(`📱 Memory warning: ${memMB.toFixed(1)}MB`);
+        }
+      }, 5000);
+    }
+  }
+
+  async addStem(label: string, url: string): Promise<MobileStem> {
+    const stem = new MobileStem(this.ctx, url, label);
+    await stem.initialize();
+    
+    stem.connect(this.masterGain);
+    this.stems.set(label, stem);
+    
+    console.log(`✅ ${label} mobile ready`);
+    return stem;
+  }
+
+  async playAll(): Promise<void> {
+    if (this.isPlaying) return;
+    
+    if (this.ctx.state === 'suspended') {
+      await this.ctx.resume();
+    }
+    
+    const startPos = this.pausedAt;
+    this.isPlaying = true;
+    
+    console.log(`📱 Mobile play all from ${startPos.toFixed(1)}s`);
+    
+    // Tight sync for mobile
+    const syncTime = this.ctx.currentTime + CONFIG.scheduleAhead;
+    
+    const promises = Array.from(this.stems.values()).map(stem =>
+      stem.play(startPos, syncTime)
+    );
+    
+    await Promise.all(promises);
+    console.log('📱 Mobile stems synced');
+  }
+
+  async stopAll(): Promise<void> {
+    if (!this.isPlaying) return;
+    
+    this.isPlaying = false;
+    this.pausedAt = this.getCurrentTime();
+    
+    const promises = Array.from(this.stems.values()).map(s => s.stop());
+    await Promise.all(promises);
+    
+    console.log(`📱 Mobile stopped at ${this.pausedAt.toFixed(1)}s`);
+  }
+
+  seekTo(seconds: number): void {
+    this.pausedAt = Math.max(0, seconds);
+    
+    this.stems.forEach(stem => {
+      stem.seekTo(this.pausedAt);
+    });
+  }
+
+  getCurrentTime(): number {
+    if (!this.isPlaying) return this.pausedAt;
+    
+    // Use first stem's position
+    const firstStem = this.stems.values().next().value;
+    return firstStem ? firstStem.getCurrentPosition() : this.pausedAt;
+  }
+
+  getStem(label: string):MobileStem | undefined {
+    return this.stems.get(label);
+  }
+
+  dispose(): void {
+    this.stopAll();
+    this.stems.forEach(stem => stem.dispose());
+    this.stems.clear();
+    this.masterGain.disconnect();
+    this.cache.clear();
+  }
+}
+
+// ==================== 🔧 EXPORTS ====================
 
 export const createStreamingPlayAll = (
   stems: Array<{ label: string; file: string }>,
@@ -682,115 +688,87 @@ export const createStreamingPlayAll = (
   delayNodesRef: React.MutableRefObject<Record<string, DelayNode>>,
   feedbackGainsRef: React.MutableRefObject<Record<string, GainNode>>
 ) => {
-  let streamingManager: StreamingAudioManager | null = null;
+  let manager: StreamingAudioManager | null = null;
 
   return async function playAll(): Promise<StreamingAudioManager> {
     try {
-      console.log('🚀 Initializing bulletproof streaming...');
+      console.log('📱 Starting mobile streaming...');
       
-      // Initialize audio context with mobile optimizations
       let ctx = audioCtxRef.current;
       if (!ctx || ctx.state === 'closed') {
         ctx = new AudioContext({
-          sampleRate: isMobile() ? 44100 : undefined, // Force standard sample rate on mobile
+          sampleRate: 44100,
+          latencyHint: 'interactive'
         });
         audioCtxRef.current = ctx;
-      }
-      
-      if (ctx.state === 'suspended') {
-        await ctx.resume();
-      }
-
-      // Clean up existing manager
-      if (streamingManager) {
-        streamingManager.dispose();
+        
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
       }
 
-      // Create new bulletproof manager
-      streamingManager = new StreamingAudioManager(ctx);
+      if (manager) {
+        manager.dispose();
+      }
 
-      // Add stems with progress tracking
-      console.log(`📦 Loading ${stems.length} stems...`);
+      manager = new StreamingAudioManager(ctx);
+
+      for (const { label, file } of stems) {
+        try {
+          const stem = await manager.addStem(label, file);
+          
+          gainNodesRef.current[label] = stem.gainNode;
+          delayNodesRef.current[label] = stem.delayNode;
+          feedbackGainsRef.current[label] = stem.feedbackGain;
+          
+        } catch (error) {
+          console.error(`Failed ${label}:`, error);
+        }
+      }
+
+      await manager.playAll();
+      return manager;
       
-      const loadPromises = stems.map(async ({ label, file }, index) => {
-        console.log(`⏳ Loading stem ${index + 1}/${stems.length}: ${label}`);
-        
-        const stem = await streamingManager!.addStem(label, file);
-        
-        // Store references for existing controls
-        gainNodesRef.current[label] = stem.gainNode;
-        delayNodesRef.current[label] = stem.delayNode;
-        feedbackGainsRef.current[label] = stem.feedbackGain;
-        
-        return stem;
-      });
-
-      await Promise.all(loadPromises);
-      console.log('✅ All stems loaded and ready!');
-
-      // Start synchronized playback
-      await streamingManager.playAll();
-      
-      return streamingManager;
     } catch (error) {
-      console.error('❌ Bulletproof streaming failed:', error);
+      console.error('📱 Mobile streaming failed:', error);
       throw error;
     }
   };
 };
 
 export const createStreamingStopAll = () => {
-  let streamingManager: StreamingAudioManager | null = null;
+  let manager: StreamingAudioManager | null = null;
   
-  const setManager = (manager: StreamingAudioManager) => {
-    streamingManager = manager;
+  const setManager = (mgr: StreamingAudioManager) => {
+    manager = mgr;
     
     return async function stopAll(): Promise<void> {
-      if (streamingManager) {
-        await streamingManager.stopAll();
+      if (manager) {
+        await manager.stopAll();
       }
     };
   };
 
   setManager.stopAll = async (): Promise<void> => {
-    if (streamingManager) {
-      await streamingManager.stopAll();
+    if (manager) {
+      await manager.stopAll();
     }
   };
 
   return setManager;
 };
 
-// ==================== 📱 MOBILE OPTIMIZATION ====================
-
 export const optimizeForMobile = (): (() => void) => {
-  console.log('📱 Bulletproof mobile optimization enabled');
+  console.log('📱 Tiny chunk mobile optimization');
   
-  const memoryManager = MemoryManager.getInstance();
-  
-  // Setup performance monitoring
-  let performanceTimer: number | null = null;
+  const cleanup = () => {
+    TinyCache.getInstance().clear();
+  };
   
   if (isMobile()) {
-    performanceTimer = window.setInterval(() => {
-      // Monitor frame rate on mobile
-      if ('memory' in performance) {
-        const memInfo = (performance as any).memory;
-        if (memInfo) {
-          const usageMB = memInfo.usedJSHeapSize / 1024 / 1024;
-          if (usageMB > MOBILE_CONFIG.maxMemoryMB * 0.9) {
-            console.warn(`📱 High memory usage: ${usageMB.toFixed(1)}MB`);
-          }
-        }
-      }
-    }, 10000); // Check every 10 seconds
+    window.addEventListener('beforeunload', cleanup);
+    window.addEventListener('pagehide', cleanup);
   }
   
-  // Return cleanup function
-  return () => {
-    if (performanceTimer) {
-      clearInterval(performanceTimer);
-    }
-    memoryManager.destroy();
-  };
+  return cleanup;
 };

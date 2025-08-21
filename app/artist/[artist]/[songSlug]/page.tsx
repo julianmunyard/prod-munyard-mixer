@@ -13,12 +13,7 @@ import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import TransparentMixerLayout from '../../../components/TransparentMixerLayout'
 import FullWaveformScrubber from '../../../components/FullWaveformScrubber';
-import { 
-  StreamingAudioManager, 
-  createStreamingPlayAll, 
-  createStreamingStopAll, 
-  optimizeForMobile 
-} from '@/lib/streamingAudio'
+import { initMixerEngine } from "@/audio/engine/mixerEngine";
 
 // ==================== 🧾 Types ====================
 type Song = {
@@ -38,6 +33,160 @@ type Song = {
 export type Stem = {
   label: string
   file: string
+}
+
+// ==================== 🎵 Simple Audio Manager ====================
+class SimpleAudioManager {
+  private audioElements: Map<string, HTMLAudioElement> = new Map()
+  private gainNodes: Map<string, GainNode> = new Map()
+  private delayNodes: Map<string, DelayNode> = new Map()
+  private feedbackNodes: Map<string, GainNode> = new Map()
+  private audioContext: AudioContext | null = null
+  private currentTime = 0
+  private duration = 0
+  private isPlaying = false
+
+  constructor() {
+    this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+  }
+
+  async loadStems(stems: Stem[]) {
+    if (!this.audioContext) return
+
+    // Clear existing audio elements
+    this.audioElements.forEach(audio => {
+      audio.pause()
+      audio.src = ''
+    })
+    this.audioElements.clear()
+    this.gainNodes.clear()
+    this.delayNodes.clear()
+    this.feedbackNodes.clear()
+
+    // Load new stems
+    for (const stem of stems) {
+      const audio = new Audio(stem.file)
+      audio.crossOrigin = 'anonymous'
+      audio.preload = 'auto'
+
+      // tape-style varispeed (no time-stretch)
+try { (audio as any).preservesPitch = false; } catch {}
+try { (audio as any).mozPreservesPitch = false; } catch {}
+try { (audio as any).webkitPreservesPitch = false; } catch {}
+try { (audio as any).msPreservesPitch = false; } catch {}
+      
+      // Setup Web Audio API nodes
+      const source = this.audioContext.createMediaElementSource(audio)
+      const gainNode = this.audioContext.createGain()
+      const delayNode = this.audioContext.createDelay(5.0)
+      const feedbackGain = this.audioContext.createGain()
+      
+      // Connect audio graph: source -> delay -> feedback -> gain -> destination
+      source.connect(delayNode)
+      delayNode.connect(feedbackGain)
+      feedbackGain.connect(delayNode) // feedback loop
+      delayNode.connect(gainNode)
+      gainNode.connect(this.audioContext.destination)
+      
+      // Set initial values
+      gainNode.gain.value = 1
+      delayNode.delayTime.value = 0
+      feedbackGain.gain.value = 0.3
+      
+      this.audioElements.set(stem.label, audio)
+      this.gainNodes.set(stem.label, gainNode)
+      this.delayNodes.set(stem.label, delayNode)
+      this.feedbackNodes.set(stem.label, feedbackGain)
+
+      // Set duration from first loaded audio
+      audio.addEventListener('loadedmetadata', () => {
+        if (this.duration === 0) {
+          this.duration = audio.duration
+        }
+      })
+    }
+  }
+
+  async play() {
+    if (!this.audioContext) return
+
+    // Resume audio context if suspended
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume()
+    }
+
+    // Sync all audio elements to current time
+    this.audioElements.forEach(audio => {
+      audio.currentTime = this.currentTime
+      audio.play().catch(console.error)
+    })
+    
+    this.isPlaying = true
+  }
+
+  stop() {
+    this.audioElements.forEach(audio => {
+      audio.pause()
+    })
+    this.isPlaying = false
+  }
+
+  seekTo(time: number) {
+    this.currentTime = time
+    this.audioElements.forEach(audio => {
+      audio.currentTime = time
+    })
+  }
+
+  getCurrentTime(): number {
+    // Get time from first audio element if playing
+    const firstAudio = Array.from(this.audioElements.values())[0]
+    if (firstAudio && this.isPlaying) {
+      this.currentTime = firstAudio.currentTime
+    }
+    return this.currentTime
+  }
+
+  getDuration(): number {
+    return this.duration
+  }
+
+  setVolume(stemLabel: string, volume: number) {
+    const gainNode = this.gainNodes.get(stemLabel)
+    if (gainNode) {
+      gainNode.gain.value = volume
+    }
+  }
+
+  setDelay(stemLabel: string, delayTime: number) {
+    const delayNode = this.delayNodes.get(stemLabel)
+    if (delayNode) {
+      delayNode.delayTime.value = delayTime
+    }
+  }
+
+  setPlaybackRate(stemLabel: string, rate: number) {
+    const audio = this.audioElements.get(stemLabel)
+    if (audio) {
+      audio.playbackRate = rate
+    }
+  }
+
+  dispose() {
+    this.stop()
+    this.audioElements.forEach(audio => {
+      audio.src = ''
+    })
+    this.audioElements.clear()
+    this.gainNodes.clear()
+    this.delayNodes.clear()
+    this.feedbackNodes.clear()
+    
+    if (this.audioContext) {
+      this.audioContext.close()
+      this.audioContext = null
+    }
+  }
 }
 
 // ==================== 🎬 Main Component ====================
@@ -65,17 +214,8 @@ export default function MixerPage() {
   const [duration, setDuration] = useState(0);
   let lastToggleTime = 0;
 
-  // -------------------- 🔌 BULLETPROOF Audio References --------------------
-  const audioCtxRef = useRef<AudioContext | null>(null)
-  const gainNodesRef = useRef<Record<string, GainNode>>({})
-  const delayNodesRef = useRef<Record<string, DelayNode>>({})
-  const feedbackGainsRef = useRef<Record<string, GainNode>>({})
-
-  // -------------------- 🎵 Streaming References --------------------
-  const playAllRef = useRef<(() => Promise<StreamingAudioManager>) | null>(null);
-  const stopAllRef = useRef<(() => Promise<void>) | null>(null);
-  const streamingManagerRef = useRef<StreamingAudioManager | null>(null);
-  const mobileCleanupRef = useRef<(() => void) | null>(null);
+  // -------------------- 🎵 Audio Manager Reference --------------------
+  const audioManagerRef = useRef<SimpleAudioManager | null>(null)
 
   // ==================== BROWSER DETECTION ====================
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
@@ -93,6 +233,14 @@ export default function MixerPage() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    const boot = async () => {
+      const { ctx } = await initMixerEngine();
+      console.log("🎧 MixerEngine ready inside MixerPage", ctx);
+    };
+    boot();
+  }, []);
 
   useEffect(() => {
     const checkOrientation = () => {
@@ -168,281 +316,192 @@ export default function MixerPage() {
     setStems(stemObjs)
   }, [songData?.stems])
 
-  // ==================== 🛡️ BULLETPROOF INITIALIZATION ====================
+  // ==================== 🛡️ Audio Manager Initialization ====================
   useEffect(() => {
     if (stems.length === 0) return;
 
-    console.log(`🛡️ Initializing BULLETPROOF streaming for ${stems.length} stems`);
+    console.log(`🛡️ Initializing audio manager for ${stems.length} stems`);
 
-    // Clean up any existing streaming
-    if (streamingManagerRef.current) {
-      streamingManagerRef.current.dispose();
-      streamingManagerRef.current = null;
+    // Clean up existing audio manager
+    if (audioManagerRef.current) {
+      audioManagerRef.current.dispose();
     }
 
-    // Clean up previous mobile optimization
-    if (mobileCleanupRef.current) {
-      mobileCleanupRef.current();
-      mobileCleanupRef.current = null;
-    }
-
-    // Initialize bulletproof streaming
-    playAllRef.current = createStreamingPlayAll(
-      stems, 
-      audioCtxRef, 
-      gainNodesRef, 
-      delayNodesRef, 
-      feedbackGainsRef
-    );
-
-    const stopAllCreator = createStreamingStopAll();
-    stopAllRef.current = stopAllCreator.stopAll;
-
-    // Start mobile optimization
-    mobileCleanupRef.current = optimizeForMobile();
+    // Create new audio manager
+    audioManagerRef.current = new SimpleAudioManager();
     
-    // Set ready state
-    setLoadingStems(false);
-    setAllReady(true);
-
-    console.log(`✅ Bulletproof streaming ready for ${stems.length} stems`);
+    // Load stems
+    audioManagerRef.current.loadStems(stems).then(() => {
+      setLoadingStems(false);
+      setAllReady(true);
+      console.log(`✅ Audio manager ready for ${stems.length} stems`);
+    });
 
     // Cleanup function
     return () => {
-      if (mobileCleanupRef.current) {
-        mobileCleanupRef.current();
-        mobileCleanupRef.current = null;
+      if (audioManagerRef.current) {
+        audioManagerRef.current.dispose();
+        audioManagerRef.current = null;
       }
     };
   }, [stems]);
 
-// ==================== 🎵 FIXED RESPONSIVE PLAYBACK FUNCTIONS ====================
+  // ==================== 🎵 Playback Functions ====================
+  const playAll = async () => {
+    if (!audioManagerRef.current || stems.length === 0) return;
 
-const playAll = async () => {
-  if (!songData || stems.length === 0 || !playAllRef.current) return;
-
-  console.log(`🎵 Starting playback from ${scrubPosition.toFixed(1)}s...`);
-  
-  // ✅ SET STATE IMMEDIATELY for instant UI response
-  setLoadingStems(true);
-  setIsPlaying(true);
-  isPlayingRef.current = true;
-  
-  try {
-    const manager = await playAllRef.current();
-    streamingManagerRef.current = manager;
+    console.log(`🎵 Starting playback from ${scrubPosition.toFixed(1)}s...`);
     
-    // ✅ Apply saved position immediately
-    if (scrubPosition > 0) {
-      console.log(`🎯 Resuming from ${scrubPosition.toFixed(1)}s`);
-      manager.seekTo(scrubPosition);
+    setLoadingStems(true);
+    setIsPlaying(true);
+    isPlayingRef.current = true;
+    
+    try {
+      await audioManagerRef.current.play();
+      setLoadingStems(false);
+      console.log('✅ Playback started successfully!');
+    } catch (error) {
+      console.error('❌ Playback failed:', error);
+      setIsPlaying(false);
+      isPlayingRef.current = false;
+      setLoadingStems(false);
     }
+  };
+
+  const stopAll = async () => {
+    if (!audioManagerRef.current) return;
+
+    console.log('⏹️ Stopping playback...');
     
-    setAllReady(true);
-    setLoadingStems(false);
-    console.log('✅ Playback started successfully!');
-  } catch (error) {
-    console.error('❌ Playback failed:', error);
-    
-    // Reset state on error
     setIsPlaying(false);
     isPlayingRef.current = false;
-    setLoadingStems(false);
-    setAllReady(true);
-  }
-};
-
-const stopAll = async () => {
-  console.log('⏹️ Stopping playback...');
-  
-  // ✅ SET STATE IMMEDIATELY for instant UI response
-  setIsPlaying(false);
-  isPlayingRef.current = false;
-  
-  // ✅ Save position FIRST
-  if (streamingManagerRef.current) {
-    const currentPos = streamingManagerRef.current.getCurrentTime();
+    
+    // Save current position
+    const currentPos = audioManagerRef.current.getCurrentTime();
     setScrubPosition(currentPos);
     console.log(`💾 Saved position: ${currentPos.toFixed(1)}s`);
     
-    // ✅ Stop the streaming manager
-    try {
-      await streamingManagerRef.current.stopAll();
-    } catch (error) {
-      console.warn('Stop error (non-critical):', error);
-    }
-  }
-  
-  // Also call the backup stop function
-  if (stopAllRef.current) {
-    try {
-      await stopAllRef.current();
-    } catch (error) {
-      console.warn('Backup stop error (non-critical):', error);
-    }
-  }
-  
-  console.log('✅ Playback stopped');
-};
-
+    audioManagerRef.current.stop();
+    console.log('✅ Playback stopped');
+  };
 
   // ==================== 🎚️ SCRUBBING & POSITION ====================
-
-function handleScrub(newPos: number) {
-  console.log(`🎯 Scrubbing to ${newPos.toFixed(1)}s`);
-  
-  // ✅ Update UI immediately
-  setScrubPosition(newPos);
-  
-  // ✅ Apply to streaming manager
-  if (streamingManagerRef.current) {
-    streamingManagerRef.current.seekTo(newPos);
+  function handleScrub(newPos: number) {
+    console.log(`🎯 Scrubbing to ${newPos.toFixed(1)}s`);
+    setScrubPosition(newPos);
     
-    // ✅ If playing, restart playback from new position
-    if (isPlayingRef.current) {
-      console.log('🔄 Restarting from new position...');
-      // Quick restart
-      streamingManagerRef.current.stopAll().then(() => {
-        streamingManagerRef.current?.playAll();
-      });
+    if (audioManagerRef.current) {
+      audioManagerRef.current.seekTo(newPos);
     }
   }
-}
 
-  // ==================== 📍 BULLETPROOF POSITION TRACKING ====================
-useEffect(() => {
-  if (!isPlaying || !streamingManagerRef.current) return;
-  
-  let raf: number;
-  let lastUpdateTime = 0;
-  
-  const update = (currentTime: number) => {
-    // ✅ Throttle updates to avoid too frequent calls
-    if (currentTime - lastUpdateTime < 50) { // Max 20fps updates
-      raf = requestAnimationFrame(update);
-      return;
-    }
-    lastUpdateTime = currentTime;
-    
-    if (streamingManagerRef.current && isPlayingRef.current) {
-      const streamTime = streamingManagerRef.current.getCurrentTime();
-      setScrubPosition(streamTime);
-      
-      // Update duration from first stem if available
-      const firstStem = streamingManagerRef.current.getStem(stems[0]?.label);
-      if (firstStem && firstStem.getDuration() > 0) {
-        setDuration(firstStem.getDuration());
-      }
-    }
-    
-    if (isPlayingRef.current) {
-      raf = requestAnimationFrame(update);
-    }
-  };
-  
-  raf = requestAnimationFrame(update);
-  
-  return () => {
-    if (raf) cancelAnimationFrame(raf);
-  };
-}, [isPlaying, stems]);
-  // ==================== 🎛️ BULLETPROOF VOLUME CONTROLS ====================
+  // ==================== 📍 Position Tracking ====================
   useEffect(() => {
-    if (!streamingManagerRef.current) return;
+    if (!isPlaying || !audioManagerRef.current) return;
+    
+    let raf: number;
+    let lastUpdateTime = 0;
+    
+    const update = (currentTime: number) => {
+      if (currentTime - lastUpdateTime < 33) { // 30fps updates
+        raf = requestAnimationFrame(update);
+        return;
+      }
+      lastUpdateTime = currentTime;
+      
+      if (audioManagerRef.current && isPlayingRef.current) {
+        const currentPos = audioManagerRef.current.getCurrentTime();
+        setScrubPosition(currentPos);
+        
+        const audioDuration = audioManagerRef.current.getDuration();
+        if (audioDuration > 0) {
+          setDuration(audioDuration);
+        }
+      }
+      
+      if (isPlayingRef.current) {
+        raf = requestAnimationFrame(update);
+      }
+    };
+    
+    raf = requestAnimationFrame(update);
+    
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [isPlaying]);
+
+  // ==================== 🎛️ Volume Controls ====================
+  useEffect(() => {
+    if (!audioManagerRef.current) return;
 
     stems.forEach(({ label }) => {
-      const stem = streamingManagerRef.current?.getStem(label);
-      if (!stem) return;
-
       const soloed = Object.values(solos).some(Boolean);
       const shouldPlay = soloed ? solos[label] : !mutes[label];
       const volume = shouldPlay ? volumes[label] : 0;
       
-      // Use bulletproof volume control
-      stem.setVolume(volume);
+      audioManagerRef.current?.setVolume(label, volume);
     });
   }, [volumes, mutes, solos, stems]);
 
-  // ==================== 🎛️ BULLETPROOF DELAY CONTROLS ====================
+  // ==================== 🎛️ Delay Controls ====================
   useEffect(() => {
-    if (!streamingManagerRef.current) return;
+    if (!audioManagerRef.current) return;
 
     stems.forEach(({ label }) => {
-      const stem = streamingManagerRef.current?.getStem(label);
-      if (stem) {
-        stem.setDelay(delays[label] || 0);
-      }
+      audioManagerRef.current?.setDelay(label, delays[label] || 0);
     });
   }, [delays, stems]);
 
-  // ==================== 🎛️ BULLETPROOF VARISPEED CONTROLS ====================
+  // ==================== 🎛️ Varispeed Controls ====================
   useEffect(() => {
-    if (!streamingManagerRef.current) return;
+    if (!audioManagerRef.current) return;
     
     stems.forEach(({ label }) => {
-      const stem = streamingManagerRef.current?.getStem(label);
-      if (stem) {
-        const playbackRate = isInstagram
-          ? varispeed
-          : isIOS
-          ? 2 - varispeed
-          : varispeed;
-        
-        stem.setPlaybackRate(playbackRate);
-      }
+      const playbackRate = isInstagram
+        ? varispeed
+        : isIOS
+        ? 2 - varispeed
+        : varispeed;
+      
+      audioManagerRef.current?.setPlaybackRate(label, playbackRate);
     });
   }, [varispeed, stems, isInstagram, isIOS]);
 
   // ==================== 🎮 KEYBOARD CONTROLS ====================
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
-      e.preventDefault();
-      const now = Date.now();
-      if (now - lastToggleTime < 200) return; // Reduced debounce time
-      lastToggleTime = now;
-      
-      console.log(`⌨️ Space pressed - Currently playing: ${isPlayingRef.current}`);
-      
-      if (isPlayingRef.current) {
-        stopAll();
-      } else {
-        playAll();
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
+        e.preventDefault();
+        const now = Date.now();
+        if (now - lastToggleTime < 200) return;
+        lastToggleTime = now;
+        
+        console.log(`⌨️ Space pressed - Currently playing: ${isPlayingRef.current}`);
+        
+        if (isPlayingRef.current) {
+          stopAll();
+        } else {
+          playAll();
+        }
       }
-    }
-  };
-  
-  window.addEventListener('keydown', handleKeyDown);
-  return () => window.removeEventListener('keydown', handleKeyDown);
-}, []); // Remove allReady dependency for instant response
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
-  // ==================== 🧹 BULLETPROOF CLEANUP ====================
-useEffect(() => {
-  return () => {
-    console.log('🧹 Bulletproof cleanup...');
-    
-    // Save final position before cleanup
-    if (streamingManagerRef.current) {
-      const finalPos = streamingManagerRef.current.getCurrentTime();
-      console.log(`💾 Final position saved: ${finalPos.toFixed(1)}s`);
-    }
-    
-    if (streamingManagerRef.current) {
-      streamingManagerRef.current.dispose();
-      streamingManagerRef.current = null;
-    }
-    
-    if (mobileCleanupRef.current) {
-      mobileCleanupRef.current();
-      mobileCleanupRef.current = null;
-    }
-    
-    if (audioCtxRef.current) {
-      audioCtxRef.current.close();
-      audioCtxRef.current = null;
-    }
-  };
-}, []);
+  // ==================== 🧹 Cleanup ====================
+  useEffect(() => {
+    return () => {
+      console.log('🧹 Component cleanup...');
+      
+      if (audioManagerRef.current) {
+        audioManagerRef.current.dispose();
+        audioManagerRef.current = null;
+      }
+    };
+  }, []);
 
   // ==================== 🎨 UTILITY FUNCTIONS ====================
   function formatTime(secs: number) {
