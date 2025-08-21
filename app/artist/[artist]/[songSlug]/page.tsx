@@ -13,7 +13,8 @@ import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import TransparentMixerLayout from '../../../components/TransparentMixerLayout'
 import FullWaveformScrubber from '../../../components/FullWaveformScrubber';
-import { initMixerEngine } from "@/audio/engine/mixerEngine";
+import { initMixerEngine, loadStems, play, stop, setVolume, setDelay, setRate } 
+  from "@/audio/engine/mixerEngine";
 
 // ==================== 🧾 Types ====================
 type Song = {
@@ -234,13 +235,20 @@ export default function MixerPage() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  useEffect(() => {
-    const boot = async () => {
-      const { ctx } = await initMixerEngine();
-      console.log("🎧 MixerEngine ready inside MixerPage", ctx);
-    };
-    boot();
-  }, []);
+useEffect(() => {
+  const boot = async () => {
+    const { ctx } = await initMixerEngine();
+    console.log("🎧 MixerEngine ready inside MixerPage", ctx);
+  };
+  boot();
+}, []);
+
+useEffect(() => {
+  if (stems.length > 0) {
+    loadStems(stems.map(s => ({ id: s.label, label: s.label, url: s.file })));
+    setAllReady(true);
+  }
+}, [stems]);
 
   useEffect(() => {
     const checkOrientation = () => {
