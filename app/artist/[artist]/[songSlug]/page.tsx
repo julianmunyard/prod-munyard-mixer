@@ -896,7 +896,7 @@ export default function MixerPage() {
             }
             @media screen and (max-width: 767px) and (orientation: landscape) {
               .mixer-module {
-                min-height: 220px !important;
+                min-height: 260px !important;
               }
             }
             @media screen and (max-width: 767px) {
@@ -1094,7 +1094,7 @@ export default function MixerPage() {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      height: isMobile ? '380px' : undefined,
+                      height: isMobile ? '420px' : '420px', // Increased height for more colored space
                       justifyContent: 'flex-start',
                       flexShrink: 0,
                       minWidth: isMobile ? '80px' : 'auto',
