@@ -2,19 +2,19 @@
   "name": "munyard-mixer-user-portal-working",
   "version": "0.1.0",
   "private": true,
-"scripts": {
-  "copy:worklet": "cpx audio/worklet/mixer-processor.js public/worklet/",
-  "watch:worklet": "cpx \"audio/worklet/*.js\" public/worklet/ --watch",
-  "dev:next": "next dev",
-  "dev": "npm-run-all --parallel watch:worklet dev:next",
-  "build": "npm run copy:worklet && next build",
-  "start": "next start"
-},
+  "scripts": {
+    "copy:worklet": "cpx audio/worklet/mixer-processor.js public/worklet/",
+    "watch:worklet": "cpx \"audio/worklet/*.js\" public/worklet/ --watch",
+    "dev:next": "next dev",
+    "dev": "npm-run-all --parallel watch:worklet dev:next",
+    "build": "npm run copy:worklet && next build",
+    "start": "next start"
+  },
   "dependencies": {
     "@ffmpeg/core": "^0.11.0",
     "@ffmpeg/ffmpeg": "^0.11.6",
     "@supabase/supabase-js": "^2.50.2",
-    "@superpoweredsdk/web": "^2.7.5",
+    "@superpoweredsdk/web": "^2.7.2",
     "axios": "^1.10.0",
     "next": "15.3.4",
     "react": "^19.0.0",

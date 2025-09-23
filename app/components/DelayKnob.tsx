@@ -56,7 +56,7 @@ export default function DelayKnob({ value, onChange, color }: DelayKnobProps) {
 
   return (
 <div className="flex flex-col items-center text-xs select-none" style={{ color: color ?? 'white' }}>
-  <span className="mb-1">DELAY</span>
+  <span className="mb-1">REVERB</span>
 <div
   ref={knobRef}
   onMouseDown={() => setDragging(true)}

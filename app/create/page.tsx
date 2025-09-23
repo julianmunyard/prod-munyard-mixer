@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid'
 import axios, { AxiosProgressEvent } from 'axios'
 import { HexColorPicker } from 'react-colorful'
 import MiniMixerPreview from '../components/MiniMixerPreview'
-import { convertToOgg } from '@/lib/convertToOgg';
+import { convertToMp3 } from '@/lib/convertToMp3';
 
 
 
@@ -106,7 +106,7 @@ const handleConvertAllToMp3 = async () => {
     const file = stems[i]
     if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
       try {
-const ogg = await convertToOgg(file)
+const ogg = await convertToMp3(file)
 convertedFiles.push(ogg)
       } catch (err) {
         clearInterval(interval)
@@ -235,7 +235,7 @@ const handleSubmit = async (e: React.FormEvent) => {
  if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
   try {
     console.log(`🎛 Converting ${file.name} to OGG...`)
-    processedFile = await convertToOgg(file)
+    processedFile = await convertToMp3(file)
     console.log('✅ Conversion complete:', processedFile.name)
   } catch (err) {
     console.error('❌ OGG conversion failed:', err)

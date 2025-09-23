@@ -1,0 +1,13 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Next.js: debug client-side",
+        "type": "chrome", // or "chrome", "firefox"
+        "request": "launch",
+        "url": "http://localhost:3000", // Your Next.js app's URL
+        "webRoot": "${workspaceFolder}",
+        "sourceMaps": true
+      }
+    ]
+  }

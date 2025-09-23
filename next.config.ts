@@ -46,9 +46,9 @@ const nextConfig: NextConfig = {
         ],
       },
 
-      // ✅ And for your mixer-processor worklet (so it serves cleanly)
+      // ✅ And for your worklet processors (so they serve cleanly)
       {
-        source: '/mixer-processor.js',
+        source: '/worklet/:file*.js',
         headers: [
           { key: 'Content-Type', value: 'application/javascript' },
         ],
