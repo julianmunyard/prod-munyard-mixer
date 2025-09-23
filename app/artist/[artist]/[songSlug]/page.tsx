@@ -656,7 +656,15 @@ export default function MixerPage() {
     setStems(stemObjs);
     stemsRef.current = stemObjs; // Update ref
     
-    // Just update the ref, let loadAllTracks handle the loading state
+    // Set loading state immediately when stems are available
+    if (stemObjs.length > 0) {
+      setLoadingStems(true);
+      setTotalStemsCount(stemObjs.length);
+      totalStemsCountRef.current = stemObjs.length;
+      setLoadedStemsCount(0);
+      setAllReady(false);
+      console.log(`🎵 IMMEDIATE: Set loading state for ${stemObjs.length} stems`);
+    }
   }, [songData?.stems])
 
   // ==================== 🎵 Load All Stems ====================
@@ -668,11 +676,9 @@ export default function MixerPage() {
       console.log("🎵 stems:", stems);
       console.log("🎵 artist:", artist, "songSlug:", songSlug);
       
-      if (!mixerReady || !stems.length) {
-        console.log("🎵 Skipping loadAllTracks - conditions not met");
-        console.log("🎵 mixerReady:", mixerReady);
-        console.log("🎵 stems.length:", stems.length);
-        console.log("🎵 stems:", stems);
+      // Start loading immediately when we have stems, don't wait for mixerReady
+      if (!stems.length) {
+        console.log("🎵 Skipping loadAllTracks - no stems available");
         return;
       }
       
@@ -682,14 +688,14 @@ export default function MixerPage() {
         return;
       }
 
+      // If mixer isn't ready yet, wait for it
+      if (!mixerReady) {
+        console.log("🎵 Mixer not ready yet, waiting...");
+        return;
+      }
+
       console.log("Starting to load all tracks...");
-      // Always set loading state when starting to load
-      setLoadingStems(true);
-      setAllReady(false);
-      // Reset counts to ensure proper display
-      setLoadedStemsCount(0);
-      setTotalStemsCount(stems.length);
-      totalStemsCountRef.current = stems.length;
+      // Loading state is already set when stems were parsed
       console.log(`🎵 Loading ${stems.length} stems...`);
 
       try {
