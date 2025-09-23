@@ -1130,7 +1130,7 @@ export default function MixerPage() {
                             writingMode: 'bt-lr' as any,
                             WebkitAppearance: 'slider-vertical',
                             width: '4px',
-                            height: isMobile ? '100px' : '150px',
+                            height: isMobile ? '140px' : '180px', // Increased height for more volume control length
                             background: 'transparent',
                           }}
                         />
