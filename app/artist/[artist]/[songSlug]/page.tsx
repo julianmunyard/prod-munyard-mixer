@@ -480,6 +480,7 @@ export default function MixerPage() {
   const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
 
+
   // ==================== 🎵 Superpowered Initialization ====================
   useEffect(() => {
     let mounted = true;
@@ -652,6 +653,22 @@ export default function MixerPage() {
     console.log('🎵 Setting stems to:', stemObjs);
     setStems(stemObjs);
     stemsRef.current = stemObjs; // Update ref
+    
+    // Initialize loading state when stems are available
+    if (stemObjs.length > 0) {
+      setLoadingStems(true);
+      setTotalStemsCount(stemObjs.length);
+      totalStemsCountRef.current = stemObjs.length;
+      setLoadedStemsCount(0);
+      setAllReady(false); // Ensure allReady is false when starting to load
+      console.log(`🎵 Initialized loading state: 0/${stemObjs.length} stems`);
+    } else {
+      // Reset loading state if no stems
+      setLoadingStems(false);
+      setTotalStemsCount(0);
+      setLoadedStemsCount(0);
+      console.log('🎵 No stems available - reset loading state');
+    }
   }, [songData?.stems])
 
   // ==================== 🎵 Load All Stems ====================
@@ -678,12 +695,13 @@ export default function MixerPage() {
       }
 
       console.log("Starting to load all tracks...");
-      setLoadingStems(true);
+      // Only set loading state if not already set from stems initialization
+      if (!loadingStems) {
+        setLoadingStems(true);
+      }
       setAllReady(false);
-      setLoadedStemsCount(0);
-      setTotalStemsCount(stems.length);
-      totalStemsCountRef.current = stems.length; // Update ref
-      console.log(`🎵 Set totalStemsCount to ${stems.length}`);
+      // Don't reset counts here - they should already be set from stems initialization
+      console.log(`🎵 Loading ${stems.length} stems...`);
 
       try {
         // Load stems sequentially to ensure correct order assignment
@@ -1094,7 +1112,7 @@ export default function MixerPage() {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      height: isMobile ? '420px' : '420px', // Increased height for more colored space
+                      height: isMobile ? '420px' : undefined, // Keep mobile increased, desktop back to original auto-sizing
                       justifyContent: 'flex-start',
                       flexShrink: 0,
                       minWidth: isMobile ? '80px' : 'auto',
@@ -1130,7 +1148,7 @@ export default function MixerPage() {
                             writingMode: 'bt-lr' as any,
                             WebkitAppearance: 'slider-vertical',
                             width: '4px',
-                            height: isMobile ? '140px' : '180px', // Increased height for more volume control length
+                            height: isMobile ? '140px' : undefined, // Keep mobile increased, desktop back to original auto-sizing
                             background: 'transparent',
                           }}
                         />
