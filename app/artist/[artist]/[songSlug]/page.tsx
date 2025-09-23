@@ -1061,18 +1061,6 @@ export default function MixerPage() {
               {/* Fade indicators for mobile scrolling */}
               {isMobile && (
                 <>
-                  <div
-                    className="absolute left-0 top-0 bottom-0 w-8 pointer-events-none z-10"
-                    style={{
-                      background: 'linear-gradient(to right, rgba(252, 250, 238, 1), rgba(252, 250, 238, 0))',
-                    }}
-                  />
-                  <div
-                    className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none z-10"
-                    style={{
-                      background: 'linear-gradient(to left, rgba(252, 250, 238, 1), rgba(252, 250, 238, 0))',
-                    }}
-                  />
                 </>
               )}
               <div
