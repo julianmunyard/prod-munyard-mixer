@@ -724,7 +724,7 @@ export default function MixerPage() {
     };
 
     loadAllTracks();
-  }, [stems, mixerReady]);
+  }, [stems, mixerReady, artist, songSlug]);
 
 
   // ==================== 🎵 Auto-Play Logic ====================
