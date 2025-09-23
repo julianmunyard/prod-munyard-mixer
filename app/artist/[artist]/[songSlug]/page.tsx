@@ -688,9 +688,9 @@ export default function MixerPage() {
         return;
       }
 
-      // If mixer isn't ready yet, wait for it
-      if (!mixerReady) {
-        console.log("🎵 Mixer not ready yet, waiting...");
+      // Check if mixer is available, if not wait a bit and try again
+      if (!mixerManagerRef.current) {
+        console.log("🎵 Mixer not available yet, waiting...");
         return;
       }
 
@@ -730,8 +730,32 @@ export default function MixerPage() {
     };
 
     loadAllTracks();
-  }, [stems, mixerReady, artist, songSlug]);
+  }, [stems, artist, songSlug]);
 
+  // ==================== 🎵 Trigger Loading When Mixer Ready ====================
+  useEffect(() => {
+    if (mixerReady && stems.length > 0 && loadingStems && loadedStemsCount === 0) {
+      console.log("🎵 Mixer became ready, triggering loadAllTracks");
+      // Trigger the loadAllTracks function by calling it directly
+      const loadTracks = async () => {
+        if (!mixerManagerRef.current || !stems.length || !artist || !songSlug) return;
+        
+        console.log("🎵 Starting delayed track loading...");
+        try {
+          for (let index = 0; index < stems.length; index++) {
+            const stem = stems[index];
+            const url = await resolveStemUrl(stem.file);
+            await mixerManagerRef.current.loadTrackSequentially(url, index);
+          }
+          console.log("🎵 All tracks loaded successfully!");
+        } catch (error) {
+          console.error("🎵 Error loading tracks:", error);
+          setLoadingStems(false);
+        }
+      };
+      loadTracks();
+    }
+  }, [mixerReady, stems.length, loadingStems, loadedStemsCount, stems, artist, songSlug]);
 
   // ==================== 🎵 Auto-Play Logic ====================
   useEffect(() => {
