@@ -656,73 +656,31 @@ export default function MixerPage() {
     setStems(stemObjs);
     stemsRef.current = stemObjs; // Update ref
     
-    // Set loading state immediately when stems are available
-    if (stemObjs.length > 0) {
-      setLoadingStems(true);
-      setTotalStemsCount(stemObjs.length);
-      totalStemsCountRef.current = stemObjs.length;
-      setLoadedStemsCount(0);
-      setAllReady(false);
-      console.log(`🎵 IMMEDIATE: Set loading state for ${stemObjs.length} stems`);
-    }
+    // Just update the ref, let loadAllTracks handle everything
   }, [songData?.stems])
 
   // ==================== 🎵 Load All Stems ====================
   useEffect(() => {
     const loadAllTracks = async () => {
-      console.log("🎵 loadAllTracks useEffect triggered");
-      console.log("🎵 mixerReady:", mixerReady);
-      console.log("🎵 stems.length:", stems.length);
-      console.log("🎵 stems:", stems);
-      console.log("🎵 artist:", artist, "songSlug:", songSlug);
-      
-      // Start loading immediately when we have stems, don't wait for mixerReady
-      if (!stems.length) {
-        console.log("🎵 Skipping loadAllTracks - no stems available");
-        return;
-      }
-      
-      // Check if we have valid URL parameters
-      if (!artist || !songSlug) {
-        console.log("🎵 Skipping loadAllTracks - missing URL parameters");
-        return;
-      }
-
-      // Check if mixer is available, if not wait a bit and try again
-      if (!mixerManagerRef.current) {
-        console.log("🎵 Mixer not available yet, waiting...");
+      if (!mixerReady || !stems.length || !artist || !songSlug) {
         return;
       }
 
       console.log("Starting to load all tracks...");
-      // Loading state is already set when stems were parsed
-      console.log(`🎵 Loading ${stems.length} stems...`);
+      setLoadingStems(true);
+      setAllReady(false);
+      setLoadedStemsCount(0);
+      setTotalStemsCount(stems.length);
+      totalStemsCountRef.current = stems.length;
 
       try {
-        // Load stems sequentially to ensure correct order assignment
-        console.log(`🎵 Starting to load ${stems.length} stems sequentially...`);
-        
-        if (stems.length === 0) {
-          console.error("🎵 No stems to load - stems array is empty!");
-          setLoadingStems(false);
-          return;
-        }
-        
         for (let index = 0; index < stems.length; index++) {
           const stem = stems[index];
-          console.log(`🎵 Processing stem ${index}:`, stem);
           const url = await resolveStemUrl(stem.file);
-          console.log(`Loading track ${index}:`, url);
-          console.log(`🎵 About to call loadTrackSequentially for stem ${index}`);
           await mixerManagerRef.current!.loadTrackSequentially(url, index);
-          console.log(`🎵 loadTrackSequentially completed for stem ${index}`);
-          console.log(`Track ${index} loaded successfully`);
         }
-        
-        console.log("All tracks loaded successfully");
         setLoadingStems(false);
         setAllReady(true);
-        console.log("🎵 setAllReady(true) called");
       } catch (e) {
         console.error("Failed to load tracks:", e);
         setLoadingStems(false);
@@ -730,32 +688,7 @@ export default function MixerPage() {
     };
 
     loadAllTracks();
-  }, [stems, artist, songSlug]);
-
-  // ==================== 🎵 Trigger Loading When Mixer Ready ====================
-  useEffect(() => {
-    if (mixerReady && stems.length > 0 && loadingStems && loadedStemsCount === 0) {
-      console.log("🎵 Mixer became ready, triggering loadAllTracks");
-      // Trigger the loadAllTracks function by calling it directly
-      const loadTracks = async () => {
-        if (!mixerManagerRef.current || !stems.length || !artist || !songSlug) return;
-        
-        console.log("🎵 Starting delayed track loading...");
-        try {
-          for (let index = 0; index < stems.length; index++) {
-            const stem = stems[index];
-            const url = await resolveStemUrl(stem.file);
-            await mixerManagerRef.current.loadTrackSequentially(url, index);
-          }
-          console.log("🎵 All tracks loaded successfully!");
-        } catch (error) {
-          console.error("🎵 Error loading tracks:", error);
-          setLoadingStems(false);
-        }
-      };
-      loadTracks();
-    }
-  }, [mixerReady, stems.length, loadingStems, loadedStemsCount, stems, artist, songSlug]);
+  }, [stems, mixerReady, artist, songSlug]);
 
   // ==================== 🎵 Auto-Play Logic ====================
   useEffect(() => {
