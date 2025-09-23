@@ -1056,6 +1056,7 @@ export default function MixerPage() {
                 overflow: 'hidden',
                 height: isMobile ? '420px' : 'auto',
                 maxHeight: isMobile ? '420px' : 'none',
+                marginTop: '-20px', // Move mixer modules up closer to timestamp
               }}
             >
               {/* Fade indicators for mobile scrolling */}
