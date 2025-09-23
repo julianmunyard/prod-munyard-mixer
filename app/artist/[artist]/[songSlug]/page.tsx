@@ -656,21 +656,7 @@ export default function MixerPage() {
     setStems(stemObjs);
     stemsRef.current = stemObjs; // Update ref
     
-    // Initialize loading state when stems are available
-    if (stemObjs.length > 0) {
-      setLoadingStems(true);
-      setTotalStemsCount(stemObjs.length);
-      totalStemsCountRef.current = stemObjs.length;
-      setLoadedStemsCount(0);
-      setAllReady(false); // Ensure allReady is false when starting to load
-      console.log(`🎵 Initialized loading state: 0/${stemObjs.length} stems`);
-    } else {
-      // Reset loading state if no stems
-      setLoadingStems(false);
-      setTotalStemsCount(0);
-      setLoadedStemsCount(0);
-      console.log('🎵 No stems available - reset loading state');
-    }
+    // Just update the ref, let loadAllTracks handle the loading state
   }, [songData?.stems])
 
   // ==================== 🎵 Load All Stems ====================
