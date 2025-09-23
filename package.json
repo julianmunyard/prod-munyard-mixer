@@ -8,7 +8,8 @@
     "dev:next": "next dev",
     "dev": "npm-run-all --parallel watch:worklet dev:next",
     "build": "npm run copy:worklet && next build",
-    "start": "next start"
+    "start": "next start",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@ffmpeg/core": "^0.11.0",
