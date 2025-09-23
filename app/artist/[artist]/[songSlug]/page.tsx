@@ -522,6 +522,8 @@ export default function MixerPage() {
           mixerManagerRef.current = manager;
           setMixerReady(true);
           console.log("🎵 Mixer ready state set to true");
+          console.log("🎵 Current stems:", stems);
+          console.log("🎵 Stems length:", stems.length);
           
           // Set up message listener for position updates
           manager.setMessageListener((event: MessageEvent) => {
@@ -695,12 +697,13 @@ export default function MixerPage() {
       }
 
       console.log("Starting to load all tracks...");
-      // Only set loading state if not already set from stems initialization
-      if (!loadingStems) {
-        setLoadingStems(true);
-      }
+      // Always set loading state when starting to load
+      setLoadingStems(true);
       setAllReady(false);
-      // Don't reset counts here - they should already be set from stems initialization
+      // Reset counts to ensure proper display
+      setLoadedStemsCount(0);
+      setTotalStemsCount(stems.length);
+      totalStemsCountRef.current = stems.length;
       console.log(`🎵 Loading ${stems.length} stems...`);
 
       try {
