@@ -55,8 +55,6 @@ export default function DelayKnob({ value, onChange, color }: DelayKnobProps) {
   const angle = -135 + value * 270
 
   return (
-<div className="flex flex-col items-center text-xs select-none" style={{ color: color ?? 'white' }}>
-  <span className="mb-1">REVERB</span>
 <div
   ref={knobRef}
   onMouseDown={() => setDragging(true)}
@@ -68,6 +66,5 @@ export default function DelayKnob({ value, onChange, color }: DelayKnobProps) {
           style={{ transform: `rotate(${angle}deg) translateY(-10px)` }}
         />
       </div>
-    </div>
   )
 }

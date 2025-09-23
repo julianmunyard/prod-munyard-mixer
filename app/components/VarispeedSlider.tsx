@@ -13,7 +13,9 @@ type Props = {
   primaryColor?: string
   bpm?: number | null
   horizontal?: boolean
-  stemCount?: number       // <-- ADD THIS LINE
+  stemCount?: number
+  varispeedMode?: 'timeStretch' | 'natural'
+  onVarispeedModeChange?: (mode: 'timeStretch' | 'natural') => void
 }
 
 export default function VarispeedSlider({
@@ -23,7 +25,9 @@ export default function VarispeedSlider({
   bpm,
   primaryColor = '#B8001F',
   horizontal = false,
-  stemCount = 0,   // <-- add this default
+  stemCount = 0,
+  varispeedMode = 'timeStretch',
+  onVarispeedModeChange,
 }: Props) {
   const previousTick = useRef<number | null>(null)
 
@@ -131,6 +135,24 @@ const tickLabels = shouldFlipLabels
           <span className="text-[12px] font-mono tracking-wider mt-1" style={{ color: primaryColor }}>
             VARISPEED
           </span>
+          {/* Mode Toggle Button */}
+          {onVarispeedModeChange && (
+            <button
+              onClick={() => {
+                const newMode = varispeedMode === 'timeStretch' ? 'natural' : 'timeStretch';
+                onVarispeedModeChange(newMode);
+              }}
+              className="mt-2 px-2 py-1 text-[10px] font-mono rounded border"
+              style={{ 
+                color: primaryColor,
+                borderColor: primaryColor,
+                backgroundColor: varispeedMode === 'natural' ? primaryColor + '20' : 'transparent'
+              }}
+              title={`Switch to ${varispeedMode === 'timeStretch' ? 'Natural' : 'Time-stretch'} mode`}
+            >
+              {varispeedMode === 'timeStretch' ? 'STRETCH' : 'NATURAL'}
+            </button>
+          )}
         </div>
       )}
 

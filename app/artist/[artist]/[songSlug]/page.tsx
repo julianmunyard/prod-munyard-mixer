@@ -407,11 +407,13 @@ export default function MixerPage() {
   const [mutes, setMutes] = useState<Record<string, boolean>>({})
   const [solos, setSolos] = useState<Record<string, boolean>>({})
   const [varispeed, setVarispeed] = useState(1)
+  const [isNaturalVarispeed, setIsNaturalVarispeed] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const [reverbConfigModal, setReverbConfigModal] = useState<{
     isOpen: boolean
     stemLabel: string
     stemIndex: number
+    position?: { x: number; y: number }
   }>({ isOpen: false, stemLabel: '', stemIndex: 0 })
   const [reverbConfigs, setReverbConfigs] = useState<Record<string, {
     mix: number
@@ -772,6 +774,13 @@ export default function MixerPage() {
     });
   }, [volumes, stems]);
 
+
+  useEffect(() => {
+    if (!mixerManagerRef.current) return;
+    // Set varispeed mode: 0 = timeStretch, 1 = natural
+    mixerManagerRef.current.setParameter("varispeedMode", isNaturalVarispeed ? 1 : 0);
+  }, [isNaturalVarispeed]);
+
   useEffect(() => {
     if (!mixerManagerRef.current) return;
     mixerManagerRef.current.setParameter("speed", varispeed);
@@ -789,11 +798,12 @@ export default function MixerPage() {
   }, [reverbs, stems]);
 
   // ==================== 🎛️ REVERB CONFIGURATION ====================
-  const handleReverbConfigOpen = (stemLabel: string, stemIndex: number) => {
+  const handleReverbConfigOpen = (stemLabel: string, stemIndex: number, position?: { x: number; y: number }) => {
     setReverbConfigModal({
       isOpen: true,
       stemLabel,
-      stemIndex
+      stemIndex,
+      position
     })
   }
 
@@ -889,6 +899,15 @@ export default function MixerPage() {
                 min-height: 220px !important;
               }
             }
+            @media screen and (max-width: 767px) {
+              .stems-container::-webkit-scrollbar {
+                display: none;
+              }
+              .stems-container {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+              }
+            }
           `}</style>
 
           {/* 🎥 Background Video */}
@@ -931,10 +950,11 @@ export default function MixerPage() {
             <h1
               className="village text-center mb-16"
               style={{
-                fontSize: '96px',
+                fontSize: isMobile ? '48px' : '96px',
                 letterSpacing: '0.05em',
                 lineHeight: '1.1',
                 color: primary,
+                padding: isMobile ? '0 16px' : '0',
               }}
             >
               {songData?.title}
@@ -942,11 +962,11 @@ export default function MixerPage() {
 
 
             {/* ▶️ Playback Controls */}
-            <div className="flex justify-center mb-2 gap-8">
+            <div className={`flex justify-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
               <button
                 onClick={playAll}
                 disabled={!allReady}
-                className={`pressable px-6 py-2 font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
+                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
                   !allReady 
                     ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
                     : 'hover:opacity-90'
@@ -966,7 +986,7 @@ export default function MixerPage() {
 
               <button
                 onClick={stopAll}
-                className="pressable text-white px-6 py-2 font-mono tracking-wide"
+                className={`pressable text-white ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
                 style={{ backgroundColor: primary }}
               >
                 Stop
@@ -974,11 +994,29 @@ export default function MixerPage() {
 
               <button
                 onClick={() => {
+                  // Prevent clicking if audio engine not ready
+                  if (mixerManagerRef.current?.isReady !== true) {
+                    console.warn('Audio engine not ready, ignoring UNSOLO click');
+                    return;
+                  }
+                  
+                  // Update UI state first
                   setSolos(Object.fromEntries(stems.map(s => [s.label, false])))
                   setMutes(Object.fromEntries(stems.map(s => [s.label, false])))
+                  
+                  // Clear all solo and mute states in audio engine with error handling
+                  try {
+                    stems.forEach((_, index) => {
+                      mixerManagerRef.current!.setParameter("solo", 0, index);
+                      mixerManagerRef.current!.setParameter("mute", 0, index);
+                    });
+                    console.log('Cleared all solo and mute states');
+                  } catch (error) {
+                    console.error('Failed to clear solo/mute states:', error);
+                  }
                 }}
                 style={{ backgroundColor: primary, color: 'white' }}
-                className="pressable px-6 py-2 font-mono tracking-wide"
+                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
               >
                 UNSOLO
               </button>
@@ -1012,23 +1050,45 @@ export default function MixerPage() {
 
             {/* 🎚️ Mixer Modules */}
             <div
-              className="w-full flex justify-center sm:overflow-visible overflow-x-auto"
+              className="w-full flex justify-center relative"
               style={{
-                transform:
-                  typeof window !== 'undefined' &&
-                  window.innerWidth < 768 &&
-                  window.innerWidth > window.innerHeight
-                    ? 'scale(0.85)'
-                    : 'scale(1)',
-                transformOrigin: 'top center',
+                padding: isMobile ? '0' : '0',
+                overflow: 'hidden',
+                height: isMobile ? '420px' : 'auto',
+                maxHeight: isMobile ? '420px' : 'none',
               }}
             >
+              {/* Fade indicators for mobile scrolling */}
+              {isMobile && (
+                <>
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-8 pointer-events-none z-10"
+                    style={{
+                      background: 'linear-gradient(to right, rgba(252, 250, 238, 1), rgba(252, 250, 238, 0))',
+                    }}
+                  />
+                  <div
+                    className="absolute right-0 top-0 bottom-0 w-8 pointer-events-none z-10"
+                    style={{
+                      background: 'linear-gradient(to left, rgba(252, 250, 238, 1), rgba(252, 250, 238, 0))',
+                    }}
+                  />
+                </>
+              )}
               <div
-                className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'} px-2`}
+                className={`flex ${isMobile ? 'gap-2' : stems.length >= 6 ? 'gap-4' : 'gap-8'} ${isMobile ? 'overflow-x-auto stems-container' : ''}`}
                 style={{
-                  minWidth: stems.length <= 4 ? '100%' : 'max-content',
-                  justifyContent: stems.length <= 4 ? 'center' : 'flex-start',
+                  width: '100%',
+                  maxWidth: isMobile ? '100vw' : 'none',
+                  justifyContent: isMobile ? 'flex-start' : 'center',
+                  flexWrap: 'nowrap',
                   margin: '0 auto',
+                  padding: isMobile ? '0 8px' : '0 8px',
+                  scrollBehavior: 'smooth',
+                  WebkitOverflowScrolling: 'touch',
+                  overflowY: 'hidden',
+                  height: '100%',
+                  alignItems: 'center',
                 }}
               >
                 {stems.map(({ label }) => (
@@ -1036,20 +1096,22 @@ export default function MixerPage() {
                     key={label}
                     className="mixer-module"
                     style={{
-                      width: stems.length >= 6 ? '86px' : '96px',
+                      width: isMobile ? '80px' : stems.length >= 6 ? '86px' : '96px',
                       backgroundColor: primary,
                       border: '1px solid #444',
                       boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
                       borderRadius: '10px',
-                      padding: '16px',
+                      padding: isMobile ? '12px' : '16px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      height: isMobile ? '450px' : undefined,
+                      height: isMobile ? '380px' : undefined,
                       justifyContent: 'flex-start',
+                      flexShrink: 0,
+                      minWidth: isMobile ? '80px' : 'auto',
                     }}
                   >
-                    <div style={{ width: '16px', height: isMobile ? '40px' : '40px', marginBottom: isMobile ? '20px' : '18px' }} />
+                    <div style={{ width: '16px', height: isMobile ? '30px' : '40px', marginBottom: isMobile ? '16px' : '18px' }} />
 
                     <div
                       style={{
@@ -1079,7 +1141,7 @@ export default function MixerPage() {
                             writingMode: 'bt-lr' as any,
                             WebkitAppearance: 'slider-vertical',
                             width: '4px',
-                            height: isMobile ? '150px' : '150px',
+                            height: isMobile ? '100px' : '150px',
                             background: 'transparent',
                           }}
                         />
@@ -1088,14 +1150,24 @@ export default function MixerPage() {
 
                     {/* Reverb Knob */}
                     <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-                      <div
-                        onContextMenu={(e) => {
-                          e.preventDefault()
-                          const stemIndex = stems.findIndex(s => s.label === label)
-                          handleReverbConfigOpen(label, stemIndex)
-                        }}
-                        style={{ cursor: 'context-menu' }}
-                      >
+                      <div className="flex flex-col items-center text-xs select-none" style={{ color: 'white' }}>
+                        <span 
+                          className="mb-1 cursor-pointer hover:opacity-75"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            const stemIndex = stems.findIndex(s => s.label === label)
+                            handleReverbConfigOpen(label, stemIndex, { x: e.clientX, y: e.clientY })
+                          }}
+                          onTouchEnd={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            const stemIndex = stems.findIndex(s => s.label === label)
+                            handleReverbConfigOpen(label, stemIndex, { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY })
+                          }}
+                        >
+                          REVERB
+                        </span>
                         <DelayKnob
                           value={reverbs[label] || 0}
                           onChange={(val) => {
@@ -1109,14 +1181,39 @@ export default function MixerPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <button
                         onClick={() => {
-                          setMutes(prev => ({ ...prev, [label]: !prev[label] }))
+                          // Prevent rapid clicking
+                          if (mixerManagerRef.current?.isReady !== true) {
+                            console.warn('Audio engine not ready, ignoring mute click');
+                            return;
+                          }
+                          
+                          const stemIndex = stems.findIndex(s => s.label === label);
+                          if (stemIndex === -1) {
+                            console.warn(`Stem not found: ${label}`);
+                            return;
+                          }
+                          
+                          const newMuteState = !mutes[label];
+                          
+                          // Update UI state first
+                          setMutes(prev => ({ ...prev, [label]: newMuteState }))
                           setSolos(prev => ({ ...prev, [label]: false }))
+                          
+                          // Apply mute to audio engine with error handling
+                          try {
+                            mixerManagerRef.current.setParameter("mute", newMuteState ? 1 : 0, stemIndex);
+                            console.log(`${newMuteState ? 'Muted' : 'Unmuted'} stem ${stemIndex}: ${label}`);
+                          } catch (error) {
+                            console.error('Failed to set mute parameter:', error);
+                            // Revert UI state on error
+                            setMutes(prev => ({ ...prev, [label]: !newMuteState }))
+                          }
                         }}
                         style={{
                           fontSize: '12px',
                           padding: '4px 10px',
                           borderRadius: '4px',
-                          marginBottom: isMobile ? '14px' : '8px',
+                          marginBottom: '8px',
                           backgroundColor: mutes[label] ? '#FFD700' : '#FCFAEE',
                           color: mutes[label] ? 'black' : primary,
                           border: `1px solid ${primary}`,
@@ -1128,8 +1225,33 @@ export default function MixerPage() {
 
                       <button
                         onClick={() => {
-                          setSolos(prev => ({ ...prev, [label]: !prev[label] }))
+                          // Prevent rapid clicking
+                          if (mixerManagerRef.current?.isReady !== true) {
+                            console.warn('Audio engine not ready, ignoring solo click');
+                            return;
+                          }
+                          
+                          const stemIndex = stems.findIndex(s => s.label === label);
+                          if (stemIndex === -1) {
+                            console.warn(`Stem not found: ${label}`);
+                            return;
+                          }
+                          
+                          const newSoloState = !solos[label];
+                          
+                          // Update UI state first
+                          setSolos(prev => ({ ...prev, [label]: newSoloState }))
                           setMutes(prev => ({ ...prev, [label]: false }))
+                          
+                          // Apply solo to audio engine with error handling
+                          try {
+                            mixerManagerRef.current.setParameter("solo", newSoloState ? 1 : 0, stemIndex);
+                            console.log(`${newSoloState ? 'Soloed' : 'Unsoloed'} stem ${stemIndex}: ${label}`);
+                          } catch (error) {
+                            console.error('Failed to set solo parameter:', error);
+                            // Revert UI state on error
+                            setSolos(prev => ({ ...prev, [label]: !newSoloState }))
+                          }
                         }}
                         style={{
                           fontSize: '12px',
@@ -1146,40 +1268,6 @@ export default function MixerPage() {
                         SOLO
                       </button>
 
-                      {/* Individual Play Button */}
-                      <button
-                        onClick={async () => {
-                          try {
-                            
-                            const stemIndex = stems.findIndex(s => s.label === label);
-                            console.log(`🎵 Playing individual stem ${stemIndex}: ${label}`);
-                            
-                            // Stop all stems first
-                            if (mixerManagerRef.current) {
-                              await mixerManagerRef.current.stop();
-                            }
-                            
-                            // Play only this stem
-                            if (mixerManagerRef.current) {
-                              await mixerManagerRef.current.playStem(stemIndex);
-                            }
-                          } catch (error) {
-                            console.error(`Error playing stem ${label}:`, error);
-                          }
-                        }}
-                        style={{
-                          fontSize: '12px',
-                          padding: '4px 10px',
-                          borderRadius: '4px',
-                          marginBottom: '8px',
-                          backgroundColor: '#FF6B6B',
-                          color: 'white',
-                          border: '1px solid #FF6B6B',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        PLAY
-                      </button>
 
                       {/* Label */}
                       <div
@@ -1232,7 +1320,26 @@ export default function MixerPage() {
                   onChange={setVarispeed}
                   isIOS={isIOS}
                   primaryColor={primary}
+                  bpm={bpm}
                 />
+                {/* Mode Toggle Button - Centered below slider */}
+                <div className="flex justify-center mt-3">
+                  <button
+                    onClick={() => setIsNaturalVarispeed(!isNaturalVarispeed)}
+                    className="px-3 py-2 text-xs font-mono rounded border"
+                    style={{ 
+                      color: primary,
+                      borderColor: primary,
+                      backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
+                      pointerEvents: 'auto', // Enable pointer events for mobile tapping
+                      minHeight: '32px', // Ensure minimum touch target size
+                      minWidth: '70px' // Ensure minimum touch target size
+                    }}
+                    title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
+                  >
+                    {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1279,6 +1386,25 @@ export default function MixerPage() {
                       stemCount={stems.length}
                     />
                   </div>
+                  
+                  {/* Mode Toggle Button - Centered below slider for mobile */}
+                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+                    <button
+                      onClick={() => setIsNaturalVarispeed(!isNaturalVarispeed)}
+                      className="px-3 py-2 text-xs font-mono rounded border"
+                      style={{ 
+                        color: primary,
+                        borderColor: primary,
+                        backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
+                        pointerEvents: 'auto', // Enable pointer events for mobile tapping
+                        minHeight: '32px', // Ensure minimum touch target size
+                        minWidth: '70px' // Ensure minimum touch target size
+                      }}
+                      title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
+                    >
+                      {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1300,6 +1426,7 @@ export default function MixerPage() {
               enabled: true
             }}
             stemLabel={reverbConfigModal.stemLabel}
+            position={reverbConfigModal.position}
           />
         </>
       )}

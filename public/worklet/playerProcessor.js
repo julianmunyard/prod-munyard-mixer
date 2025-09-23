@@ -15,6 +15,8 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
     this.totalStems = 0; // Total number of stems to be loaded
     this.stemGains = []; // Dynamic gain array for each stem
     this.reverbMix = []; // Reverb mix levels for each stem (0-1)
+    this.stemMutes = []; // Mute state for each stem (true/false)
+    this.stemSolos = []; // Solo state for each stem (true/false)
     this.outputGain = 1; // Master output gain
     this.mixerOutputBuffers = []; // Output buffers for each mixer
     this.finalMixer = null; // Final mixer to combine all mixer outputs
@@ -22,6 +24,7 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
     this.finalMixers = []; // Array of final mixers for multiple groups
     this.currentPosition = 0; // Current playback position in seconds
     this.duration = 0; // Total duration of the audio
+    this.varispeedMode = 'timeStretch'; // 'timeStretch' or 'natural' - controls how varispeed behaves
   }
 
   // Runs after the constructor
@@ -33,6 +36,7 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
     
     // Create final mixer for combining all mixer outputs
     this.finalMixer = new this.Superpowered.StereoMixer();
+    
     
     // Mark as ready
     this.isReady = true;
@@ -79,8 +83,10 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
     console.log(`🎵 Need ${numMixers} mixers for ${stemCount} stems`);
     
      // Initialize stem gains array and reverb mix levels
-     this.stemGains = new Array(stemCount).fill(1);
-     this.reverbMix = new Array(stemCount).fill(0.0);
+    this.stemGains = new Array(stemCount).fill(1);
+    this.reverbMix = new Array(stemCount).fill(0.0);
+    this.stemMutes = new Array(stemCount).fill(false);
+    this.stemSolos = new Array(stemCount).fill(false);
      console.log("🎵 Initialized stem gains:", this.stemGains);
      console.log("🎵 Initialized reverb mix levels:", this.reverbMix);
     
@@ -529,21 +535,74 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
         this.reverbs[stemIndex].enabled = value > 0;
         console.log(`Set reverb enabled for stem ${stemIndex} to ${value > 0}`);
       }
+    } else if (id === "varispeedMode") {
+      // Set the varispeed mode: 0 = timeStretch, 1 = natural
+      this.varispeedMode = value === 1 ? 'natural' : 'timeStretch';
+      console.log(`Set varispeed mode to: ${this.varispeedMode}`);
     } else if (id === "speed") {
-      if (stemIndex !== undefined) {
-        // Set speed for specific stem
-        if (this.players[stemIndex]) {
-          this.players[stemIndex].playbackRate = value;
-          console.log(`Set speed for stem ${stemIndex} to ${value}`);
+      // Apply speed based on current varispeed mode
+      if (this.varispeedMode === 'natural') {
+        // Natural varispeed: changes both speed and pitch together
+        const speedMultiplier = value;
+        const pitchShiftCents = (speedMultiplier - 1) * 1200; // Convert speed ratio to cents
+        
+        if (stemIndex !== undefined) {
+          // Set natural varispeed for specific stem
+          if (this.players[stemIndex]) {
+            this.players[stemIndex].playbackRate = speedMultiplier;
+            this.players[stemIndex].pitchShiftCents = pitchShiftCents;
+            console.log(`Set natural varispeed for stem ${stemIndex}: speed=${speedMultiplier}, pitch=${pitchShiftCents} cents`);
+          }
+        } else {
+          // Set natural varispeed for all stems
+          this.players.forEach((player, index) => {
+            if (player && this.loadedStems.has(index)) {
+              player.playbackRate = speedMultiplier;
+              player.pitchShiftCents = pitchShiftCents;
+            }
+          });
+          console.log(`Set natural varispeed for all stems: speed=${speedMultiplier}, pitch=${pitchShiftCents} cents`);
         }
       } else {
-        // Set speed for all stems
+        // Time-stretch mode: changes speed without affecting pitch
+        if (stemIndex !== undefined) {
+          // Set speed for specific stem
+          if (this.players[stemIndex]) {
+            this.players[stemIndex].playbackRate = value;
+            console.log(`Set time-stretch speed for stem ${stemIndex} to ${value}`);
+          }
+        } else {
+          // Set speed for all stems
+          this.players.forEach((player, index) => {
+            if (player && this.loadedStems.has(index)) {
+              player.playbackRate = value;
+            }
+          });
+          console.log(`Set time-stretch speed for all stems to ${value}`);
+        }
+      }
+    } else if (id === "naturalVarispeed") {
+      // Natural varispeed: changes both speed and pitch together
+      // Value represents the speed multiplier (0.5 = half speed + half pitch)
+      const speedMultiplier = value;
+      const pitchShiftCents = (speedMultiplier - 1) * 1200; // Convert speed ratio to cents
+      
+      if (stemIndex !== undefined) {
+        // Set natural varispeed for specific stem
+        if (this.players[stemIndex]) {
+          this.players[stemIndex].playbackRate = speedMultiplier;
+          this.players[stemIndex].pitchShiftCents = pitchShiftCents;
+          console.log(`Set natural varispeed for stem ${stemIndex}: speed=${speedMultiplier}, pitch=${pitchShiftCents} cents`);
+        }
+      } else {
+        // Set natural varispeed for all stems
         this.players.forEach((player, index) => {
           if (player && this.loadedStems.has(index)) {
-            player.playbackRate = value;
+            player.playbackRate = speedMultiplier;
+            player.pitchShiftCents = pitchShiftCents;
           }
         });
-        console.log(`Set speed for all stems to ${value}`);
+        console.log(`Set natural varispeed for all stems: speed=${speedMultiplier}, pitch=${pitchShiftCents} cents`);
       }
     } else if (id === "pitch") {
       if (stemIndex !== undefined) {
@@ -560,6 +619,20 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
           }
         });
         console.log(`Set pitch for all stems to ${value}`);
+      }
+    } else if (id === "mute") {
+      if (stemIndex !== undefined && stemIndex < this.stemMutes.length) {
+        this.stemMutes[stemIndex] = value > 0;
+        console.log(`${value > 0 ? 'Muted' : 'Unmuted'} stem ${stemIndex}`);
+      } else {
+        console.warn(`Invalid stem index for mute: ${stemIndex}`);
+      }
+    } else if (id === "solo") {
+      if (stemIndex !== undefined && stemIndex < this.stemSolos.length) {
+        this.stemSolos[stemIndex] = value > 0;
+        console.log(`${value > 0 ? 'Soloed' : 'Unsoloed'} stem ${stemIndex}`);
+      } else {
+        console.warn(`Invalid stem index for solo: ${stemIndex}`);
       }
     }
   }
@@ -605,6 +678,28 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
            const localIndex = stemIndex - startStemIndex; // Local index within this mixer (0-3)
            
            if (player && this.loadedStems.has(stemIndex)) {
+             // Check solo and mute states (with bounds checking)
+             const isMuted = this.stemMutes[stemIndex] || false;
+             const isSoloed = this.stemSolos[stemIndex] || false;
+             
+             // Check if any stem is soloed
+             const hasAnySolo = this.stemSolos.some(solo => solo);
+             
+             // Calculate effective gain based on solo/mute states
+             let effectiveGain = this.stemGains[stemIndex];
+             
+             if (isMuted) {
+               // Muted stems have zero gain
+               effectiveGain = 0;
+             } else if (hasAnySolo && !isSoloed) {
+               // If any stem is soloed and this one isn't, silence it
+               effectiveGain = 0;
+             }
+             
+             // Debug logging
+             if (isMuted || isSoloed || hasAnySolo) {
+               console.log(`🎵 Stem ${stemIndex}: muted=${isMuted}, soloed=${isSoloed}, hasAnySolo=${hasAnySolo}, effectiveGain=${effectiveGain}`);
+             }
              try {
                // Get the pre-allocated output buffer for this stem
                const stemOutputBuffer = this.stemOutputBuffers[stemIndex];
@@ -613,7 +708,7 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
                this.Superpowered.memorySet(stemOutputBuffer.pointer, 0, buffersize * 8);
                
                // Process the AdvancedAudioPlayer into its output buffer
-               const hasOutput = player.processStereo(stemOutputBuffer.pointer, false, buffersize, this.stemGains[stemIndex]);
+               const hasOutput = player.processStereo(stemOutputBuffer.pointer, false, buffersize, effectiveGain);
                
                if (hasOutput) {
                  // Apply reverb if enabled

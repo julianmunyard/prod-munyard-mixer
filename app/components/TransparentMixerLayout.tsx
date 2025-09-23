@@ -25,6 +25,8 @@ type TransparentMixerLayoutProps = {
   delaysRef: React.MutableRefObject<Record<string, number>>
   backgroundVideo?: string
   primaryColor: string
+  varispeedMode?: 'timeStretch' | 'natural'
+  onVarispeedModeChange?: (mode: 'timeStretch' | 'natural') => void
 }
 
 export default function TransparentMixerLayout({
@@ -44,8 +46,8 @@ export default function TransparentMixerLayout({
   delaysRef,
   backgroundVideo,
   primaryColor,
-
-  
+  varispeedMode = 'timeStretch',
+  onVarispeedModeChange,
 }: TransparentMixerLayoutProps) {
   const isMobilePortrait = typeof window !== 'undefined' && window.innerWidth < 768 && window.innerHeight > window.innerWidth
   const isMobileLandscape = typeof window !== 'undefined' && window.innerWidth < 768 && window.innerWidth > window.innerHeight === false
@@ -200,6 +202,9 @@ export default function TransparentMixerLayout({
       onChange={setVarispeed}
       isIOS={isIOS}
       primaryColor={primaryColor}
+      bpm={bpm}
+      varispeedMode={varispeedMode}
+      onVarispeedModeChange={onVarispeedModeChange}
     />
   </div>
 )}
@@ -225,6 +230,8 @@ export default function TransparentMixerLayout({
           isIOS={isIOS}
           primaryColor={primaryColor}
           stemCount={stems.length}
+          varispeedMode={varispeedMode}
+          onVarispeedModeChange={onVarispeedModeChange}
         />
       </div>
     </div>

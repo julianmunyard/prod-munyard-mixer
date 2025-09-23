@@ -339,3 +339,71 @@ body[data-page="create"] {
 input, select, textarea {
   font-size: 16px !important;
 }
+
+/* HORIZONTAL SLIDER STYLES FOR REVERB MODAL */
+.slider-horizontal {
+  -webkit-appearance: slider-horizontal !important;
+  appearance: slider-horizontal !important;
+  writing-mode: initial !important;
+  height: 8px !important;
+  width: 100% !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  position: relative !important;
+}
+
+.slider-horizontal::-webkit-slider-runnable-track {
+  background: #D1D5DB !important;
+  height: 8px !important;
+  border-radius: 4px !important;
+  width: 100% !important;
+}
+
+.slider-horizontal::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  height: 16px !important;
+  width: 16px !important;
+  background: #B8001F !important;
+  border-radius: 50% !important;
+  border: none !important;
+  position: relative !important;
+  top: -4px !important;
+  cursor: pointer !important;
+}
+
+.slider-horizontal::-moz-range-track {
+  background: #D1D5DB !important;
+  height: 8px !important;
+  border-radius: 4px !important;
+  width: 100% !important;
+  border: none !important;
+}
+
+.slider-horizontal::-moz-range-thumb {
+  height: 16px !important;
+  width: 16px !important;
+  background: #B8001F !important;
+  border-radius: 50% !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.slider-horizontal::-ms-thumb {
+  height: 16px !important;
+  width: 16px !important;
+  background: #B8001F !important;
+  border-radius: 50% !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+.slider-horizontal::-ms-track {
+  background: #D1D5DB !important;
+  height: 8px !important;
+  border-radius: 4px !important;
+  width: 100% !important;
+  border: none !important;
+}
