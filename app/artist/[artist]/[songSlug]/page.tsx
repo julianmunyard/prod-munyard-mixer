@@ -105,6 +105,7 @@ class SuperpoweredMixerManager {
   }
 
   private async start() {
+    console.log("🎵 SP Manager: Entered start() method."); // This will tell us if start() is even called
     try {
       console.log("🎵 SP Manager: Starting initialization...");
       // 1) Load the UMD build which populates window.SuperpoweredGlue & window.SuperpoweredWebAudio
@@ -606,6 +607,19 @@ function MixerPage() {
         const manager = new SuperpoweredMixerManager();
         addDebugLog("🎵 Manager created, calling initialize()...");
         
+        // Wrap initialize call in try-catch to catch immediate errors
+        try {
+          await manager.initialize();
+          addDebugLog("🎵 Manager initialize() completed successfully");
+        } catch (initError) {
+          addDebugLog(`❌ Manager initialize() failed: ${initError}`);
+          console.error("❌ Manager initialize() failed:", initError);
+          if (mounted) {
+            setLoadingStems(false);
+          }
+          return;
+        }
+        
         // Set up message callback - use refs to prevent infinite loops
         const messageCallback = (message: any) => {
           if (!mounted) return;
@@ -630,8 +644,7 @@ function MixerPage() {
         
         manager.setMessageCallback(messageCallback);
 
-        // Initialize Superpowered and wait for it to complete
-        await manager.initialize();
+        // Superpowered initialization already completed above
         addDebugLog("✅ Superpowered initialization completed");
 
         if (mounted) {
