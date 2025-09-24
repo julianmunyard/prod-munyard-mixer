@@ -634,7 +634,13 @@ function MixerPage() {
       }
     };
 
-    initSuperpowered();
+    // Add delay for direct access - Instagram browser is more lenient with timing
+    setTimeout(() => {
+      if (mounted) {
+        console.log("Starting Superpowered initialization after delay...");
+        initSuperpowered();
+      }
+    }, 1000); // 1 second delay
 
     return () => {
       mounted = false;
