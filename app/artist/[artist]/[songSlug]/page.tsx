@@ -202,7 +202,13 @@ class SuperpoweredMixerManager {
   }
 
   async loadTrackSequentially(url: string, stemIndex: number = 0): Promise<void> {
-    if (!this.isReady) throw new Error("Superpowered not initialized");
+    console.log(`🎵 loadTrackSequentially called:`, { url, stemIndex, isReady: this.isReady });
+    
+    if (!this.isReady) {
+      console.error(`❌ Superpowered not ready for stem ${stemIndex}`);
+      throw new Error("Superpowered not initialized");
+    }
+    
     if (stemIndex >= this.maxStems) {
       console.warn(`Cannot load more than ${this.maxStems} stems. Skipping stem ${stemIndex}`);
       return;
@@ -210,7 +216,7 @@ class SuperpoweredMixerManager {
     
     // AudioContext should already be resumed when mixer is initialized
 
-    console.log(`Loading track ${stemIndex} sequentially with Superpowered downloadAndDecode:`, url);
+    console.log(`🎵 Loading track ${stemIndex} sequentially with Superpowered downloadAndDecode:`, url);
     
     // Create a promise that resolves when this specific stem is loaded
     return new Promise((resolve, reject) => {
@@ -258,8 +264,17 @@ class SuperpoweredMixerManager {
         });
         
         // Use the glue's downloadAndDecode method with the worklet node
-        this.glue.downloadAndDecode(url, this.node);
+        console.log(`🎵 Calling downloadAndDecode for stem ${stemIndex}...`);
+        try {
+          this.glue.downloadAndDecode(url, this.node);
+          console.log(`🎵 downloadAndDecode called successfully for stem ${stemIndex}`);
+        } catch (downloadError) {
+          console.error(`❌ downloadAndDecode failed for stem ${stemIndex}:`, downloadError);
+          reject(downloadError);
+          return;
+        }
       } else {
+        console.error(`❌ Audio worklet node not available for stem ${stemIndex}`);
         reject(new Error("Audio worklet node not available for postMessage"));
         return;
       }
@@ -441,7 +456,14 @@ export default function MixerPage() {
   const isPlayingRef = useRef(false)
   const [scrubPosition, setScrubPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
   let lastToggleTime = 0;
+
+  // Debug logging function that shows on page
+  const addDebugLog = (message: string) => {
+    console.log(message);
+    setDebugLogs(prev => [...prev.slice(-9), `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
 
   // -------------------- 🎵 Superpowered Manager Reference --------------------
   const mixerManagerRef = useRef<SuperpoweredMixerManager | null>(null);
@@ -451,6 +473,21 @@ export default function MixerPage() {
   // ==================== BROWSER DETECTION ====================
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   const isInstagram = ua.includes('Instagram');
+  
+  // Debug logging for browser detection
+  useEffect(() => {
+    const browserInfo = {
+      userAgent: ua,
+      isInstagram,
+      hasSharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined',
+      isMobileBrowser: typeof window !== 'undefined' && window.innerWidth < 768,
+      windowWidth: typeof window !== 'undefined' ? window.innerWidth : 'N/A',
+      crossOriginIsolated: typeof window !== 'undefined' ? window.crossOriginIsolated : 'N/A'
+    };
+    
+    console.log('🔍 Browser Detection:', browserInfo);
+    addDebugLog(`Browser: ${isInstagram ? 'Instagram' : 'Standard'} | SharedArrayBuffer: ${browserInfo.hasSharedArrayBuffer} | CrossOriginIsolated: ${browserInfo.crossOriginIsolated}`);
+  }, []);
 
   // -------------------- 📱 Device Detection --------------------
   useEffect(() => {
@@ -487,7 +524,7 @@ export default function MixerPage() {
 
     const initSuperpowered = async () => {
       try {
-        console.log("Initializing Superpowered...");
+        addDebugLog("🎵 Initializing Superpowered...");
         const manager = new SuperpoweredMixerManager();
         
         // Set up message callback - use refs to prevent infinite loops
@@ -516,7 +553,7 @@ export default function MixerPage() {
 
         // Initialize Superpowered and wait for it to complete
         await manager.initialize();
-        console.log("Superpowered initialization completed");
+        addDebugLog("✅ Superpowered initialization completed");
 
         if (mounted) {
           mixerManagerRef.current = manager;
@@ -535,7 +572,9 @@ export default function MixerPage() {
           });
         }
       } catch (err) {
-        console.error("Failed to initialize Superpowered:", err);
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        addDebugLog(`❌ Superpowered init failed: ${errorMsg}`);
+        console.error("❌ Failed to initialize Superpowered:", err);
         if (mounted) {
           setLoadingStems(false);
         }
@@ -674,15 +713,25 @@ export default function MixerPage() {
       totalStemsCountRef.current = stems.length;
 
       try {
+        addDebugLog(`🎵 Starting to load ${stems.length} tracks...`);
         for (let index = 0; index < stems.length; index++) {
           const stem = stems[index];
+          addDebugLog(`🎵 Loading stem ${index}: ${stem.label}`);
+          
           const url = await resolveStemUrl(stem.file);
+          addDebugLog(`🎵 Resolved URL for stem ${index}`);
+          
+          addDebugLog(`🎵 Calling loadTrackSequentially for stem ${index}...`);
           await mixerManagerRef.current!.loadTrackSequentially(url, index);
+          addDebugLog(`✅ Successfully loaded stem ${index}`);
         }
+        addDebugLog("🎵 All tracks loaded successfully!");
         setLoadingStems(false);
         setAllReady(true);
       } catch (e) {
-        console.error("Failed to load tracks:", e);
+        const errorMsg = e instanceof Error ? e.message : 'Unknown error';
+        addDebugLog(`❌ Track loading failed: ${errorMsg}`);
+        console.error("❌ Failed to load tracks:", e);
         setLoadingStems(false);
       }
     };
@@ -1258,6 +1307,33 @@ export default function MixerPage() {
               </div>
             </div>
 
+            {/* 🐛 Debug Panel */}
+            {debugLogs.length > 0 && (
+              <div
+                style={{
+                  position: 'fixed',
+                  top: '10px',
+                  left: '10px',
+                  right: '10px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  color: 'white',
+                  padding: '10px',
+                  borderRadius: '5px',
+                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                  zIndex: 1000,
+                  maxHeight: '200px',
+                  overflowY: 'auto',
+                  border: '1px solid #333'
+                }}
+              >
+                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Debug Logs:</div>
+                {debugLogs.map((log, index) => (
+                  <div key={index} style={{ marginBottom: '2px' }}>{log}</div>
+                ))}
+              </div>
+            )}
+
             {/* 🎚️ Varispeed Slider */}
             {(!isMobilePortrait || stems.length <= 2) && (
               <div
@@ -1387,6 +1463,7 @@ export default function MixerPage() {
             stemLabel={reverbConfigModal.stemLabel}
             position={reverbConfigModal.position}
           />
+
         </>
       )}
     </>
