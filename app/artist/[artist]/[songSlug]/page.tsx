@@ -552,6 +552,7 @@ function MixerPage() {
   const [scrubPosition, setScrubPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
   let lastToggleTime = 0;
 
   // Debug logging function that shows on page
@@ -1430,34 +1431,89 @@ function MixerPage() {
               </div>
             </div>
 
-            {/* 🐛 Debug Panel */}
+            {/* 🐛 Debug Panel - Collapsible */}
             {(debugLogs.length > 0 || componentMountLogs.length > 0) && (
-              <div
-                style={{
-                  position: 'fixed',
-                  top: '10px',
-                  left: '10px',
-                  right: '10px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                  color: 'white',
-                  padding: '10px',
-                  borderRadius: '5px',
-                  fontSize: '12px',
-                  fontFamily: 'monospace',
-                  zIndex: 1000,
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  border: '1px solid #333'
-                }}
-              >
-                <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Debug Logs:</div>
-                {componentMountLogs.map((log, index) => (
-                  <div key={`mount-${index}`} style={{ marginBottom: '2px', color: '#00ff00' }}>{log}</div>
-                ))}
-                {debugLogs.map((log, index) => (
-                  <div key={`debug-${index}`} style={{ marginBottom: '2px' }}>{log}</div>
-                ))}
-              </div>
+              <>
+                {/* Debug Button */}
+                <button
+                  onClick={() => setShowDebugPanel(!showDebugPanel)}
+                  style={{
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    color: 'white',
+                    border: '1px solid #333',
+                    borderRadius: '6px',
+                    padding: '8px 12px',
+                    fontSize: '12px',
+                    fontFamily: 'monospace',
+                    cursor: 'pointer',
+                    zIndex: 1000,
+                    minWidth: '60px',
+                    minHeight: '36px'
+                  }}
+                >
+                  Logs ({debugLogs.length + componentMountLogs.length})
+                </button>
+
+                {/* Debug Panel Popup */}
+                {showDebugPanel && (
+                  <div
+                    style={{
+                      position: 'fixed',
+                      bottom: '70px',
+                      right: '20px',
+                      width: 'min(400px, calc(100vw - 40px))',
+                      maxHeight: '300px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                      color: 'white',
+                      padding: '15px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontFamily: 'monospace',
+                      zIndex: 1001,
+                      overflowY: 'auto',
+                      border: '1px solid #333',
+                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+                    }}
+                  >
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: '10px',
+                      borderBottom: '1px solid #444',
+                      paddingBottom: '5px'
+                    }}>
+                      <div style={{ fontWeight: 'bold' }}>Debug Logs</div>
+                      <button
+                        onClick={() => setShowDebugPanel(false)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'white',
+                          cursor: 'pointer',
+                          fontSize: '16px',
+                          padding: '0',
+                          width: '20px',
+                          height: '20px'
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
+                      {componentMountLogs.map((log, index) => (
+                        <div key={`mount-${index}`} style={{ marginBottom: '3px', color: '#00ff00' }}>{log}</div>
+                      ))}
+                      {debugLogs.map((log, index) => (
+                        <div key={`debug-${index}`} style={{ marginBottom: '3px' }}>{log}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             {/* 🎚️ Varispeed Slider */}
