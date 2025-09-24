@@ -111,6 +111,11 @@ class SuperpoweredMixerManager {
       console.log("About to call SuperpoweredGlue.Instantiate...");
       console.log("License key:", process.env.NEXT_PUBLIC_SUPERPOWERED_LICENSE ?? "ExampleLicenseKey-WillExpire-OnNextUpdate");
       console.log("WASM URL:", "/superpowered/superpowered.wasm");
+      console.log("Environment check:", {
+        NODE_ENV: process.env.NODE_ENV,
+        NEXT_PUBLIC_SUPERPOWERED_LICENSE: process.env.NEXT_PUBLIC_SUPERPOWERED_LICENSE,
+        windowLocation: typeof window !== 'undefined' ? window.location.href : 'undefined'
+      });
       
       const startTime = Date.now();
       this.glue = await SuperpoweredGlue.Instantiate(
