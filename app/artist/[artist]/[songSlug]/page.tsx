@@ -80,13 +80,20 @@ class SuperpoweredMixerManager {
         console.log("Superpowered.js loaded, checking globals...");
         console.log("SuperpoweredGlue:", w.SuperpoweredGlue);
         console.log("SuperpoweredWebAudio:", w.SuperpoweredWebAudio);
-        if (w.SuperpoweredGlue && w.SuperpoweredWebAudio) {
-          console.log("Superpowered globals found, resolving...");
-          resolve();
-        } else {
-          console.error("Superpowered loaded but globals missing");
-          reject(new Error("Superpowered loaded but globals missing"));
-        }
+        
+        // Wait a bit for globals to be set after module loads
+        const checkGlobals = () => {
+          if (w.SuperpoweredGlue && w.SuperpoweredWebAudio) {
+            console.log("Superpowered globals found, resolving...");
+            resolve();
+          } else {
+            console.log("Globals not ready yet, waiting...");
+            setTimeout(checkGlobals, 50); // Check again in 50ms
+          }
+        };
+        
+        // Start checking after a small delay
+        setTimeout(checkGlobals, 100);
       };
       s.onerror = () => {
         console.error("Failed to load /superpowered/Superpowered.js");
@@ -463,6 +470,8 @@ function MixerPage() {
   console.log('🎬 MixerPage component starting to render...');
   console.log('🎬 Window object available:', typeof window !== 'undefined');
   console.log('🎬 Document object available:', typeof document !== 'undefined');
+  console.log('🎬 Page accessed directly:', window.location.href);
+  console.log('🎬 Referrer:', document.referrer || 'No referrer (direct access)');
   
   const { artist, songSlug } = useParams() as { artist: string; songSlug: string }
     
@@ -573,6 +582,7 @@ function MixerPage() {
 
   // ==================== 🎵 Superpowered Initialization ====================
   useEffect(() => {
+    console.log('🎵 Superpowered useEffect triggered - direct access check');
     let mounted = true;
 
     const initSuperpowered = async () => {
