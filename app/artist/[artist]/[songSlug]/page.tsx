@@ -80,6 +80,7 @@ class SuperpoweredMixerManager {
         console.log("Superpowered.js loaded, checking globals...");
         console.log("SuperpoweredGlue:", w.SuperpoweredGlue);
         console.log("SuperpoweredWebAudio:", w.SuperpoweredWebAudio);
+        console.log("Window object keys:", Object.keys(w));
         
         // Wait a bit for globals to be set after module loads
         const checkGlobals = () => {
@@ -105,8 +106,11 @@ class SuperpoweredMixerManager {
 
   private async start() {
     try {
+      console.log("🎵 SP Manager: Starting initialization...");
       // 1) Load the UMD build which populates window.SuperpoweredGlue & window.SuperpoweredWebAudio
+      console.log("🎵 SP Manager: About to load Superpowered script...");
       await this.ensureSuperpoweredLoaded();
+      console.log("🎵 SP Manager: Superpowered script loaded successfully");
 
       // 2) Instantiate Glue from window
       const { SuperpoweredGlue, SuperpoweredWebAudio } = window as any;
@@ -598,7 +602,9 @@ function MixerPage() {
     const initSuperpowered = async () => {
       try {
         addDebugLog("🎵 Initializing Superpowered...");
+        addDebugLog("🎵 Creating SuperpoweredMixerManager...");
         const manager = new SuperpoweredMixerManager();
+        addDebugLog("🎵 Manager created, calling initialize()...");
         
         // Set up message callback - use refs to prevent infinite loops
         const messageCallback = (message: any) => {
