@@ -289,9 +289,14 @@ class SuperpoweredMixerManager {
         
         // Use the glue's downloadAndDecode method with the worklet node
         console.log(`🎵 Calling downloadAndDecode for stem ${stemIndex}...`);
+        console.log(`🎵 URL being downloaded:`, url);
+        console.log(`🎵 Node available:`, !!this.node);
+        console.log(`🎵 Glue available:`, !!this.glue);
+        
         try {
           this.glue.downloadAndDecode(url, this.node);
           console.log(`🎵 downloadAndDecode called successfully for stem ${stemIndex}`);
+          console.log(`🎵 Waiting for assetLoaded event for stem ${stemIndex}...`);
         } catch (downloadError) {
           console.error(`❌ downloadAndDecode failed for stem ${stemIndex}:`, downloadError);
           reject(downloadError);
@@ -420,14 +425,27 @@ class SuperpoweredMixerManager {
 
 // resolve a Supabase storage path to a URL.
 async function resolveStemUrl(file: string): Promise<string> {
-  if (/^https?:\/\//i.test(file)) return file;
+  console.log("🔗 Resolving stem URL for:", file);
+  
+  if (/^https?:\/\//i.test(file)) {
+    console.log("🔗 Already a full URL:", file);
+    return file;
+  }
 
   const clean = file.replace(/^\/+/, "");
   const parts = clean.split("/");
   const bucket = parts.shift()!;
   const objectPath = parts.join("/");
 
+  console.log("🔗 Supabase resolution:", { bucket, objectPath });
+  
+  if (!supabase) {
+    console.error("🔗 Supabase client is null!");
+    throw new Error("Supabase client not initialized");
+  }
+  
   const { data } = supabase.storage.from(bucket).getPublicUrl(objectPath);
+  console.log("🔗 Resolved URL:", data.publicUrl);
   return data.publicUrl;
 }
 
