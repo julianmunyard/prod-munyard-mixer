@@ -473,6 +473,16 @@ function MixerPage() {
   console.log('🎬 Page accessed directly:', window.location.href);
   console.log('🎬 Referrer:', document.referrer || 'No referrer (direct access)');
   
+  // Add to debug logs for on-screen display
+  const [componentMountLogs] = useState(() => {
+    const logs = [
+      `🎬 Component mounting...`,
+      `🎬 Direct access: ${window.location.href}`,
+      `🎬 Referrer: ${document.referrer || 'None (direct)'}`
+    ];
+    return logs;
+  });
+  
   const { artist, songSlug } = useParams() as { artist: string; songSlug: string }
     
   console.log('🎬 URL parameters:', { artist, songSlug });
@@ -1384,7 +1394,7 @@ function MixerPage() {
             </div>
 
             {/* 🐛 Debug Panel */}
-            {debugLogs.length > 0 && (
+            {(debugLogs.length > 0 || componentMountLogs.length > 0) && (
               <div
                 style={{
                   position: 'fixed',
@@ -1404,8 +1414,11 @@ function MixerPage() {
                 }}
               >
                 <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Debug Logs:</div>
+                {componentMountLogs.map((log, index) => (
+                  <div key={`mount-${index}`} style={{ marginBottom: '2px', color: '#00ff00' }}>{log}</div>
+                ))}
                 {debugLogs.map((log, index) => (
-                  <div key={index} style={{ marginBottom: '2px' }}>{log}</div>
+                  <div key={`debug-${index}`} style={{ marginBottom: '2px' }}>{log}</div>
                 ))}
               </div>
             )}
