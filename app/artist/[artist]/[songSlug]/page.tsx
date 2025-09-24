@@ -72,12 +72,6 @@ class SuperpoweredMixerManager {
         return resolve();
       }
 
-      // Set a timeout to prevent hanging
-      const timeout = setTimeout(() => {
-        console.error("Timeout waiting for Superpowered to load");
-        reject(new Error("Timeout waiting for Superpowered to load"));
-      }, 15000); // 15 second timeout
-
       console.log("Loading Superpowered.js...");
       const s = document.createElement("script");
       s.src = "/superpowered/Superpowered.js";
@@ -86,23 +80,16 @@ class SuperpoweredMixerManager {
         console.log("Superpowered.js loaded, checking globals...");
         console.log("SuperpoweredGlue:", w.SuperpoweredGlue);
         console.log("SuperpoweredWebAudio:", w.SuperpoweredWebAudio);
-        
-        // Wait a bit for the script to fully initialize
-        setTimeout(() => {
-          if (w.SuperpoweredGlue && w.SuperpoweredWebAudio) {
-            console.log("Superpowered globals found, resolving...");
-            clearTimeout(timeout);
-            resolve();
-          } else {
-            console.error("Superpowered loaded but globals missing after timeout");
-            clearTimeout(timeout);
-            reject(new Error("Superpowered loaded but globals missing"));
-          }
-        }, 100); // Small delay to ensure full initialization
+        if (w.SuperpoweredGlue && w.SuperpoweredWebAudio) {
+          console.log("Superpowered globals found, resolving...");
+          resolve();
+        } else {
+          console.error("Superpowered loaded but globals missing");
+          reject(new Error("Superpowered loaded but globals missing"));
+        }
       };
       s.onerror = () => {
         console.error("Failed to load /superpowered/Superpowered.js");
-        clearTimeout(timeout);
         reject(new Error("Failed to load /superpowered/Superpowered.js"));
       };
       document.head.appendChild(s);
@@ -121,16 +108,21 @@ class SuperpoweredMixerManager {
       }
 
       // 3) Init Glue (NOTE: path is /public => web path /superpowered/superpowered.wasm)
-      console.log("Instantiating Superpowered Glue...");
+      console.log("About to call SuperpoweredGlue.Instantiate...");
+      console.log("License key:", process.env.NEXT_PUBLIC_SUPERPOWERED_LICENSE ?? "ExampleLicenseKey-WillExpire-OnNextUpdate");
+      console.log("WASM URL:", "/superpowered/superpowered.wasm");
+      
+      const startTime = Date.now();
       this.glue = await SuperpoweredGlue.Instantiate(
         process.env.NEXT_PUBLIC_SUPERPOWERED_LICENSE ?? "ExampleLicenseKey-WillExpire-OnNextUpdate",
         "/superpowered/superpowered.wasm"
       );
+      const endTime = Date.now();
+      console.log(`SuperpoweredGlue.Instantiate took ${endTime - startTime}ms`);
 
       console.log(`[SP] v${this.glue.Version()} loaded`);
 
       // 4) Init WebAudio facade
-      console.log("Creating SuperpoweredWebAudio instance...");
       this.wa = new SuperpoweredWebAudio(48000, this.glue);
       
       console.log('Superpowered initialized successfully');
@@ -140,7 +132,6 @@ class SuperpoweredMixerManager {
     }
 
     // 3) Create and connect the worklet node with StereoMixer
-    console.log("Creating audio worklet node...");
     const node = await this.wa!.createAudioNodeAsync(
       "/worklet/playerProcessor.js",         // served from /public
       "PlayerProcessor",                     // MUST match registerProcessor name
@@ -153,7 +144,6 @@ class SuperpoweredMixerManager {
     node.onprocessorerror = (e: Event) => console.error("[SP] processor error", e);
 
     // Connect the AudioWorkletNode to the WebAudio destination
-    console.log("Connecting audio worklet node...");
     node.connect(this.wa!.audioContext.destination);
     await this.wa!.audioContext.suspend();
 
@@ -474,7 +464,6 @@ export default function MixerPage() {
   const [scrubPosition, setScrubPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [initializationTimeout, setInitializationTimeout] = useState(false);
   let lastToggleTime = 0;
 
   // Debug logging function that shows on page
@@ -505,36 +494,6 @@ export default function MixerPage() {
     
     console.log('🔍 Browser Detection:', browserInfo);
     addDebugLog(`Browser: ${isInstagram ? 'Instagram' : 'Standard'} | SharedArrayBuffer: ${browserInfo.hasSharedArrayBuffer} | CrossOriginIsolated: ${browserInfo.crossOriginIsolated}`);
-  }, []);
-
-  // ==================== 🚀 PRELOAD SUPERPOWERED ====================
-  useEffect(() => {
-    // Preload Superpowered script early to avoid timing issues
-    const preloadSuperpowered = () => {
-      const w = window as any;
-      if (w.SuperpoweredGlue && w.SuperpoweredWebAudio) {
-        console.log("✅ Superpowered already loaded (preload)");
-        return;
-      }
-
-      console.log("🚀 Preloading Superpowered.js...");
-      const link = document.createElement("link");
-      link.rel = "preload";
-      link.as = "script";
-      link.href = "/superpowered/Superpowered.js";
-      document.head.appendChild(link);
-
-      // Also create a script tag to start loading it
-      const script = document.createElement("script");
-      script.src = "/superpowered/Superpowered.js";
-      script.type = "module";
-      script.async = true;
-      script.onload = () => console.log("🚀 Superpowered.js preloaded successfully");
-      script.onerror = () => console.warn("⚠️ Failed to preload Superpowered.js");
-      document.head.appendChild(script);
-    };
-
-    preloadSuperpowered();
   }, []);
 
   // -------------------- 📱 Device Detection --------------------
@@ -569,21 +528,10 @@ export default function MixerPage() {
   // ==================== 🎵 Superpowered Initialization ====================
   useEffect(() => {
     let mounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
 
-    // Set up a global timeout to prevent infinite loading
-    const globalTimeout = setTimeout(() => {
-      if (mounted && !mixerReady) {
-        console.warn("⚠️ Global initialization timeout reached");
-        addDebugLog("⚠️ Initialization taking longer than expected...");
-        setInitializationTimeout(true);
-      }
-    }, 30000); // 30 second global timeout
-
-    const initSuperpowered = async (attempt: number = 1) => {
+    const initSuperpowered = async () => {
       try {
-        addDebugLog(`🎵 Initializing Superpowered... (attempt ${attempt}/${maxRetries})`);
+        addDebugLog("🎵 Initializing Superpowered...");
         const manager = new SuperpoweredMixerManager();
         
         // Set up message callback - use refs to prevent infinite loops
@@ -613,12 +561,10 @@ export default function MixerPage() {
         // Initialize Superpowered and wait for it to complete
         await manager.initialize();
         addDebugLog("✅ Superpowered initialization completed");
-        clearTimeout(globalTimeout); // Clear the global timeout on success
 
         if (mounted) {
           mixerManagerRef.current = manager;
           setMixerReady(true);
-          setInitializationTimeout(false); // Reset timeout state
           console.log("🎵 Mixer ready state set to true");
           console.log("🎵 Current stems:", stems);
           console.log("🎵 Stems length:", stems.length);
@@ -634,39 +580,18 @@ export default function MixerPage() {
         }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-        addDebugLog(`❌ Superpowered init failed (attempt ${attempt}): ${errorMsg}`);
-        console.error(`❌ Failed to initialize Superpowered (attempt ${attempt}):`, err);
-        
-        if (mounted && attempt < maxRetries) {
-          retryCount++;
-          addDebugLog(`🔄 Retrying Superpowered initialization in 2 seconds...`);
-          setTimeout(() => {
-            if (mounted) {
-              initSuperpowered(attempt + 1);
-            }
-          }, 2000);
-        } else {
-          addDebugLog(`❌ Superpowered initialization failed after ${maxRetries} attempts`);
-          clearTimeout(globalTimeout);
-          if (mounted) {
-            setLoadingStems(false);
-            setInitializationTimeout(true);
-          }
+        addDebugLog(`❌ Superpowered init failed: ${errorMsg}`);
+        console.error("❌ Failed to initialize Superpowered:", err);
+        if (mounted) {
+          setLoadingStems(false);
         }
       }
     };
 
-    // Add a small delay to ensure DOM is fully ready
-    const initTimeout = setTimeout(() => {
-      if (mounted) {
-        initSuperpowered();
-      }
-    }, 100);
+    initSuperpowered();
 
     return () => {
       mounted = false;
-      clearTimeout(initTimeout);
-      clearTimeout(globalTimeout);
       if (mixerManagerRef.current) {
         mixerManagerRef.current.setMessageCallback(null); // Clear callback
         mixerManagerRef.current.dispose();
@@ -1413,66 +1338,6 @@ export default function MixerPage() {
                 {debugLogs.map((log, index) => (
                   <div key={index} style={{ marginBottom: '2px' }}>{log}</div>
                 ))}
-              </div>
-            )}
-
-            {/* ⚠️ Initialization Timeout Warning */}
-            {initializationTimeout && !mixerReady && (
-              <div
-                style={{
-                  position: 'fixed',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  backgroundColor: 'rgba(184, 0, 31, 0.95)',
-                  color: 'white',
-                  padding: '20px',
-                  borderRadius: '10px',
-                  fontSize: '16px',
-                  fontFamily: 'monospace',
-                  zIndex: 1001,
-                  textAlign: 'center',
-                  border: '2px solid white',
-                  maxWidth: '400px',
-                  width: '90%'
-                }}
-              >
-                <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>
-                  ⚠️ Loading Taking Longer Than Expected
-                </div>
-                <div style={{ marginBottom: '15px', fontSize: '14px' }}>
-                  The audio engine is taking longer to initialize. This can happen on slower connections or certain browsers.
-                </div>
-                <button
-                  onClick={() => window.location.reload()}
-                  style={{
-                    backgroundColor: 'white',
-                    color: '#B8001F',
-                    border: 'none',
-                    padding: '10px 20px',
-                    borderRadius: '5px',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer',
-                    marginRight: '10px'
-                  }}
-                >
-                  🔄 Retry
-                </button>
-                <button
-                  onClick={() => setInitializationTimeout(false)}
-                  style={{
-                    backgroundColor: 'transparent',
-                    color: 'white',
-                    border: '1px solid white',
-                    padding: '10px 20px',
-                    borderRadius: '5px',
-                    fontSize: '14px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Wait Longer
-                </button>
               </div>
             )}
 
