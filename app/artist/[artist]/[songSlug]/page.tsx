@@ -75,18 +75,29 @@ class SuperpoweredMixerManager {
       console.log("Loading Superpowered.js...");
       const s = document.createElement("script");
       s.src = "/superpowered/Superpowered.js";
-      s.type = "module";
+      // Remove type="module" to load as regular script and ensure globals are set
       s.onload = () => {
         console.log("Superpowered.js loaded, checking globals...");
-        console.log("SuperpoweredGlue:", w.SuperpoweredGlue);
-        console.log("SuperpoweredWebAudio:", w.SuperpoweredWebAudio);
-        if (w.SuperpoweredGlue && w.SuperpoweredWebAudio) {
-          console.log("Superpowered globals found, resolving...");
-          resolve();
-        } else {
-          console.error("Superpowered loaded but globals missing");
-          reject(new Error("Superpowered loaded but globals missing"));
-        }
+        
+        // Wait for globals to be set with retry mechanism
+        const checkGlobals = (attempt: number = 1) => {
+          console.log(`Checking globals attempt ${attempt}...`);
+          console.log("SuperpoweredGlue:", w.SuperpoweredGlue);
+          console.log("SuperpoweredWebAudio:", w.SuperpoweredWebAudio);
+          
+          if (w.SuperpoweredGlue && w.SuperpoweredWebAudio) {
+            console.log("Superpowered globals found, resolving...");
+            resolve();
+          } else if (attempt < 10) {
+            console.log(`Globals not ready yet, retrying in 100ms... (attempt ${attempt})`);
+            setTimeout(() => checkGlobals(attempt + 1), 100);
+          } else {
+            console.error("Superpowered loaded but globals missing after 10 attempts");
+            reject(new Error("Superpowered loaded but globals missing"));
+          }
+        };
+        
+        checkGlobals();
       };
       s.onerror = () => {
         console.error("Failed to load /superpowered/Superpowered.js");
