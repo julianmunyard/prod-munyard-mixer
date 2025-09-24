@@ -662,6 +662,13 @@ function MixerPage() {
     const fetchSong = async () => {
       console.log('🧠 Fetching song data for:', { artist, songSlug });
       
+      // Check if Supabase is properly initialized
+      if (!supabase) {
+        console.error('❌ Supabase client not initialized! Environment variables may be missing.');
+        addDebugLog('❌ Supabase client not initialized');
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('songs')
         .select('*')
