@@ -118,6 +118,7 @@ function MixerPage() {
   const [loadedStemsCount, setLoadedStemsCount] = useState(0)
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [memoryUsage, setMemoryUsage] = useState<{heap: number, total: number}>({heap: 0, total: 0});
 
   // -------------------- 🎵 Timeline Engine Reference --------------------
   const mixerEngineRef = useRef<RealTimelineMixerEngine | null>(null);
@@ -126,6 +127,17 @@ function MixerPage() {
   const addDebugLog = (message: string) => {
     console.log(message);
     setDebugLogs(prev => [...prev.slice(-9), `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
+
+  // Memory monitoring function
+  const checkMemoryUsage = () => {
+    if (mixerEngineRef.current?.audioEngine?.superpowered) {
+      const superpowered = mixerEngineRef.current.audioEngine.superpowered;
+      const heap = superpowered.heapSize || 0;
+      const total = superpowered.totalMemory || 0;
+      setMemoryUsage({heap, total});
+      addDebugLog(`🧠 Memory: ${(heap / 1024 / 1024).toFixed(1)}MB heap, ${(total / 1024 / 1024).toFixed(1)}MB total`);
+    }
   };
 
   const primary = songData?.primary_color || '#B8001F'
@@ -318,6 +330,16 @@ function MixerPage() {
         label: stem.label
       }));
 
+      // Check mobile memory limits
+      const maxStemsForMobile = 15; // Limit to prevent 1GB+ memory usage
+      const shouldLimitStems = isMobile && stemData.length > maxStemsForMobile;
+      
+      if (shouldLimitStems) {
+        addDebugLog(`📱 Mobile detected with ${stemData.length} stems - limiting to ${maxStemsForMobile} for memory optimization`);
+        stemData = stemData.slice(0, maxStemsForMobile);
+        addDebugLog(`⚠️ Using first ${maxStemsForMobile} stems only on mobile`);
+      }
+
       // Set up the callback to wait for all assets to be downloaded
       let assetsDownloadedPromise = new Promise<void>((resolve) => {
         if (mixerEngineRef.current?.audioEngine) {
@@ -330,7 +352,7 @@ function MixerPage() {
         }
       });
 
-      // Load all stems at once (Thomas's system handles the downloading)
+      // Load stems (Thomas's system handles memory optimization)
       addDebugLog(`🎵 Sending ${stemData.length} stems to timeline processor...`);
       await mixerEngineRef.current.loadStemsFromSupabase(stemData);
       

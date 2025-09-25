@@ -52,6 +52,9 @@ export default function Create() {
   const [hasWavs, setHasWavs] = useState(false)
   const [convertStatus, setConvertStatus] = useState<'idle' | 'uploading' | 'done'>('idle')
   const [dotCount, setDotCount] = useState(0)
+  
+  // Mobile detection
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768
 
 
 
@@ -417,6 +420,9 @@ effects: (
             </label>
             <span style={{ fontSize: '0.85rem', color: '#aaa', marginTop: '0.25rem' }}>
               ⚠️ Use MP3s for faster uploads, or WAVs under 50MB.
+              {isMobile && (
+                <><br />📱 Mobile: Limited to 15 stems for memory optimization.</>
+              )}
             </span>
             <input
               id="file-upload"
@@ -427,11 +433,26 @@ effects: (
               onChange={(e) => {
                 const selected = e.target.files
 if (selected) {
-  setStems(selected)
-  setUploadedFiles(Array.from(selected).map((file) => file.name))
+  // Mobile memory optimization: limit stems to 15
+  const maxStemsForMobile = 15
+  let processedFiles = selected
+  
+  if (isMobile && selected.length > maxStemsForMobile) {
+    // Create a new FileList with only the first 15 files
+    const limitedFiles = Array.from(selected).slice(0, maxStemsForMobile)
+    const newFileList = new DataTransfer()
+    limitedFiles.forEach(file => newFileList.items.add(file))
+    processedFiles = newFileList.files
+    
+    // Show warning
+    alert(`📱 Mobile detected: Limited to ${maxStemsForMobile} stems for memory optimization. Only the first ${maxStemsForMobile} files will be used.`)
+  }
+  
+  setStems(processedFiles)
+  setUploadedFiles(Array.from(processedFiles).map((file) => file.name))
 
   // Check for .wav files
-  const wavDetected = Array.from(selected).some((file) =>
+  const wavDetected = Array.from(processedFiles).some((file) =>
     file.name.toLowerCase().endsWith('.wav') || file.type === 'audio/wav'
   )
   setHasWavs(wavDetected)
