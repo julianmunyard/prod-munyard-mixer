@@ -3,6 +3,9 @@ import SuperpoweredRegion from "./SuperpoweredRegion.js";
 class SuperpoweredTrack {
   playing = false;
   regions = [];
+  volume = 1.0;
+  muted = false;
+  soloed = false;
 
   constructor(id, samplerate, numOfFrames, superpowered) {
     this.id = id;
@@ -91,12 +94,36 @@ class SuperpoweredTrack {
       if (region.playing) {
         // console.log("Region shuyld play from offset", region.startFrameOffset);
         region.play();
-        region.processRegion(inputBuffer, outputBuffer, buffersize);
-        // Access raw audio buffer of each track
-        const preFaderTrackFrameBuffer = outputBuffer.array;
-        // console.log(preFaderTrackFrameBuffer);
+        
+        // Determine if this track should be audible (not muted and either soloed or no solo active)
+        const shouldPlay = !this.muted && (this.soloed || !this.isAnyTrackSoloed(timeline));
+        
+        // Process the region with volume and mute parameters
+        region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay);
       }
     }
+  }
+
+  // Helper method to check if any track is soloed
+  isAnyTrackSoloed(timeline) {
+    if (!timeline) return false;
+    return timeline.tracks.some(track => track.soloed);
+  }
+
+  // ==================== 🎛️ Audio Control Methods ====================
+  setVolume(volume) {
+    console.log(`🎛️ Track ${this.id} volume set to:`, volume);
+    this.volume = volume;
+  }
+
+  setMute(muted) {
+    console.log(`🎛️ Track ${this.id} mute set to:`, muted);
+    this.muted = muted;
+  }
+
+  setSolo(soloed) {
+    console.log(`🎛️ Track ${this.id} solo set to:`, soloed);
+    this.soloed = soloed;
   }
 }
 
