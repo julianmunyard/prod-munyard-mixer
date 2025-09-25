@@ -869,46 +869,68 @@ function MixerPage() {
               </>
             )}
 
-            {/* 🎚️ Varispeed Slider */}
-            {(!isMobilePortrait || stems.length <= 2) && (
-              <div
-                className="absolute right-4 flex flex-col items-center"
-                style={{
-                  top: songData?.title.length > 16 ? '350px' : '260px',
-                }}
-              >
-                {bpm !== null && (
-                  <div className="mb-1 text-xs font-mono" style={{ color: primary }}>
-                    {Math.round(bpm * varispeed)} BPM
-                  </div>
-                )}
-                <span className="mb-3 text-sm tracking-wider" style={{ color: primary }}>
-                  VARISPEED
-                </span>
-                <VarispeedSlider
-                  value={varispeed}
-                  onChange={setVarispeed}
-                  isIOS={isIOS}
-                  primaryColor={primary}
-                  bpm={bpm}
-                />
-                {/* Mode Toggle Button - Centered below slider */}
-                <div className="flex justify-center mt-3">
-                  <button
-                    onClick={() => setIsNaturalVarispeed(!isNaturalVarispeed)}
-                    className="px-3 py-2 text-xs font-mono rounded border"
-                    style={{ 
-                      color: primary,
-                      borderColor: primary,
-                      backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
-                      pointerEvents: 'auto', // Enable pointer events for mobile tapping
-                      minHeight: '32px', // Ensure minimum touch target size
-                      minWidth: '70px' // Ensure minimum touch target size
+            {/* 🎚️ Desktop Varispeed Slider - Bottom Center */}
+            {!isMobile && (
+              <div className="w-full flex justify-center">
+                <div
+                  className="relative"
+                  style={{
+                    marginTop: '20px',
+                    width: '350px',
+                    height: '140px',
+                  }}
+                >
+                  <div
+                    className="absolute top-0 left-0 w-full flex flex-col items-center"
+                    style={{
+                      pointerEvents: 'none',
+                      marginTop: '0px',
                     }}
-                    title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
                   >
-                    {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
-                  </button>
+                    {bpm !== null && (
+                      <div className="text-xs font-mono mb-1" style={{ color: primary }}>
+                        {Math.round(bpm * varispeed)} BPM
+                      </div>
+                    )}
+                    <div className="text-sm tracking-wider" style={{ color: primary }}>
+                      VARISPEED
+                    </div>
+                  </div>
+
+                  <div
+                    className="absolute left-1/2"
+                    style={{
+                      transform: 'translateX(-50%) rotate(-90deg)',
+                      top: '-118px',
+                    }}
+                  >
+                    <VarispeedSlider
+                      value={2 - varispeed}
+                      onChange={val => setVarispeed(2 - val)}
+                      isIOS={isIOS}
+                      primaryColor={primary}
+                      stemCount={stems.length}
+                    />
+                  </div>
+                  
+                  {/* Mode Toggle Button - Centered below slider for desktop */}
+                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
+                    <button
+                      onClick={() => setIsNaturalVarispeed(!isNaturalVarispeed)}
+                      className="px-3 py-2 text-xs font-mono rounded border"
+                      style={{ 
+                        color: primary,
+                        borderColor: primary,
+                        backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
+                        pointerEvents: 'auto',
+                        minHeight: '32px',
+                        minWidth: '70px'
+                      }}
+                      title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
+                    >
+                      {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
