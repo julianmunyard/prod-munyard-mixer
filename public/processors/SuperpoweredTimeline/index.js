@@ -95,7 +95,8 @@ class SuperpoweredTimeline {
         inputBuffer,
         outputBuffer,
         this.currentFrameCursor,
-        buffersize
+        buffersize,
+        this
       );
     }
 

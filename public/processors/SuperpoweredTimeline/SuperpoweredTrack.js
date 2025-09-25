@@ -49,7 +49,7 @@ class SuperpoweredTrack {
     }
   }
 
-  processTrack(inputBuffer, outputBuffer, currentFrameCursor, buffersize) {
+  processTrack(inputBuffer, outputBuffer, currentFrameCursor, buffersize, timeline) {
     // We're not doing anythign with the input buffers yet!
 
     for (const [index, region] of this.regions.entries()) {
