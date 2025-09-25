@@ -377,11 +377,14 @@ function MixerPage() {
     const stemIndex = stems.findIndex(s => s.label === stemLabel);
     if (stemIndex === -1) return;
     
+    const trackId = `track_${stemIndex}`;
+    console.log(`🎚️ UI: Setting volume for ${stemLabel} (index: ${stemIndex}, trackId: ${trackId}) to ${volume}`);
+    
     mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
       type: "command",
       data: { 
         command: "setTrackVolume", 
-        trackId: `track_${stemIndex}`,
+        trackId: trackId,
         volume: volume 
       }
     });

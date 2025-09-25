@@ -182,9 +182,14 @@ class SuperpoweredTimeline {
 
   // ==================== 🎛️ Audio Control Methods ====================
   setTrackVolume(trackId, volume) {
+    console.log(`🎛️ setTrackVolume called: trackId=${trackId}, volume=${volume}`);
+    console.log(`🎛️ Available tracks:`, this.tracks.map(t => t.id));
     const track = this.tracks.find(t => t.id === trackId);
     if (track) {
+      console.log(`🎛️ Found track ${trackId}, setting volume to ${volume}`);
       track.setVolume(volume);
+    } else {
+      console.log(`🎛️ Track ${trackId} not found!`);
     }
   }
 
