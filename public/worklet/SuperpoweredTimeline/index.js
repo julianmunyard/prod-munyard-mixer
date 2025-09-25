@@ -147,6 +147,18 @@ class SuperpoweredTimeline {
         }
       }
     }
+    if (message.command === "setTrackVolume") {
+      this.setTrackVolume(message.trackId, message.volume);
+    }
+    if (message.command === "setTrackMute") {
+      this.setTrackMute(message.trackId, message.muted);
+    }
+    if (message.command === "setTrackSolo") {
+      this.setTrackSolo(message.trackId, message.soloed);
+    }
+    if (message.command === "setVarispeed") {
+      this.setVarispeed(message.speed, message.isNatural);
+    }
   }
 
   handleTimelineDataUpdate(timelineData) {
@@ -165,6 +177,33 @@ class SuperpoweredTimeline {
     }
     this.currentFrameCursor = 0;
     this.tracks = [];
+  }
+
+  // ==================== 🎛️ Audio Control Methods ====================
+  setTrackVolume(trackId, volume) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setVolume(volume);
+    }
+  }
+
+  setTrackMute(trackId, muted) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setMute(muted);
+    }
+  }
+
+  setTrackSolo(trackId, soloed) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setSolo(soloed);
+    }
+  }
+
+  setVarispeed(speed, isNatural) {
+    // Update all tracks with new varispeed
+    this.tracks.forEach(track => track.setVarispeed(speed, isNatural));
   }
 }
 

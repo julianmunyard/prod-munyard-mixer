@@ -98,6 +98,24 @@ class SuperpoweredTrack {
       }
     }
   }
+
+  // ==================== 🎛️ Audio Control Methods ====================
+  setVolume(volume) {
+    this.volume = volume;
+  }
+
+  setMute(muted) {
+    this.muted = muted;
+  }
+
+  setSolo(soloed) {
+    this.soloed = soloed;
+  }
+
+  setVarispeed(speed, isNatural) {
+    // Update all regions with new varispeed
+    this.regions.forEach(region => region.setVarispeed(speed, isNatural));
+  }
 }
 
 export default SuperpoweredTrack;

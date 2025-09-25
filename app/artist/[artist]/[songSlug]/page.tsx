@@ -370,6 +370,106 @@ function MixerPage() {
     }
   };
 
+  // ==================== 🎛️ Audio Control Functions ====================
+  const setTrackVolume = (stemLabel: string, volume: number) => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    
+    const stemIndex = stems.findIndex(s => s.label === stemLabel);
+    if (stemIndex === -1) return;
+    
+    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+      type: "command",
+      data: { 
+        command: "setTrackVolume", 
+        trackId: `track_${stemIndex}`,
+        volume: volume 
+      }
+    });
+    
+    addDebugLog(`🎚️ Volume set to ${(volume * 100).toFixed(0)}% for ${stemLabel}`);
+  };
+
+  const setTrackMute = (stemLabel: string, muted: boolean) => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    
+    const stemIndex = stems.findIndex(s => s.label === stemLabel);
+    if (stemIndex === -1) return;
+    
+    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+      type: "command",
+      data: { 
+        command: "setTrackMute", 
+        trackId: `track_${stemIndex}`,
+        muted: muted 
+      }
+    });
+    
+    addDebugLog(`${muted ? '🔇 Muted' : '🔊 Unmuted'} ${stemLabel}`);
+  };
+
+  const setTrackSolo = (stemLabel: string, soloed: boolean) => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    
+    const stemIndex = stems.findIndex(s => s.label === stemLabel);
+    if (stemIndex === -1) return;
+    
+    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+      type: "command",
+      data: { 
+        command: "setTrackSolo", 
+        trackId: `track_${stemIndex}`,
+        soloed: soloed 
+      }
+    });
+    
+    addDebugLog(`${soloed ? '🎤 Soloed' : '🎵 Unsoloed'} ${stemLabel}`);
+  };
+
+  const unsoloAll = () => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    
+    // Update UI state
+    setSolos(Object.fromEntries(stems.map(s => [s.label, false])));
+    setMutes(Object.fromEntries(stems.map(s => [s.label, false])));
+    
+    // Clear all solo and mute states in audio engine
+    stems.forEach((_, index) => {
+      mixerEngineRef.current!.audioEngine!.sendMessageToAudioProcessor({
+        type: "command",
+        data: { 
+          command: "setTrackSolo", 
+          trackId: `track_${index}`,
+          soloed: false 
+        }
+      });
+      mixerEngineRef.current!.audioEngine!.sendMessageToAudioProcessor({
+        type: "command",
+        data: { 
+          command: "setTrackMute", 
+          trackId: `track_${index}`,
+          muted: false 
+        }
+      });
+    });
+    
+    addDebugLog('🎵 Cleared all solo and mute states');
+  };
+
+  const setVarispeedControl = (speed: number, isNatural: boolean) => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    
+    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+      type: "command",
+      data: { 
+        command: "setVarispeed", 
+        speed: speed,
+        isNatural: isNatural 
+      }
+    });
+    
+    addDebugLog(`🎚️ Varispeed set to ${speed.toFixed(2)}x (${isNatural ? 'Natural' : 'Stretch'} mode)`);
+  };
+
   // ==================== 🎵 Playback Functions ====================
   const playAll = async () => {
     if (!mixerEngineRef.current || !timelineReady) return;
@@ -584,10 +684,7 @@ function MixerPage() {
               </button>
 
               <button
-                onClick={() => {
-                  // TODO: Add unsolo functionality
-                  console.log('Unsolo all')
-                }}
+                onClick={unsoloAll}
                 className={`pressable text-white ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
                 style={{ backgroundColor: primary }}
               >
@@ -675,7 +772,9 @@ function MixerPage() {
                           step="0.01"
                           value={volumes[stem.label] || 1}
                           onChange={(e) => {
-                            setVolumes((prev) => ({ ...prev, [stem.label]: parseFloat(e.target.value) }))
+                            const volume = parseFloat(e.target.value);
+                            setVolumes((prev) => ({ ...prev, [stem.label]: volume }));
+                            setTrackVolume(stem.label, volume);
                           }}
                           className="volume-slider"
                           style={{
@@ -722,8 +821,10 @@ function MixerPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <button
                         onClick={() => {
-                          // TODO: Connect to timeline system
-                          console.log(`Mute ${stem.label}`)
+                          const newMuteState = !mutes[stem.label];
+                          setMutes(prev => ({ ...prev, [stem.label]: newMuteState }));
+                          setSolos(prev => ({ ...prev, [stem.label]: false })); // Clear solo when muting
+                          setTrackMute(stem.label, newMuteState);
                         }}
                         style={{ 
                           fontSize: '12px', 
@@ -740,8 +841,10 @@ function MixerPage() {
                       </button>
                       <button
                         onClick={() => {
-                          // TODO: Connect to timeline system
-                          console.log(`Solo ${stem.label}`)
+                          const newSoloState = !solos[stem.label];
+                          setSolos(prev => ({ ...prev, [stem.label]: newSoloState }));
+                          setMutes(prev => ({ ...prev, [stem.label]: false })); // Clear mute when soloing
+                          setTrackSolo(stem.label, newSoloState);
                         }}
                         style={{ 
                           fontSize: '12px', 
@@ -906,7 +1009,11 @@ function MixerPage() {
                   >
                     <VarispeedSlider
                       value={2 - varispeed}
-                      onChange={val => setVarispeed(2 - val)}
+                      onChange={val => {
+                        const newVarispeed = 2 - val;
+                        setVarispeed(newVarispeed);
+                        setVarispeedControl(newVarispeed, isNaturalVarispeed);
+                      }}
                       isIOS={isIOS}
                       primaryColor={primary}
                       stemCount={stems.length}
@@ -916,7 +1023,11 @@ function MixerPage() {
                   {/* Mode Toggle Button - Centered below slider for desktop */}
                   <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                     <button
-                      onClick={() => setIsNaturalVarispeed(!isNaturalVarispeed)}
+                      onClick={() => {
+                        const newMode = !isNaturalVarispeed;
+                        setIsNaturalVarispeed(newMode);
+                        setVarispeedControl(varispeed, newMode);
+                      }}
                       className="px-3 py-2 text-xs font-mono rounded border"
                       style={{ 
                         color: primary,
@@ -972,7 +1083,11 @@ function MixerPage() {
                   >
                     <VarispeedSlider
                       value={2 - varispeed}
-                      onChange={val => setVarispeed(2 - val)}
+                      onChange={val => {
+                        const newVarispeed = 2 - val;
+                        setVarispeed(newVarispeed);
+                        setVarispeedControl(newVarispeed, isNaturalVarispeed);
+                      }}
                       isIOS={isIOS}
                       primaryColor={primary}
                       stemCount={stems.length}
@@ -982,7 +1097,11 @@ function MixerPage() {
                   {/* Mode Toggle Button - Centered below slider for mobile */}
                   <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
                     <button
-                      onClick={() => setIsNaturalVarispeed(!isNaturalVarispeed)}
+                      onClick={() => {
+                        const newMode = !isNaturalVarispeed;
+                        setIsNaturalVarispeed(newMode);
+                        setVarispeedControl(varispeed, newMode);
+                      }}
                       className="px-3 py-2 text-xs font-mono rounded border"
                       style={{ 
                         color: primary,

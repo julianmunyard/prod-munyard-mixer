@@ -89,6 +89,13 @@ class SuperpoweredRegion {
       sampleRate,
     };
   }
+
+  setVarispeed(speed, isNatural) {
+    // Set varispeed on the Superpowered player
+    if (this.player) {
+      this.player.setTempo(speed, isNatural);
+    }
+  }
 }
 
 export default SuperpoweredRegion;
