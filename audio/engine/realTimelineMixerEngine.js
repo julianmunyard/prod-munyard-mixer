@@ -95,6 +95,10 @@ export class RealTimelineMixerEngine {
     });
 
     this.stems = stems;
+    
+    // Return a promise that resolves when the data is sent
+    // The actual asset downloading will be handled by the onAllAssetsDownloaded callback
+    return Promise.resolve();
   }
 
   // Play timeline using Thomas's system

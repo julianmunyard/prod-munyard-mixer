@@ -276,21 +276,28 @@ function MixerPage() {
         label: stem.label
       }));
 
-      // Load each stem individually to track progress
-      for (let i = 0; i < stemData.length; i++) {
-        const stem = stemData[i];
-        addDebugLog(`🎵 Loading stem ${i + 1}/${stemData.length}: ${stem.label}`);
-        
-        // Load individual stem (you might need to modify this based on your timeline engine)
-        await mixerEngineRef.current.loadStemsFromSupabase([stem]);
-        
-        setLoadedStemsCount(i + 1);
-        addDebugLog(`✅ Loaded stem ${i + 1}/${stemData.length}: ${stem.label}`);
-      }
+      // Set up the callback to wait for all assets to be downloaded
+      let assetsDownloadedPromise = new Promise<void>((resolve) => {
+        if (mixerEngineRef.current?.audioEngine) {
+          mixerEngineRef.current.audioEngine.onAllAssetsDownloaded = () => {
+            addDebugLog('✅ All assets downloaded and decoded!');
+            setAllAssetsLoaded(true);
+            setLoadingStems(false);
+            resolve();
+          };
+        }
+      });
 
-      addDebugLog('✅ All stems loaded into timeline');
-      setAllAssetsLoaded(true);
-      setLoadingStems(false);
+      // Load all stems at once (Thomas's system handles the downloading)
+      addDebugLog(`🎵 Sending ${stemData.length} stems to timeline processor...`);
+      await mixerEngineRef.current.loadStemsFromSupabase(stemData);
+      
+      // Update progress as we send the data
+      setLoadedStemsCount(stemData.length);
+      addDebugLog(`📤 Sent ${stemData.length} stems to processor - waiting for download...`);
+
+      // Wait for all assets to be actually downloaded and decoded
+      await assetsDownloadedPromise;
       
     } catch (error) {
       addDebugLog(`❌ Failed to load stems: ${error}`);
@@ -485,7 +492,7 @@ function MixerPage() {
                   <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                 )}
                 {loadingStems 
-                  ? `Loading... (${loadedStemsCount}/${stems.length})` 
+                  ? `Downloading... (${loadedStemsCount}/${stems.length})` 
                   : 'Load Stems'
                 }
               </button>
@@ -527,7 +534,7 @@ function MixerPage() {
             {/* 🎵 Status */}
             <div className="text-center mb-8">
               <p className="text-lg">
-                Status: {!timelineReady ? '⏳ Initializing...' : loadingStems ? `⏳ Loading Stems... (${loadedStemsCount}/${stems.length})` : !allAssetsLoaded ? '⏳ Ready to Load Stems' : '✅ Ready to Play'}
+                Status: {!timelineReady ? '⏳ Initializing...' : loadingStems ? `⏳ Downloading & Decoding Audio... (${loadedStemsCount}/${stems.length})` : !allAssetsLoaded ? '⏳ Ready to Load Stems' : '✅ Ready to Play'}
               </p>
               <p className="text-sm opacity-70">
                 Current Time: {currentTime.toFixed(2)}s
