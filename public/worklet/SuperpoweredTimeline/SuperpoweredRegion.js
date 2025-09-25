@@ -2,6 +2,8 @@ class SuperpoweredRegion {
   startFrameOffset = 0;
   bufferPointer = 0;
   terminated = false;
+  volume = 1.0;
+  muted = false;
   constructor(regionData, samplerate, numOfFrames, superpowered) {
     this.samplerate = samplerate;
     this.numOfFrames = numOfFrames;
@@ -68,14 +70,30 @@ class SuperpoweredRegion {
         0.5
       );
 
+      // Use the region's own volume property if it exists, otherwise use the passed volume
+      const finalVolume = this.volume !== undefined ? this.volume : volume;
+      const finalMuted = this.muted !== undefined ? this.muted : muted;
+
       // Apply volume and mute before adding to output buffer
-      if (!muted) {
+      if (!finalMuted) {
         const sampleOffset = this.startFrameOffset * 2;
         for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
-          outputBuffer.array[i] += this.playerBuffer.array[i] * volume;
+          outputBuffer.array[i] += this.playerBuffer.array[i] * finalVolume;
         }
       }
     }
+  }
+
+  // Direct volume control method
+  setVolume(volume) {
+    this.volume = volume;
+    console.log(`🔊 Region ${this.id} volume set to: ${volume}`);
+  }
+
+  // Direct mute control method
+  setMute(muted) {
+    this.muted = muted;
+    console.log(`🔊 Region ${this.id} muted set to: ${muted}`);
   }
 
   downloadBuffer() {
@@ -101,3 +119,4 @@ class SuperpoweredRegion {
 }
 
 export default SuperpoweredRegion;
+
