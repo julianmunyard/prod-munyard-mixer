@@ -101,6 +101,11 @@ class SuperpoweredTrack {
         // Determine if this track should be audible (not muted and either soloed or no solo active)
         const shouldPlay = !this.muted && (this.soloed || !this.isAnyTrackSoloed(timeline));
         
+        // Debug logging
+        if (this.id === "track-0") { // Only log for first track to avoid spam
+          console.log(`🎵 Track ${this.id} processing: volume=${this.volume}, muted=${this.muted}, soloed=${this.soloed}, shouldPlay=${shouldPlay}`);
+        }
+        
         // Process the region with volume and mute parameters
         region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay);
       }
@@ -115,14 +120,17 @@ class SuperpoweredTrack {
 
   // ==================== 🎛️ Audio Control Methods ====================
   setVolume(volume) {
+    console.log(`🎛️ Track ${this.id} volume set to:`, volume);
     this.volume = volume;
   }
 
   setMute(muted) {
+    console.log(`🎛️ Track ${this.id} mute set to:`, muted);
     this.muted = muted;
   }
 
   setSolo(soloed) {
+    console.log(`🎛️ Track ${this.id} solo set to:`, soloed);
     this.soloed = soloed;
   }
 

@@ -108,8 +108,10 @@ export class RealTimelineMixerEngine {
       throw new Error("AudioEngine not initialized");
     }
     
-    // Resume audio context (required for audio to play)
-    this.audioEngine.webaudioManager.audioContext.resume();
+    // Resume audio context (required for audio to play) - only if audioContext exists
+    if (this.audioEngine.webaudioManager && this.audioEngine.webaudioManager.audioContext) {
+      this.audioEngine.webaudioManager.audioContext.resume();
+    }
     
     this.audioEngine.sendMessageToAudioProcessor({
       type: "command",
@@ -126,8 +128,10 @@ export class RealTimelineMixerEngine {
       throw new Error("AudioEngine not initialized");
     }
     
-    // Suspend audio context (like Thomas does)
-    this.audioEngine.webaudioManager.audioContext.suspend();
+    // Suspend audio context (like Thomas does) - only if audioContext exists
+    if (this.audioEngine.webaudioManager && this.audioEngine.webaudioManager.audioContext) {
+      this.audioEngine.webaudioManager.audioContext.suspend();
+    }
     
     this.audioEngine.sendMessageToAudioProcessor({
       type: "command",
