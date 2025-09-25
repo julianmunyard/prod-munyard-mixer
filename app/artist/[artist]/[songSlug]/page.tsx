@@ -6,15 +6,13 @@
 /* eslint-disable prefer-const */
 
 // ==================== 📦 Imports ====================
-import React, { useEffect, useRef, useState, ChangeEvent } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import DelayKnob from '../../../components/DelayKnob'
 import ReverbConfigModal from '../../../components/ReverbConfigModal'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
-import TransparentMixerLayout from '../../../components/TransparentMixerLayout'
-import FullWaveformScrubber from '../../../components/FullWaveformScrubber'
-// Import Superpowered from CDN at runtime
+import RealTimelineMixerEngine from '../../../../audio/engine/realTimelineMixerEngine'
 
 // ==================== 🧾 Types ====================
 type Song = {
@@ -36,418 +34,11 @@ export type Stem = {
   file: string
 }
 
-// Add type declarations for Superpowered modules
-declare global {
-  interface Window {
-    SuperpoweredGlue: any;
-    SuperpoweredWebAudio: any;
-    SuperpoweredTrackLoader: any;
-  }
-}
 
-
-// ==================== 🎵 Superpowered Manager Class ====================
-class SuperpoweredMixerManager {
-  private glue: any = null;
-  private wa: any = null;             // SuperpoweredWebAudio instance
-  private node: AudioWorkletNode | null = null; // Single audio worklet node with StereoMixer
-  private onMessageCallback: ((message: any) => void) | null = null;
-  private loadedStems: Set<string> = new Set(); // Track which stems are loaded
-  private maxStems: number = 100; // Support up to 100 stems (dynamic mixer system)
-
-  constructor() {
-    // Don't call start() in constructor - it will be called explicitly
-  }
-
-  public async initialize() {
-    await this.start();
-  }
-
-
-  private ensureSuperpoweredLoaded(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const w = window as any;
-      if (w.SuperpoweredGlue && w.SuperpoweredWebAudio) {
-        console.log("Superpowered already loaded");
-        return resolve();
-      }
-
-      console.log("Loading Superpowered.js...");
-      const s = document.createElement("script");
-      s.src = "/superpowered/Superpowered.js";
-      s.type = "module";
-      s.onload = () => {
-        console.log("Superpowered.js loaded, checking globals...");
-        console.log("SuperpoweredGlue:", w.SuperpoweredGlue);
-        console.log("SuperpoweredWebAudio:", w.SuperpoweredWebAudio);
-        console.log("Window object keys:", Object.keys(w));
-        
-        // Wait a bit for globals to be set after module loads
-        const checkGlobals = () => {
-          if (w.SuperpoweredGlue && w.SuperpoweredWebAudio) {
-            console.log("Superpowered globals found, resolving...");
-            resolve();
-          } else {
-            console.log("Globals not ready yet, waiting...");
-            setTimeout(checkGlobals, 50); // Check again in 50ms
-          }
-        };
-        
-        // Start checking after a small delay
-        setTimeout(checkGlobals, 100);
-      };
-      s.onerror = () => {
-        console.error("Failed to load /superpowered/Superpowered.js");
-        reject(new Error("Failed to load /superpowered/Superpowered.js"));
-      };
-      document.head.appendChild(s);
-    });
-  }
-
-  private async start() {
-    console.log("🎵 SP Manager: Entered start() method."); // This will tell us if start() is even called
-    try {
-      console.log("🎵 SP Manager: Starting initialization...");
-      // 1) Load the UMD build which populates window.SuperpoweredGlue & window.SuperpoweredWebAudio
-      console.log("🎵 SP Manager: About to load Superpowered script...");
-      await this.ensureSuperpoweredLoaded();
-      console.log("🎵 SP Manager: Superpowered script loaded successfully");
-
-      // 2) Instantiate Glue from window
-      const { SuperpoweredGlue, SuperpoweredWebAudio } = window as any;
-      if (!SuperpoweredGlue || !SuperpoweredWebAudio) {
-        throw new Error("Superpowered UMD not loaded (SuperpoweredGlue/SuperpoweredWebAudio missing on window)");
-      }
-
-      // 3) Init Glue (NOTE: path is /public => web path /superpowered/superpowered.wasm)
-      console.log("About to call SuperpoweredGlue.Instantiate...");
-      console.log("License key:", process.env.NEXT_PUBLIC_SUPERPOWERED_LICENSE ?? "ExampleLicenseKey-WillExpire-OnNextUpdate");
-      console.log("WASM URL:", "/superpowered/superpowered.wasm");
-      console.log("Environment check:", {
-        NODE_ENV: process.env.NODE_ENV,
-        NEXT_PUBLIC_SUPERPOWERED_LICENSE: process.env.NEXT_PUBLIC_SUPERPOWERED_LICENSE,
-        windowLocation: typeof window !== 'undefined' ? window.location.href : 'undefined'
-      });
-      
-      const startTime = Date.now();
-      this.glue = await SuperpoweredGlue.Instantiate(
-        process.env.NEXT_PUBLIC_SUPERPOWERED_LICENSE ?? "ExampleLicenseKey-WillExpire-OnNextUpdate",
-        "/superpowered/superpowered.wasm"
-      );
-      const endTime = Date.now();
-      console.log(`SuperpoweredGlue.Instantiate took ${endTime - startTime}ms`);
-
-      console.log(`[SP] v${this.glue.Version()} loaded`);
-
-      // 4) Init WebAudio facade
-      this.wa = new SuperpoweredWebAudio(48000, this.glue);
-      
-      console.log('Superpowered initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize Superpowered:', error);
-      throw error;
-    }
-
-    // 3) Create and connect the worklet node with StereoMixer
-    const node = await this.wa!.createAudioNodeAsync(
-      "/worklet/playerProcessor.js",         // served from /public
-      "PlayerProcessor",                     // MUST match registerProcessor name
-      (msg: any) => this.onMessageFromProcessor(msg)
-    );
-
-    // If the worklet failed to load or the name didn't match, you'll catch it here:
-    if (!node) throw new Error("createAudioNodeAsync returned null/undefined (check path and processor name)");
-
-    node.onprocessorerror = (e: Event) => console.error("[SP] processor error", e);
-
-    // Connect the AudioWorkletNode to the WebAudio destination
-    node.connect(this.wa!.audioContext.destination);
-    await this.wa!.audioContext.suspend();
-
-    this.node = node; // assign only after it's proven to exist
-    console.log("[SP] Mixer manager ready");
-    console.log("[SP] Node assigned:", !!this.node);
-    console.log("[SP] WA assigned:", !!this.wa);
-    console.log("[SP] Glue assigned:", !!this.glue);
-    console.log("[SP] isReady:", this.isReady);
-  }
-
-
-  private onMessageFromProcessor(message: any, stemIndex?: number) {
-    console.log(`[SP] Message from processor ${stemIndex || 'unknown'}:`, message);
-    this.onMessageCallback?.(message);
-  }
-
-  setMessageCallback(cb: ((m: any) => void) | null) {
-    this.onMessageCallback = cb;
-  }
-
-  get isReady() {
-    const ready = !!this.node && !!this.wa && !!this.glue;
-    console.log("SuperpoweredMixerManager.isReady check:", {
-      node: !!this.node,
-      wa: !!this.wa,
-      glue: !!this.glue,
-      isReady: ready
-    });
-    return ready;
-  }
-
-  async loadTrack(url: string, stemIndex: number = 0): Promise<void> {
-    if (!this.isReady) throw new Error("Superpowered not initialized");
-    if (stemIndex >= this.maxStems) {
-      console.warn(`Cannot load more than ${this.maxStems} stems. Skipping stem ${stemIndex}`);
-      return;
-    }
-    
-    await this.wa.audioContext.resume();
-
-    console.log(`Loading track ${stemIndex} with Superpowered downloadAndDecode:`, url);
-    
-    // Send the stem data to the single processor first
-    if (this.node?.port) {
-      this.node.port.postMessage({ 
-        type: "loadStem", 
-        payload: { 
-          url, 
-          stemIndex,
-          maxStems: this.maxStems
-        } 
-      });
-      
-      // Use the glue's downloadAndDecode method with the worklet node
-      this.glue.downloadAndDecode(url, this.node);
-    } else {
-      throw new Error("Audio worklet node not available");
-    }
-    
-    this.loadedStems.add(url);
-    console.log(`Track ${stemIndex} loading request sent and downloadAndDecode called`);
-  }
-
-  async loadTrackSequentially(url: string, stemIndex: number = 0): Promise<void> {
-    console.log(`🎵 loadTrackSequentially called:`, { url, stemIndex, isReady: this.isReady });
-    
-    if (!this.isReady) {
-      console.error(`❌ Superpowered not ready for stem ${stemIndex}`);
-      throw new Error("Superpowered not initialized");
-    }
-    
-    if (stemIndex >= this.maxStems) {
-      console.warn(`Cannot load more than ${this.maxStems} stems. Skipping stem ${stemIndex}`);
-      return;
-    }
-    
-    // AudioContext should already be resumed when mixer is initialized
-
-    console.log(`🎵 Loading track ${stemIndex} sequentially with Superpowered downloadAndDecode:`, url);
-    
-    // Create a promise that resolves when this specific stem is loaded
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        console.error(`Timeout waiting for stem ${stemIndex} to load`);
-        if (this.node?.port) {
-          this.node.port.removeEventListener("message", handleMessage);
-        }
-        reject(new Error(`Timeout loading stem ${stemIndex}`));
-      }, 10000); // 10 second timeout
-      
-      const handleMessage = (event: MessageEvent) => {
-        if (event.data.event === "assetLoaded" && event.data.stemIndex === stemIndex) {
-          console.log(`Track ${stemIndex} loaded successfully`);
-          clearTimeout(timeout);
-          if (this.node?.port) {
-            this.node.port.removeEventListener("message", handleMessage);
-          }
-          this.loadedStems.add(url);
-          
-          // Forward the event to the main message callback
-          this.onMessageCallback?.(event.data);
-          
-          resolve();
-        }
-      };
-      
-      if (this.node?.port) {
-        this.node.port.addEventListener("message", handleMessage);
-      } else {
-        reject(new Error("Audio worklet node not available"));
-        return;
-      }
-      
-      // Send the stem data to the single processor first
-      console.log(`🎵 Sending loadStem message to worklet for stem ${stemIndex}:`, url);
-      if (this.node?.port) {
-        this.node.port.postMessage({ 
-          type: "loadStem", 
-          payload: { 
-            url, 
-            stemIndex,
-            maxStems: this.maxStems
-          } 
-        });
-        
-        // Use the glue's downloadAndDecode method with the worklet node
-        console.log(`🎵 Calling downloadAndDecode for stem ${stemIndex}...`);
-        console.log(`🎵 URL being downloaded:`, url);
-        console.log(`🎵 Node available:`, !!this.node);
-        console.log(`🎵 Glue available:`, !!this.glue);
-        
-        try {
-          this.glue.downloadAndDecode(url, this.node);
-          console.log(`🎵 downloadAndDecode called successfully for stem ${stemIndex}`);
-          console.log(`🎵 Waiting for assetLoaded event for stem ${stemIndex}...`);
-        } catch (downloadError) {
-          console.error(`❌ downloadAndDecode failed for stem ${stemIndex}:`, downloadError);
-          reject(downloadError);
-          return;
-        }
-      } else {
-        console.error(`❌ Audio worklet node not available for stem ${stemIndex}`);
-        reject(new Error("Audio worklet node not available for postMessage"));
-        return;
-      }
-    });
-  }
-
-  async play() {
-    if (!this.isReady) {
-      console.error("Superpowered not ready for playback");
-      return;
-    }
-    console.log("Starting playback for all stems...");
-    await this.wa.audioContext.resume();
-    
-    // Send play message to the single processor
-    if (this.node?.port) {
-      this.node.port.postMessage({ type: "play" });
-      console.log("Play message sent to processor");
-    } else {
-      console.error("Cannot send play message - audio worklet node not available");
-    }
-  }
-
-  async playStem(stemIndex: number) {
-    if (!this.isReady) {
-      console.error("Superpowered not ready for playback");
-      return;
-    }
-    console.log(`Starting playback for stem ${stemIndex} only...`);
-    await this.wa.audioContext.resume();
-    
-    // Send play stem message to the single processor
-    if (this.node?.port) {
-      this.node.port.postMessage({ 
-        type: "playStem", 
-        payload: { stemIndex } 
-      });
-      console.log(`Play stem ${stemIndex} message sent to processor`);
-    } else {
-      console.error("Cannot send playStem message - audio worklet node not available");
-    }
-  }
-
-  pause() {
-    if (!this.isReady) return;
-    
-    // Send pause message to the single processor
-    if (this.node?.port) {
-      this.node.port.postMessage({ type: "pause" });
-      console.log("Pause message sent to processor");
-    } else {
-      console.error("Cannot send pause message - audio worklet node not available");
-    }
-  }
-
-  stop() {
-    if (!this.isReady) return;
-    
-    // Send stop message to the single processor
-    if (this.node?.port) {
-      this.node.port.postMessage({ type: "stop" });
-      console.log("Stop message sent to processor");
-    } else {
-      console.error("Cannot send stop message - audio worklet node not available");
-    }
-  }
-
-  seek(seconds: number) {
-    if (!this.isReady) return;
-    
-    // Send seek message to the single processor
-    if (this.node?.port) {
-      this.node.port.postMessage({ type: "seek", payload: { seconds } });
-      console.log(`Seek message sent to processor: ${seconds}s`);
-    } else {
-      console.error("Cannot send seek message - audio worklet node not available");
-    }
-  }
-
-  setMessageListener(callback: (message: any) => void) {
-    if (this.node) {
-      this.node.port.onmessage = callback;
-    }
-  }
-
-  setParameter(id: string, value: number, stemIndex?: number) {
-    if (!this.isReady) return;
-    
-    // Send parameter change to the single processor
-    if (this.node?.port) {
-      this.node.port.postMessage({ 
-        type: "parameterChange", 
-        payload: { id, value, stemIndex } 
-      });
-      console.log(`Parameter ${id} set to ${value} for stem ${stemIndex || 'all'}`);
-    } else {
-      console.error("Cannot send parameter change - audio worklet node not available");
-    }
-  }
-
-  dispose() {
-    // Disconnect the single node
-    try { 
-      this.node?.disconnect(); 
-      console.log("Disconnected node");
-    } catch (e) {
-      console.error("Error disconnecting node:", e);
-    }
-    this.node = null;
-    this.loadedStems.clear();
-    this.wa = null;
-    this.glue = null;
-    this.onMessageCallback = null;
-  }
-}
+// ==================== 🎵 Timeline Mixer Engine ====================
 
 
 
-
-// resolve a Supabase storage path to a URL.
-async function resolveStemUrl(file: string): Promise<string> {
-  console.log("🔗 Resolving stem URL for:", file);
-  
-  if (/^https?:\/\//i.test(file)) {
-    console.log("🔗 Already a full URL:", file);
-    return file;
-  }
-
-  const clean = file.replace(/^\/+/, "");
-  const parts = clean.split("/");
-  const bucket = parts.shift()!;
-  const objectPath = parts.join("/");
-
-  console.log("🔗 Supabase resolution:", { bucket, objectPath });
-  
-  if (!supabase) {
-    console.error("🔗 Supabase client is null!");
-    throw new Error("Supabase client not initialized");
-  }
-  
-  const { data } = supabase.storage.from(bucket).getPublicUrl(objectPath);
-  console.log("🔗 Resolved URL:", data.publicUrl);
-  return data.publicUrl;
-}
 
 // ==================== 🎬 Error Boundary Component ====================
 class MixerErrorBoundary extends React.Component<
@@ -489,27 +80,9 @@ class MixerErrorBoundary extends React.Component<
 
 // ==================== 🎬 Main Component ====================
 function MixerPage() {
-  // -------------------- 🔧 State --------------------
-  console.log('🎬 MixerPage component starting to render...');
-  console.log('🎬 Window object available:', typeof window !== 'undefined');
-  console.log('🎬 Document object available:', typeof document !== 'undefined');
-  console.log('🎬 Page accessed directly:', window.location.href);
-  console.log('🎬 Referrer:', document.referrer || 'No referrer (direct access)');
-  
-  // Add to debug logs for on-screen display
-  const [componentMountLogs] = useState(() => {
-    const logs = [
-      `🎬 Component mounting...`,
-      `🎬 Direct access: ${window.location.href}`,
-      `🎬 Referrer: ${document.referrer || 'None (direct)'}`
-    ];
-    return logs;
-  });
-  
   const { artist, songSlug } = useParams() as { artist: string; songSlug: string }
-    
-  console.log('🎬 URL parameters:', { artist, songSlug });
-  console.log('🎬 Component is rendering...');
+  
+  // -------------------- 🔧 State --------------------
   const [songData, setSongData] = useState<Song | null>(null)
   const [stems, setStems] = useState<Stem[]>([])
   const [volumes, setVolumes] = useState<Record<string, number>>({})
@@ -518,7 +91,6 @@ function MixerPage() {
   const [solos, setSolos] = useState<Record<string, boolean>>({})
   const [varispeed, setVarispeed] = useState(1)
   const [isNaturalVarispeed, setIsNaturalVarispeed] = useState(false)
-  const [showNotification, setShowNotification] = useState(false)
   const [reverbConfigModal, setReverbConfigModal] = useState<{
     isOpen: boolean
     stemLabel: string
@@ -534,26 +106,21 @@ function MixerPage() {
     lowCutHz: number
     enabled: boolean
   }>>({})
-  const [loadingStems, setLoadingStems] = useState(true)
-  const [allReady, setAllReady] = useState(false)
-  const [loadedStemsCount, setLoadedStemsCount] = useState(0)
-  const [totalStemsCount, setTotalStemsCount] = useState(0)
-  const [mixerReady, setMixerReady] = useState(false)
   const [bpm, setBpm] = useState<number | null>(null)
-  const [currentPosition, setCurrentPosition] = useState(0)
-  const [audioDuration, setAudioDuration] = useState(0)
-  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null)
-  const primary = songData?.primary_color || '#B8001F' 
   const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const [isPlaying, setIsPlaying] = useState(false)
-  const isPlayingRef = useRef(false)
-  const [scrubPosition, setScrubPosition] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0)
+  const [timelineReady, setTimelineReady] = useState(false)
+  const [allAssetsLoaded, setAllAssetsLoaded] = useState(false)
+  const [loadingStems, setLoadingStems] = useState(false)
+  const [loadedStemsCount, setLoadedStemsCount] = useState(0)
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
-  let lastToggleTime = 0;
+
+  // -------------------- 🎵 Timeline Engine Reference --------------------
+  const mixerEngineRef = useRef<RealTimelineMixerEngine | null>(null);
 
   // Debug logging function that shows on page
   const addDebugLog = (message: string) => {
@@ -561,29 +128,7 @@ function MixerPage() {
     setDebugLogs(prev => [...prev.slice(-9), `${new Date().toLocaleTimeString()}: ${message}`]);
   };
 
-  // -------------------- 🎵 Superpowered Manager Reference --------------------
-  const mixerManagerRef = useRef<SuperpoweredMixerManager | null>(null);
-  const stemsRef = useRef<Stem[]>([]);
-  const totalStemsCountRef = useRef(0);
-
-  // ==================== BROWSER DETECTION ====================
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-  const isInstagram = ua.includes('Instagram');
-  
-  // Debug logging for browser detection
-  useEffect(() => {
-    const browserInfo = {
-      userAgent: ua,
-      isInstagram,
-      hasSharedArrayBuffer: typeof SharedArrayBuffer !== 'undefined',
-      isMobileBrowser: typeof window !== 'undefined' && window.innerWidth < 768,
-      windowWidth: typeof window !== 'undefined' ? window.innerWidth : 'N/A',
-      crossOriginIsolated: typeof window !== 'undefined' ? window.crossOriginIsolated : 'N/A'
-    };
-    
-    console.log('🔍 Browser Detection:', browserInfo);
-    addDebugLog(`Browser: ${isInstagram ? 'Instagram' : 'Standard'} | SharedArrayBuffer: ${browserInfo.hasSharedArrayBuffer} | CrossOriginIsolated: ${browserInfo.crossOriginIsolated}`);
-  }, []);
+  const primary = songData?.primary_color || '#B8001F'
 
   // -------------------- 📱 Device Detection --------------------
   useEffect(() => {
@@ -614,158 +159,86 @@ function MixerPage() {
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
 
 
-  // ==================== 🎵 Superpowered Initialization ====================
+  // ==================== 🎵 Timeline Engine Initialization ====================
   useEffect(() => {
-    console.log('🎵 Superpowered useEffect triggered - direct access check');
-    let mounted = true;
-
-    const initSuperpowered = async () => {
+    const initializeTimeline = async () => {
       try {
-        addDebugLog("🎵 Initializing Superpowered...");
-        addDebugLog("🎵 Creating SuperpoweredMixerManager...");
-        const manager = new SuperpoweredMixerManager();
-        addDebugLog("🎵 Manager created, calling initialize()...");
+        addDebugLog('🎵 Initializing Timeline Engine...')
         
-        // Wrap initialize call in try-catch to catch immediate errors
-        try {
-          await manager.initialize();
-          addDebugLog("🎵 Manager initialize() completed successfully");
-        } catch (initError) {
-          addDebugLog(`❌ Manager initialize() failed: ${initError}`);
-          console.error("❌ Manager initialize() failed:", initError);
-          if (mounted) {
-            setLoadingStems(false);
+        mixerEngineRef.current = new RealTimelineMixerEngine()
+        await mixerEngineRef.current.init()
+        
+        // Set up timeline cursor updates
+        if (mixerEngineRef.current.audioEngine) {
+          mixerEngineRef.current.audioEngine.onTimelineFrameCursorUpdate = (cursor: number) => {
+            setCurrentTime(cursor / 48000) // Convert samples to seconds
           }
-          return;
         }
+
+        setTimelineReady(true)
+        addDebugLog('✅ Timeline Engine ready!')
         
-        // Set up message callback - use refs to prevent infinite loops
-        const messageCallback = (message: any) => {
-          if (!mounted) return;
-
-          console.log("📨 Message from processor:", message);
-
-          if (message?.event === "ready") {
-            console.log("📨 PlayerProcessor ready");
-            // Don't set allReady here - wait for all stems to load
-            setLoadingStems(false);
-          } else if (message?.event === "assetLoaded") {
-            console.log("📨 Asset loaded event received:", message);
-            // Track individual stem loads using refs
-            setLoadedStemsCount(prev => {
-              const newCount = prev + 1;
-              const totalCount = stemsRef.current.length || totalStemsCountRef.current;
-              console.log(`📨 Asset loaded successfully (${newCount}/${totalCount})`);
-              return newCount;
-            });
-          }
-        };
-        
-        manager.setMessageCallback(messageCallback);
-
-        // Superpowered initialization already completed above
-        addDebugLog("✅ Superpowered initialization completed");
-
-        if (mounted) {
-          mixerManagerRef.current = manager;
-          setMixerReady(true);
-          console.log("🎵 Mixer ready state set to true");
-          console.log("🎵 Current stems:", stems);
-          console.log("🎵 Stems length:", stems.length);
-          
-          // Set up message listener for position updates
-          manager.setMessageListener((event: MessageEvent) => {
-            if (event.data.event === 'positionUpdate') {
-              setCurrentPosition(event.data.position);
-              setAudioDuration(event.data.duration);
-              setDuration(event.data.duration); // Update scrubber duration
-            }
-          });
-        }
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-        addDebugLog(`❌ Superpowered init failed: ${errorMsg}`);
-        console.error("❌ Failed to initialize Superpowered:", err);
-        if (mounted) {
-          setLoadingStems(false);
-        }
+      } catch (error) {
+        addDebugLog(`❌ Failed to initialize: ${error}`)
       }
-    };
+    }
 
-    // Add delay for direct access - Instagram browser is more lenient with timing
-    setTimeout(() => {
-      if (mounted) {
-        console.log("Starting Superpowered initialization after delay...");
-        initSuperpowered();
-      }
-    }, 1000); // 1 second delay
-
-    return () => {
-      mounted = false;
-      if (mixerManagerRef.current) {
-        mixerManagerRef.current.setMessageCallback(null); // Clear callback
-        mixerManagerRef.current.dispose();
-        mixerManagerRef.current = null;
-      }
-    };
-  }, []);
+    initializeTimeline()
+  }, [])
 
   // ==================== 🧠 Data Loading ====================
   useEffect(() => {
-    console.log('🧠 Data Loading useEffect triggered');
-    console.log('🧠 artist:', artist);
-    console.log('🧠 songSlug:', songSlug);
-    console.log('🧠 artist && songSlug:', artist && songSlug);
-    
     const fetchSong = async () => {
-      console.log('🧠 Fetching song data for:', { artist, songSlug });
+      if (!artist || !songSlug) return;
       
-      // Check if Supabase is properly initialized
-      if (!supabase) {
-        console.error('❌ Supabase client not initialized! Environment variables may be missing.');
-        addDebugLog('❌ Supabase client not initialized');
-        return;
-      }
+      addDebugLog(`🎵 Loading song: ${artist}/${songSlug}`);
       
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('songs')
         .select('*')
         .eq('artist_slug', artist)
         .eq('song_slug', songSlug)
         .single()
 
-      console.log('🧠 Supabase response:', { data, error });
-
       if (error) {
-        console.error('Song fetch failed with error:', error);
+        addDebugLog(`❌ Supabase error: ${error.message}`);
         return;
       }
-      
+
       if (!data) {
-        console.warn('No data found for artist:', artist, 'song:', songSlug);
-        console.log('This might mean there is no data in the database for this combination');
+        addDebugLog('❌ Song not found in database');
         return;
       }
-      
-      if (data.bpm) setBpm(data.bpm)
 
-      const parsedStems = typeof data.stems === 'string' ? JSON.parse(data.stems) : data.stems
-      const usedLabels = new Set<string>()
+      addDebugLog(`✅ Found song: ${data.title} by ${data.artist_name}`);
 
+      if (data.bpm) setBpm(data.bpm);
+
+      // Parse stems
+      const parsedStems = typeof data.stems === 'string' 
+        ? JSON.parse(data.stems) 
+        : data.stems
+
+      if (!parsedStems || !Array.isArray(parsedStems)) {
+        addDebugLog('❌ No stems found in song data');
+        return;
+      }
+
+      addDebugLog(`✅ Found ${parsedStems.length} stems`);
+
+      // Convert stems to the format expected by timeline system
       const stemObjs: Stem[] = parsedStems.map((stem: any, i: number) => {
         let rawLabel = stem.label?.trim() || stem.file?.split('/').pop() || `Untitled Stem ${i + 1}`
         rawLabel = rawLabel.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ')
-        let label = rawLabel
-        while (usedLabels.has(label)) label += `_${i}`
-        usedLabels.add(label)
-        return { label, file: stem.file }
-      })
+        return { label: rawLabel, file: stem.file }
+      });
 
-      setSongData(data)
-      setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])))
-      setReverbs(Object.fromEntries(stemObjs.map(s => [s.label, 0])))
-      setMutes(Object.fromEntries(stemObjs.map(s => [s.label, false])))
-      setSolos(Object.fromEntries(stemObjs.map(s => [s.label, false])))
+      setSongData(data);
+      setStems(stemObjs);
+      setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])));
+      setReverbs(Object.fromEntries(stemObjs.map(s => [s.label, 0])));
+      setMutes(Object.fromEntries(stemObjs.map(s => [s.label, false])));
+      setSolos(Object.fromEntries(stemObjs.map(s => [s.label, false])));
       
       // Initialize reverb configs with default values
       const defaultReverbConfig = {
@@ -777,168 +250,92 @@ function MixerPage() {
         lowCutHz: 0,
         enabled: true
       }
-      setReverbConfigs(Object.fromEntries(stemObjs.map(s => [s.label, defaultReverbConfig])))
+      setReverbConfigs(Object.fromEntries(stemObjs.map(s => [s.label, defaultReverbConfig])));
     }
 
-    document.documentElement.style.setProperty('--bg', '#B8001F')
-    document.documentElement.style.setProperty('--fg', '#ffffff')
-
-    if (artist && songSlug) {
-      console.log('🧠 Calling fetchSong with:', { artist, songSlug });
-      fetchSong();
-    } else {
-      console.log('🧠 Not calling fetchSong - missing artist or songSlug');
-    }
+    fetchSong();
   }, [artist, songSlug])
 
-  // 🔁 Keep stems up-to-date with songData.stems
-  useEffect(() => {
-    console.log('🎵 Stems useEffect triggered');
-    console.log('🎵 songData?.stems:', songData?.stems);
-    
-    if (!songData?.stems) {
-      console.log('🎵 No stems data, setting empty array');
-      setStems([])
-      return
+  // ==================== 🎵 Load Stems Function ====================
+  const loadStemsIntoTimeline = async () => {
+    if (!timelineReady || !stems.length || !mixerEngineRef.current) {
+      addDebugLog('❌ Cannot load stems - timeline not ready or no stems');
+      return;
     }
-    const parsedStems = typeof songData.stems === 'string'
-      ? JSON.parse(songData.stems)
-      : songData.stems
-    console.log('🎵 Parsed stems:', parsedStems);
-    
-    const usedLabels = new Set<string>()
-    const stemObjs: Stem[] = parsedStems.map((stem: any, i: number) => {
-      let rawLabel = stem.label?.trim() || stem.file?.split('/').pop() || `Untitled Stem ${i + 1}`
-      rawLabel = rawLabel.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ')
-      let label = rawLabel
-      while (usedLabels.has(label)) label += `_${i}`
-      usedLabels.add(label)
-      return { label, file: stem.file }
-    })
-    console.log('🎵 Setting stems to:', stemObjs);
-    setStems(stemObjs);
-    stemsRef.current = stemObjs; // Update ref
-    
-    // Just update the ref, let loadAllTracks handle everything
-  }, [songData?.stems])
 
-  // ==================== 🎵 Load All Stems ====================
-  useEffect(() => {
-    const loadAllTracks = async () => {
-      if (!mixerReady || !stems.length || !artist || !songSlug) {
-        return;
-      }
-
-      console.log("Starting to load all tracks...");
+    try {
+      addDebugLog(`🎵 Loading ${stems.length} stems into timeline...`);
       setLoadingStems(true);
-      setAllReady(false);
+      setAllAssetsLoaded(false);
       setLoadedStemsCount(0);
-      setTotalStemsCount(stems.length);
-      totalStemsCountRef.current = stems.length;
+      
+      // Convert stems to timeline format
+      const stemData = stems.map(stem => ({
+        name: stem.label,
+        url: stem.file, // file field already contains full Supabase storage URL
+        label: stem.label
+      }));
 
-      try {
-        addDebugLog(`🎵 Starting to load ${stems.length} tracks...`);
-        for (let index = 0; index < stems.length; index++) {
-          const stem = stems[index];
-          addDebugLog(`🎵 Loading stem ${index}: ${stem.label}`);
-          
-          const url = await resolveStemUrl(stem.file);
-          addDebugLog(`🎵 Resolved URL for stem ${index}`);
-          
-          addDebugLog(`🎵 Calling loadTrackSequentially for stem ${index}...`);
-          await mixerManagerRef.current!.loadTrackSequentially(url, index);
-          addDebugLog(`✅ Successfully loaded stem ${index}`);
-        }
-        addDebugLog("🎵 All tracks loaded successfully!");
-        setLoadingStems(false);
-        setAllReady(true);
-      } catch (e) {
-        const errorMsg = e instanceof Error ? e.message : 'Unknown error';
-        addDebugLog(`❌ Track loading failed: ${errorMsg}`);
-        console.error("❌ Failed to load tracks:", e);
-        setLoadingStems(false);
+      // Load each stem individually to track progress
+      for (let i = 0; i < stemData.length; i++) {
+        const stem = stemData[i];
+        addDebugLog(`🎵 Loading stem ${i + 1}/${stemData.length}: ${stem.label}`);
+        
+        // Load individual stem (you might need to modify this based on your timeline engine)
+        await mixerEngineRef.current.loadStemsFromSupabase([stem]);
+        
+        setLoadedStemsCount(i + 1);
+        addDebugLog(`✅ Loaded stem ${i + 1}/${stemData.length}: ${stem.label}`);
       }
-    };
 
-    loadAllTracks();
-  }, [stems, mixerReady, artist, songSlug]);
-
-  // ==================== 🎵 Auto-Play Logic ====================
-  useEffect(() => {
-    console.log("🎵 Auto-play useEffect triggered - allReady:", allReady, "mixerReady:", mixerReady);
-    if (allReady && mixerReady) {
-      console.log("🧪 AUTO-TEST: All ready, starting auto-play in 2 seconds...");
+      addDebugLog('✅ All stems loaded into timeline');
+      setAllAssetsLoaded(true);
+      setLoadingStems(false);
       
-      const timer = setTimeout(() => {
-        if (mixerManagerRef.current?.isReady) {
-          console.log("🧪 AUTO-TEST: Executing auto-play...");
-          playAll();
-        }
-      }, 2000);
-      
-      return () => clearTimeout(timer);
+    } catch (error) {
+      addDebugLog(`❌ Failed to load stems: ${error}`);
+      setAllAssetsLoaded(false);
+      setLoadingStems(false);
     }
-  }, [allReady, mixerReady]);
+  };
 
   // ==================== 🎵 Playback Functions ====================
   const playAll = async () => {
-    if (!mixerManagerRef.current) return;
+    if (!mixerEngineRef.current || !timelineReady) return;
     
-    
-    await mixerManagerRef.current.play();
-    setIsPlaying(true);
-    isPlayingRef.current = true;
+    try {
+      await mixerEngineRef.current.play();
+      setIsPlaying(true);
+      addDebugLog('▶️ Playback started');
+    } catch (error) {
+      addDebugLog(`❌ Failed to play: ${error}`);
+    }
   };
 
-  const stopAll = async () => {
-    if (!mixerManagerRef.current) return;
-    mixerManagerRef.current.stop();
-    setIsPlaying(false);
-    isPlayingRef.current = false;
-    setScrubPosition(0);
+  const pauseAll = () => {
+    if (!mixerEngineRef.current) return;
+    
+    try {
+      mixerEngineRef.current.pause();
+      setIsPlaying(false);
+      addDebugLog('⏸️ Playback paused');
+    } catch (error) {
+      addDebugLog(`❌ Failed to pause: ${error}`);
+    }
   };
 
-  // ==================== 🎚️ SCRUBBING & POSITION ====================
-  function handleScrub(newPos: number) {
-    if (!mixerManagerRef.current) return;
-    setScrubPosition(newPos);
-    setCurrentPosition(newPos);
-    mixerManagerRef.current.seek(newPos);
-  }
-
-  // ==================== 🎛️ Parameter Updates ====================
-  useEffect(() => {
-    if (!mixerManagerRef.current || !stems.length) return;
+  const stopAll = () => {
+    if (!mixerEngineRef.current) return;
     
-    // Set volume for each individual stem
-    stems.forEach((stem, index) => {
-      const volume = volumes[stem.label] ?? 1;
-      mixerManagerRef.current!.setParameter("volume", volume, index);
-    });
-  }, [volumes, stems]);
-
-
-  useEffect(() => {
-    if (!mixerManagerRef.current) return;
-    // Set varispeed mode: 0 = timeStretch, 1 = natural
-    mixerManagerRef.current.setParameter("varispeedMode", isNaturalVarispeed ? 1 : 0);
-  }, [isNaturalVarispeed]);
-
-  useEffect(() => {
-    if (!mixerManagerRef.current) return;
-    mixerManagerRef.current.setParameter("speed", varispeed);
-  }, [varispeed]);
-
-  // Reverb parameter updates
-  useEffect(() => {
-    if (!mixerManagerRef.current || !stems.length) return;
-    
-    // Set reverb for each individual stem
-    stems.forEach((stem, index) => {
-      const reverbMix = reverbs[stem.label] ?? 0;
-      mixerManagerRef.current!.setParameter("reverb", reverbMix, index);
-    });
-  }, [reverbs, stems]);
+    try {
+      mixerEngineRef.current.stop();
+      setIsPlaying(false);
+      setCurrentTime(0);
+      addDebugLog('⏹️ Playback stopped');
+    } catch (error) {
+      addDebugLog(`❌ Failed to stop: ${error}`);
+    }
+  };
 
   // ==================== 🎛️ REVERB CONFIGURATION ====================
   const handleReverbConfigOpen = (stemLabel: string, stemIndex: number, position?: { x: number; y: number }) => {
@@ -976,40 +373,9 @@ function MixerPage() {
       [stemLabel]: config
     }))
     
-    // Send all reverb parameters to the worklet
-    if (mixerManagerRef.current) {
-      mixerManagerRef.current.setParameter("reverbMix", config.mix, stemIndex)
-      mixerManagerRef.current.setParameter("reverbWidth", config.width, stemIndex)
-      mixerManagerRef.current.setParameter("reverbDamp", config.damp, stemIndex)
-      mixerManagerRef.current.setParameter("reverbRoomSize", config.roomSize, stemIndex)
-      mixerManagerRef.current.setParameter("reverbPredelay", config.predelayMs, stemIndex)
-      mixerManagerRef.current.setParameter("reverbLowCut", config.lowCutHz, stemIndex)
-      mixerManagerRef.current.setParameter("reverbEnabled", config.enabled ? 1 : 0, stemIndex)
-    }
+    // TODO: Connect to timeline system for reverb parameters
+    console.log('Reverb config saved:', config);
   }
-
-  // ==================== 🎮 KEYBOARD CONTROLS ====================
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
-        e.preventDefault();
-        const now = Date.now();
-        if (now - lastToggleTime < 200) return;
-        lastToggleTime = now;
-        
-        console.log(`Space pressed - Currently playing: ${isPlayingRef.current}`);
-        
-        if (isPlayingRef.current) {
-          stopAll();
-        } else {
-          playAll();
-        }
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // ==================== 🎨 UTILITY FUNCTIONS ====================
   function formatTime(secs: number) {
@@ -1103,116 +469,88 @@ function MixerPage() {
               {songData?.title}
             </h1>
 
-
             {/* ▶️ Playback Controls */}
             <div className={`flex justify-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
               <button
-                onClick={playAll}
-                disabled={!allReady}
+                onClick={loadStemsIntoTimeline}
+                disabled={!timelineReady || loadingStems}
                 className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
-                  !allReady 
+                  !timelineReady || loadingStems
                     ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
                     : 'hover:opacity-90'
                 }`}
-                style={allReady ? { backgroundColor: primary, color: 'white' } : undefined}
+                style={timelineReady && !loadingStems ? { backgroundColor: primary, color: 'white' } : undefined}
               >
                 {loadingStems && (
                   <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
                 )}
                 {loadingStems 
-                  ? `Loading... (${loadedStemsCount}/${stems.length || totalStemsCount})` 
-                  : allReady 
-                    ? 'Play' 
-                    : `Loading... (${loadedStemsCount}/${stems.length || totalStemsCount})`
+                  ? `Loading... (${loadedStemsCount}/${stems.length})` 
+                  : 'Load Stems'
                 }
               </button>
 
               <button
-                onClick={stopAll}
+                onClick={playAll}
+                disabled={!timelineReady || !allAssetsLoaded}
+                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
+                  !timelineReady || !allAssetsLoaded
+                    ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
+                    : 'hover:opacity-90'
+                }`}
+                style={timelineReady && allAssetsLoaded ? { backgroundColor: primary, color: 'white' } : undefined}
+              >
+                Play
+              </button>
+
+              <button
+                onClick={pauseAll}
+                disabled={!timelineReady}
                 className={`pressable text-white ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
                 style={{ backgroundColor: primary }}
               >
-                Stop
+                Pause
               </button>
 
               <button
                 onClick={() => {
-                  // Prevent clicking if audio engine not ready
-                  if (mixerManagerRef.current?.isReady !== true) {
-                    console.warn('Audio engine not ready, ignoring UNSOLO click');
-                    return;
-                  }
-                  
-                  // Update UI state first
-                  setSolos(Object.fromEntries(stems.map(s => [s.label, false])))
-                  setMutes(Object.fromEntries(stems.map(s => [s.label, false])))
-                  
-                  // Clear all solo and mute states in audio engine with error handling
-                  try {
-                    stems.forEach((_, index) => {
-                      mixerManagerRef.current!.setParameter("solo", 0, index);
-                      mixerManagerRef.current!.setParameter("mute", 0, index);
-                    });
-                    console.log('Cleared all solo and mute states');
-                  } catch (error) {
-                    console.error('Failed to clear solo/mute states:', error);
-                  }
+                  // TODO: Add unsolo functionality
+                  console.log('Unsolo all')
                 }}
-                style={{ backgroundColor: primary, color: 'white' }}
-                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
+                className={`pressable text-white ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
+                style={{ backgroundColor: primary }}
               >
                 UNSOLO
               </button>
             </div>
 
-            {/* 🎵 Progress Bar */}
-            <div className="w-full max-w-4xl mx-auto mb-8 px-4">
-              <div 
-                className="bg-gray-200 h-2 rounded-full overflow-hidden cursor-pointer"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const x = e.clientX - rect.left;
-                  const percentage = x / rect.width;
-                  const newTime = percentage * duration;
-                  handleScrub(newTime);
-                }}
-              >
-                <div 
-                  className="h-full transition-all duration-100"
-                  style={{ 
-                    width: `${duration > 0 ? (currentPosition / duration) * 100 : 0}%`,
-                    backgroundColor: primary 
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-xs mt-1" style={{ color: primary }}>
-                <span>{formatTime(currentPosition)}</span>
-                <span>{formatTime(duration)}</span>
-              </div>
+            {/* 🎵 Status */}
+            <div className="text-center mb-8">
+              <p className="text-lg">
+                Status: {!timelineReady ? '⏳ Initializing...' : loadingStems ? `⏳ Loading Stems... (${loadedStemsCount}/${stems.length})` : !allAssetsLoaded ? '⏳ Ready to Load Stems' : '✅ Ready to Play'}
+              </p>
+              <p className="text-sm opacity-70">
+                Current Time: {currentTime.toFixed(2)}s
+              </p>
             </div>
 
             {/* 🎚️ Mixer Modules */}
             <div
-              className="w-full flex justify-center relative"
+              className="stems-container"
               style={{
-                padding: isMobile ? '0' : '0',
-                overflow: 'hidden',
+                width: '100%',
                 height: isMobile ? '420px' : 'auto',
                 maxHeight: isMobile ? '420px' : 'none',
-                marginTop: '-20px', // Move mixer modules up closer to timestamp
+                marginTop: '-20px',
+                overflowX: 'auto', // Enable horizontal scrolling
+                overflowY: 'hidden',
               }}
             >
-              {/* Fade indicators for mobile scrolling */}
-              {isMobile && (
-                <>
-                </>
-              )}
               <div
-                className={`flex ${isMobile ? 'gap-2' : stems.length >= 6 ? 'gap-4' : 'gap-8'} ${isMobile ? 'overflow-x-auto stems-container' : ''}`}
+                className={`flex ${isMobile ? 'gap-2' : stems.length >= 6 ? 'gap-4' : 'gap-8'}`}
                 style={{
-                  width: '100%',
-                  maxWidth: isMobile ? '100vw' : 'none',
-                  justifyContent: isMobile ? 'flex-start' : 'center',
+                  width: '100%', // Full width container
+                  justifyContent: 'center', // Always center the modules
                   flexWrap: 'nowrap',
                   margin: '0 auto',
                   padding: isMobile ? '0 8px' : '0 8px',
@@ -1223,9 +561,9 @@ function MixerPage() {
                   alignItems: 'center',
                 }}
               >
-                {stems.map(({ label }) => (
+                {stems.map((stem) => (
                   <div
-                    key={label}
+                    key={stem.label}
                     className="mixer-module"
                     style={{
                       width: isMobile ? '80px' : stems.length >= 6 ? '86px' : '96px',
@@ -1237,7 +575,7 @@ function MixerPage() {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      height: isMobile ? '420px' : undefined, // Keep mobile increased, desktop back to original auto-sizing
+                      height: isMobile ? '420px' : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
                       minWidth: isMobile ? '80px' : 'auto',
@@ -1264,16 +602,16 @@ function MixerPage() {
                           min="0"
                           max="1"
                           step="0.01"
-                          value={volumes[label] || 0}
+                          value={volumes[stem.label] || 1}
                           onChange={(e) => {
-                            setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
+                            setVolumes((prev) => ({ ...prev, [stem.label]: parseFloat(e.target.value) }))
                           }}
                           className="volume-slider"
                           style={{
                             writingMode: 'bt-lr' as any,
                             WebkitAppearance: 'slider-vertical',
                             width: '4px',
-                            height: isMobile ? '140px' : undefined, // Keep mobile increased, desktop back to original auto-sizing
+                            height: isMobile ? '140px' : undefined,
                             background: 'transparent',
                           }}
                         />
@@ -1288,22 +626,22 @@ function MixerPage() {
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            const stemIndex = stems.findIndex(s => s.label === label)
-                            handleReverbConfigOpen(label, stemIndex, { x: e.clientX, y: e.clientY })
+                            const stemIndex = stems.findIndex(s => s.label === stem.label)
+                            handleReverbConfigOpen(stem.label, stemIndex, { x: e.clientX, y: e.clientY })
                           }}
                           onTouchEnd={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            const stemIndex = stems.findIndex(s => s.label === label)
-                            handleReverbConfigOpen(label, stemIndex, { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY })
+                            const stemIndex = stems.findIndex(s => s.label === stem.label)
+                            handleReverbConfigOpen(stem.label, stemIndex, { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY })
                           }}
                         >
                           REVERB
                         </span>
                         <DelayKnob
-                          value={reverbs[label] || 0}
+                          value={reverbs[stem.label] || 0}
                           onChange={(val) => {
-                            setReverbs((prev) => ({ ...prev, [label]: val }))
+                            setReverbs((prev) => ({ ...prev, [stem.label]: val }))
                           }}
                         />
                       </div>
@@ -1313,93 +651,40 @@ function MixerPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <button
                         onClick={() => {
-                          // Prevent rapid clicking
-                          if (mixerManagerRef.current?.isReady !== true) {
-                            console.warn('Audio engine not ready, ignoring mute click');
-                            return;
-                          }
-                          
-                          const stemIndex = stems.findIndex(s => s.label === label);
-                          if (stemIndex === -1) {
-                            console.warn(`Stem not found: ${label}`);
-                            return;
-                          }
-                          
-                          const newMuteState = !mutes[label];
-                          
-                          // Update UI state first
-                          setMutes(prev => ({ ...prev, [label]: newMuteState }))
-                          setSolos(prev => ({ ...prev, [label]: false }))
-                          
-                          // Apply mute to audio engine with error handling
-                          try {
-                            mixerManagerRef.current.setParameter("mute", newMuteState ? 1 : 0, stemIndex);
-                            console.log(`${newMuteState ? 'Muted' : 'Unmuted'} stem ${stemIndex}: ${label}`);
-                          } catch (error) {
-                            console.error('Failed to set mute parameter:', error);
-                            // Revert UI state on error
-                            setMutes(prev => ({ ...prev, [label]: !newMuteState }))
-                          }
+                          // TODO: Connect to timeline system
+                          console.log(`Mute ${stem.label}`)
                         }}
-                        style={{
-                          fontSize: '12px',
-                          padding: '4px 10px',
-                          borderRadius: '4px',
+                        style={{ 
+                          fontSize: '12px', 
+                          padding: '4px 10px', 
+                          borderRadius: '4px', 
                           marginBottom: '8px',
-                          backgroundColor: mutes[label] ? '#FFD700' : '#FCFAEE',
-                          color: mutes[label] ? 'black' : primary,
+                          backgroundColor: '#FCFAEE',
+                          color: primary,
                           border: `1px solid ${primary}`,
                           cursor: 'pointer',
                         }}
                       >
                         MUTE
                       </button>
-
                       <button
                         onClick={() => {
-                          // Prevent rapid clicking
-                          if (mixerManagerRef.current?.isReady !== true) {
-                            console.warn('Audio engine not ready, ignoring solo click');
-                            return;
-                          }
-                          
-                          const stemIndex = stems.findIndex(s => s.label === label);
-                          if (stemIndex === -1) {
-                            console.warn(`Stem not found: ${label}`);
-                            return;
-                          }
-                          
-                          const newSoloState = !solos[label];
-                          
-                          // Update UI state first
-                          setSolos(prev => ({ ...prev, [label]: newSoloState }))
-                          setMutes(prev => ({ ...prev, [label]: false }))
-                          
-                          // Apply solo to audio engine with error handling
-                          try {
-                            mixerManagerRef.current.setParameter("solo", newSoloState ? 1 : 0, stemIndex);
-                            console.log(`${newSoloState ? 'Soloed' : 'Unsoloed'} stem ${stemIndex}: ${label}`);
-                          } catch (error) {
-                            console.error('Failed to set solo parameter:', error);
-                            // Revert UI state on error
-                            setSolos(prev => ({ ...prev, [label]: !newSoloState }))
-                          }
+                          // TODO: Connect to timeline system
+                          console.log(`Solo ${stem.label}`)
                         }}
-                        style={{
-                          fontSize: '12px',
-                          padding: '4px 10px',
-                          borderRadius: '4px',
+                        style={{ 
+                          fontSize: '12px', 
+                          padding: '4px 10px', 
+                          borderRadius: '4px', 
                           marginBottom: '8px',
-                          backgroundColor: solos[label] ? '#00FF99' : '#FCFAEE',
-                          color: solos[label] ? 'black' : primary,
+                          backgroundColor: '#FCFAEE',
+                          color: primary,
                           border: `1px solid ${primary}`,
                           cursor: 'pointer',
                         }}
-                        className={solos[label] ? 'flash' : ''}
                       >
                         SOLO
                       </button>
-
 
                       {/* Label */}
                       <div
@@ -1423,7 +708,7 @@ function MixerPage() {
                           border: `1px solid ${primary}`,
                         }}
                       >
-                        {label}
+                        {stem.label}
                       </div>
                     </div>
                   </div>
@@ -1432,7 +717,7 @@ function MixerPage() {
             </div>
 
             {/* 🐛 Debug Panel - Collapsible */}
-            {(debugLogs.length > 0 || componentMountLogs.length > 0) && (
+            {(debugLogs.length > 0 || loadingStems) && (
               <>
                 {/* Debug Button */}
                 <button
@@ -1454,7 +739,7 @@ function MixerPage() {
                     minHeight: '36px'
                   }}
                 >
-                  Logs ({debugLogs.length + componentMountLogs.length})
+                  Logs ({debugLogs.length})
                 </button>
 
                 {/* Debug Panel Popup */}
@@ -1504,9 +789,6 @@ function MixerPage() {
                       </button>
                     </div>
                     <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
-                      {componentMountLogs.map((log, index) => (
-                        <div key={`mount-${index}`} style={{ marginBottom: '3px', color: '#00ff00' }}>{log}</div>
-                      ))}
                       {debugLogs.map((log, index) => (
                         <div key={`debug-${index}`} style={{ marginBottom: '3px' }}>{log}</div>
                       ))}
@@ -1626,7 +908,6 @@ function MixerPage() {
               </div>
             )}
           </main>
-
 
           {/* 🎛️ Reverb Configuration Modal */}
           <ReverbConfigModal
