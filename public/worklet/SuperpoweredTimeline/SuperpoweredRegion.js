@@ -58,7 +58,7 @@ class SuperpoweredRegion {
     this.player.destruct();
   }
 
-  processRegion(inputBuffer, outputBuffer) {
+  processRegion(inputBuffer, outputBuffer, volume = 1.0, muted = false) {
     // We're not doing anything with the input audio in this example!
     if (!this.terminated) {
       this.player.processStereo(
@@ -68,16 +68,13 @@ class SuperpoweredRegion {
         0.5
       );
 
-      // Don't add audio directly to outputBuffer - let the track handle volume/mute/solo
-      // The track will call addToOutputBuffer() if needed
-    }
-  }
-
-  // Method to add processed audio to output buffer (called by track)
-  addToOutputBuffer(outputBuffer) {
-    const sampleOffset = this.startFrameOffset * 2;
-    for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
-      outputBuffer.array[i] += this.playerBuffer.array[i];
+      // Apply volume and mute before adding to output buffer
+      if (!muted) {
+        const sampleOffset = this.startFrameOffset * 2;
+        for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
+          outputBuffer.array[i] += this.playerBuffer.array[i] * volume;
+        }
+      }
     }
   }
 
