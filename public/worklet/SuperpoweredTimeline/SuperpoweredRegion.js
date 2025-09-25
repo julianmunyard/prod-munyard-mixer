@@ -6,6 +6,8 @@ class SuperpoweredRegion {
   muted = false;
   flanger = null;
   flangerEnabled = false;
+  reverb = null;
+  reverbEnabled = false;
   constructor(regionData, samplerate, numOfFrames, superpowered) {
     this.samplerate = samplerate;
     this.numOfFrames = numOfFrames;
@@ -28,6 +30,17 @@ class SuperpoweredRegion {
     // Initialize flanger effect
     this.flanger = new this.Superpowered.Flanger(this.samplerate);
     this.flanger.enabled = false;
+    
+    // Initialize reverb effect
+    this.reverb = new this.Superpowered.Reverb(this.samplerate, 48000);
+    this.reverb.enabled = false;
+    this.reverb.wet = 0.0;
+    this.reverb.dry = 1.0;
+    this.reverb.roomSize = 0.8;
+    this.reverb.damp = 0.5;
+    this.reverb.width = 1.0;
+    this.reverb.predelayMs = 0;
+    this.reverb.lowCutHz = 0;
     
     this.id = regionData.id;
     this.start = regionData.start;
@@ -68,6 +81,9 @@ class SuperpoweredRegion {
     if (this.flanger) {
       this.flanger.destruct();
     }
+    if (this.reverb) {
+      this.reverb.destruct();
+    }
   }
 
   processRegion(inputBuffer, outputBuffer, volume = 1.0, muted = false) {
@@ -102,6 +118,46 @@ class SuperpoweredRegion {
         }
         
         console.log(`🎛️ Region ${this.id} flanger processed: frames=${framesToProcess}, processed=${flangerProcessed}`);
+      }
+
+      // Apply reverb effect if enabled
+      if (this.reverb && this.reverbEnabled) {
+        try {
+          // Ensure samplerate is in sync (required by Superpowered)
+          this.reverb.samplerate = this.samplerate;
+          
+          // Create temporary buffer for reverb output to prevent feedback
+          const reverbBuffer = new this.Superpowered.Float32Buffer(framesToProcess * 2);
+          
+          // Copy dry signal to reverb buffer
+          this.Superpowered.memoryCopy(reverbBuffer.pointer, this.playerBuffer.pointer + (this.startFrameOffset * 2 * 4), framesToProcess * 8);
+          
+          // Process reverb with separate input/output buffers
+          const reverbProcessed = this.reverb.process(
+            this.playerBuffer.pointer + (this.startFrameOffset * 2 * 4),
+            reverbBuffer.pointer,
+            framesToProcess
+          );
+          
+          if (reverbProcessed) {
+            // Mix dry and wet signals properly to prevent crackling
+            const wetLevel = this.reverb.wet;
+            const dryLevel = this.reverb.dry;
+            
+            for (let i = 0; i < framesToProcess * 2; i++) {
+              const drySample = this.playerBuffer.array[(this.startFrameOffset * 2) + i];
+              const wetSample = reverbBuffer.array[i];
+              this.playerBuffer.array[(this.startFrameOffset * 2) + i] = (drySample * dryLevel) + (wetSample * wetLevel);
+            }
+          }
+          
+          // Clean up temporary buffer
+          reverbBuffer.free();
+          
+          console.log(`🎛️ Region ${this.id} reverb processed: frames=${framesToProcess}, processed=${reverbProcessed}`);
+        } catch (error) {
+          console.error(`🎛️ Reverb processing error for region ${this.id}:`, error);
+        }
       }
 
       // FORCE TEST: Apply 0.1 volume to first region to test if volume works at all
@@ -185,24 +241,41 @@ class SuperpoweredRegion {
 
   // ==================== 🎛️ Reverb Control Methods ====================
   setReverbMix(mix) {
-    // Reverb is not implemented yet, but this method exists for compatibility
-    console.log(`🎛️ Region ${this.id} reverb mix set to:`, mix);
+    if (this.reverb) {
+      this.reverb.wet = mix;
+      this.reverb.dry = 1.0 - mix;
+      this.reverb.enabled = mix > 0;
+      this.reverbEnabled = mix > 0;
+      console.log(`🎛️ Region ${this.id} reverb mix set to:`, mix);
+    }
   }
 
   setReverbPredelay(predelayMs) {
-    console.log(`🎛️ Region ${this.id} reverb predelay set to:`, predelayMs);
+    if (this.reverb) {
+      this.reverb.predelayMs = predelayMs;
+      console.log(`🎛️ Region ${this.id} reverb predelay set to:`, predelayMs);
+    }
   }
 
   setReverbRoomSize(roomSize) {
-    console.log(`🎛️ Region ${this.id} reverb room size set to:`, roomSize);
+    if (this.reverb) {
+      this.reverb.roomSize = roomSize;
+      console.log(`🎛️ Region ${this.id} reverb room size set to:`, roomSize);
+    }
   }
 
   setReverbWidth(width) {
-    console.log(`🎛️ Region ${this.id} reverb width set to:`, width);
+    if (this.reverb) {
+      this.reverb.width = width;
+      console.log(`🎛️ Region ${this.id} reverb width set to:`, width);
+    }
   }
 
   setReverbDamp(damp) {
-    console.log(`🎛️ Region ${this.id} reverb damp set to:`, damp);
+    if (this.reverb) {
+      this.reverb.damp = damp;
+      console.log(`🎛️ Region ${this.id} reverb damp set to:`, damp);
+    }
   }
 
   // ==================== 🎛️ Global Flanger Control Methods ====================
