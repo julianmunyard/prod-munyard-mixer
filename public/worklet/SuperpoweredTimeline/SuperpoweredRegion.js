@@ -68,11 +68,16 @@ class SuperpoweredRegion {
         0.5
       );
 
-      // ADD audio date into outputBuffer
-      const sampleOffset = this.startFrameOffset * 2;
-      for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
-        outputBuffer.array[i] += this.playerBuffer.array[i];
-      }
+      // Don't add audio directly to outputBuffer - let the track handle volume/mute/solo
+      // The track will call addToOutputBuffer() if needed
+    }
+  }
+
+  // Method to add processed audio to output buffer (called by track)
+  addToOutputBuffer(outputBuffer) {
+    const sampleOffset = this.startFrameOffset * 2;
+    for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
+      outputBuffer.array[i] += this.playerBuffer.array[i];
     }
   }
 

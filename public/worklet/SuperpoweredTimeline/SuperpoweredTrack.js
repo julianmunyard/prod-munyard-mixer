@@ -97,19 +97,20 @@ class SuperpoweredTrack {
       if (region.playing) {
         // console.log("Region shuyld play from offset", region.startFrameOffset);
         region.play();
+        
+        // Process the region audio into its buffer
         region.processRegion(inputBuffer, outputBuffer, buffersize);
         
         // Apply volume, mute, and solo processing
         if (!this.muted && (this.soloed || !this.isAnyTrackSoloed(timeline))) {
           // Apply volume to the region's audio buffer
-          for (let i = 0; i < region.playerBuffer.array.length; i++) {
+          const sampleOffset = region.startFrameOffset * 2;
+          for (let i = sampleOffset; i < region.playerBuffer.array.length; i++) {
             region.playerBuffer.array[i] *= this.volume;
           }
           
           // Add the processed audio to the output buffer
-          for (let i = 0; i < outputBuffer.array.length; i++) {
-            outputBuffer.array[i] += region.playerBuffer.array[i];
-          }
+          region.addToOutputBuffer(outputBuffer);
         }
       }
     }
