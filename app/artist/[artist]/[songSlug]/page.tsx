@@ -372,10 +372,20 @@ function MixerPage() {
 
   // ==================== 🎛️ Audio Control Functions ====================
   const setTrackVolume = (stemLabel: string, volume: number) => {
-    if (!mixerEngineRef.current?.audioEngine) return;
+    console.log(`🎚️ setTrackVolume called with:`, { stemLabel, volume, stemsLength: stems.length, stems: stems.map(s => s.label) });
+    
+    if (!mixerEngineRef.current?.audioEngine) {
+      console.log(`🎚️ ERROR: No audio engine available`);
+      return;
+    }
     
     const stemIndex = stems.findIndex(s => s.label === stemLabel);
-    if (stemIndex === -1) return;
+    console.log(`🎚️ Found stem index:`, stemIndex);
+    
+    if (stemIndex === -1) {
+      console.log(`🎚️ ERROR: Stem ${stemLabel} not found in stems array`);
+      return;
+    }
     
     const trackId = `track_${stemIndex}`;
     console.log(`🎚️ UI: Setting volume for ${stemLabel} (index: ${stemIndex}, trackId: ${trackId}) to ${volume}`);
