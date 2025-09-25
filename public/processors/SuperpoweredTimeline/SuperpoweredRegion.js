@@ -68,23 +68,12 @@ class SuperpoweredRegion {
         0.5
       );
 
-      // FORCE TEST: Apply 0.1 volume to first region to test if volume works at all
-      let testVolume = 1.0;
-      if (this.id === "region_0") {
-        testVolume = 0.1; // Force very quiet for first region
-        console.log(`🧪 FORCE TEST: Region ${this.id} using test volume ${testVolume}, muted: ${muted}, startFrameOffset: ${this.startFrameOffset}`);
-      }
-
       // Apply volume and mute before adding to output buffer
       if (!muted) {
         const sampleOffset = this.startFrameOffset * 2;
-        console.log(`🔊 Region ${this.id} adding audio: sampleOffset=${sampleOffset}, bufferLength=${this.playerBuffer.array.length}, outputLength=${outputBuffer.array.length}`);
-        
         for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
-          outputBuffer.array[i] += this.playerBuffer.array[i] * testVolume;
+          outputBuffer.array[i] += this.playerBuffer.array[i] * volume;
         }
-      } else {
-        console.log(`🔇 Region ${this.id} is muted (passed parameter), not adding audio`);
       }
     }
   }

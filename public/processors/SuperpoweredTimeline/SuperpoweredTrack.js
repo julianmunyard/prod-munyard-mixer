@@ -112,17 +112,14 @@ class SuperpoweredTrack {
 
   // ==================== 🎛️ Audio Control Methods ====================
   setVolume(volume) {
-    console.log(`🎛️ Track ${this.id} volume set to:`, volume);
     this.volume = volume;
   }
 
   setMute(muted) {
-    console.log(`🎛️ Track ${this.id} mute set to:`, muted);
     this.muted = muted;
   }
 
   setSolo(soloed) {
-    console.log(`🎛️ Track ${this.id} solo set to:`, soloed);
     this.soloed = soloed;
   }
 }
