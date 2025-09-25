@@ -95,7 +95,8 @@ class SuperpoweredTimeline {
         inputBuffer,
         outputBuffer,
         this.currentFrameCursor,
-        buffersize
+        buffersize,
+        this
       );
     }
 
@@ -198,6 +199,15 @@ class SuperpoweredTimeline {
     const track = this.tracks.find(t => t.id === trackId);
     if (track) {
       track.setSolo(soloed);
+      
+      // If this track is being soloed, unsolo all other tracks
+      if (soloed) {
+        this.tracks.forEach(t => {
+          if (t.id !== trackId) {
+            t.setSolo(false);
+          }
+        });
+      }
     }
   }
 

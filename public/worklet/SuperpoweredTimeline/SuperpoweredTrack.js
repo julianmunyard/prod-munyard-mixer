@@ -3,12 +3,18 @@ import SuperpoweredRegion from "./SuperpoweredRegion.js";
 class SuperpoweredTrack {
   playing = false;
   regions = [];
+  volume = 1.0;
+  muted = false;
+  soloed = false;
 
   constructor(id, samplerate, numOfFrames, superpowered) {
     this.id = id;
     this.samplerate = samplerate;
     this.Superpowered = superpowered;
     this.numOfFrames = numOfFrames;
+    this.volume = 1.0;
+    this.muted = false;
+    this.soloed = false;
   }
 
   addPlayer(regionData) {
@@ -46,7 +52,7 @@ class SuperpoweredTrack {
     }
   }
 
-  processTrack(inputBuffer, outputBuffer, currentFrameCursor, buffersize) {
+  processTrack(inputBuffer, outputBuffer, currentFrameCursor, buffersize, timeline = null) {
     // We're not doing anythign with the input buffers yet!
 
     for (const [index, region] of this.regions.entries()) {
@@ -92,11 +98,27 @@ class SuperpoweredTrack {
         // console.log("Region shuyld play from offset", region.startFrameOffset);
         region.play();
         region.processRegion(inputBuffer, outputBuffer, buffersize);
-        // Access raw audio buffer of each track
-        const preFaderTrackFrameBuffer = outputBuffer.array;
-        // console.log(preFaderTrackFrameBuffer);
+        
+        // Apply volume, mute, and solo processing
+        if (!this.muted && (this.soloed || !this.isAnyTrackSoloed(timeline))) {
+          // Apply volume to the region's audio buffer
+          for (let i = 0; i < region.playerBuffer.array.length; i++) {
+            region.playerBuffer.array[i] *= this.volume;
+          }
+          
+          // Add the processed audio to the output buffer
+          for (let i = 0; i < outputBuffer.array.length; i++) {
+            outputBuffer.array[i] += region.playerBuffer.array[i];
+          }
+        }
       }
     }
+  }
+
+  // Helper method to check if any track is soloed
+  isAnyTrackSoloed(timeline) {
+    if (!timeline) return false;
+    return timeline.tracks.some(track => track.soloed);
   }
 
   // ==================== 🎛️ Audio Control Methods ====================
