@@ -7,6 +7,7 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
     this.players = []; // Array of AdvancedAudioPlayer instances (unlimited)
     this.mixers = []; // Array of StereoMixer instances (one per 4 stems)
     this.reverbs = []; // Array of Reverb instances (one per stem)
+    this.globalFlanger = null; // Single global flanger for final output
     this.isPlaying = false;
     this.isReady = false; // Track if worklet is ready
     this.loadedStems = new Set(); // Track which stems are loaded
@@ -36,6 +37,18 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
     
     // Create final mixer for combining all mixer outputs
     this.finalMixer = new this.Superpowered.StereoMixer();
+    
+    // Create global flanger for final output (EXACTLY like official Superpowered example)
+    this.globalFlanger = new this.Superpowered.Flanger(this.samplerate);
+    this.globalFlanger.enabled = true; // EXACTLY like official example
+    this.globalFlanger.wet = 0.0; // Start with no effect
+    this.globalFlanger.depth = 0.16; // Default depth from docs
+    this.globalFlanger.lfoBeats = 16; // Default LFO from docs
+    this.globalFlanger.bpm = 128; // Default BPM from docs
+    this.globalFlanger.clipperThresholdDb = -3; // Default from docs
+    this.globalFlanger.clipperMaximumDb = 6; // Default from docs
+    this.globalFlanger.stereo = false; // Default from docs
+    console.log("🎵 Created global flanger with DEFAULT settings (enabled=true, wet=0.0)");
     
     
     // Mark as ready
@@ -122,6 +135,7 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
       reverb.predelayMs = 0;
       reverb.lowCutHz = 0;
       this.reverbs.push(reverb);
+      
     }
     
      // Create mixers (one per 4 stems) - this is what makes all stems play together
@@ -209,6 +223,14 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
           outputBuffer,
           buffersize
         );
+        
+        // Apply global flanger to final output (like reverb does - in-place processing)
+        if (this.globalFlanger && this.globalFlanger.wet > 0) {
+          this.globalFlanger.samplerate = this.samplerate;
+          // Simple in-place processing like reverb: process(outputBuffer.pointer, outputBuffer.pointer, buffersize)
+          this.globalFlanger.process(outputBuffer.pointer, outputBuffer.pointer, buffersize);
+          console.log(`🎛️ FLANGER PROCESSING: wet=${this.globalFlanger.wet}, enabled=${this.globalFlanger.enabled}`);
+        }
       } catch (error) {
         console.error("🎵 Error in final mixer process:", error);
         this.Superpowered.memorySet(outputBuffer, 0, buffersize * 8);
@@ -283,12 +305,64 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
         }
       });
     }
+    
+    // Clean up reverb instances
+    if (this.reverbs) {
+      this.reverbs.forEach((reverb, index) => {
+        if (reverb) {
+          reverb.destruct();
+          console.log(`Destructed reverb ${index}`);
+        }
+      });
+    }
+    
+    // Clean up global flanger
+    if (this.globalFlanger) {
+      this.globalFlanger.destruct();
+      console.log("Destructed global flanger");
+    }
   }
 
   onMessageFromMainScope(message) {
     console.log("🎵 PlayerProcessor received message:", message);
     console.log("🎵 Current loadedStems:", Array.from(this.loadedStems));
     console.log("🎵 Current isPlaying:", this.isPlaying);
+    
+    // Handle flanger messages
+    if (message.type === "flanger" && this.globalFlanger) {
+      if (typeof message.wet !== 'undefined') {
+        this.globalFlanger.wet = message.wet;
+        console.log(`🎛️ FLANGER: Set wet to ${message.wet}`);
+      }
+      if (typeof message.depth !== 'undefined') {
+        this.globalFlanger.depth = message.depth;
+        console.log(`🎛️ FLANGER: Set depth to ${message.depth}`);
+      }
+      if (typeof message.lfoBeats !== 'undefined') {
+        this.globalFlanger.lfoBeats = message.lfoBeats;
+        console.log(`🎛️ FLANGER: Set lfoBeats to ${message.lfoBeats}`);
+      }
+      if (typeof message.bpm !== 'undefined') {
+        this.globalFlanger.bpm = message.bpm;
+        console.log(`🎛️ FLANGER: Set bpm to ${message.bpm}`);
+      }
+      if (typeof message.clipperThresholdDb !== 'undefined') {
+        this.globalFlanger.clipperThresholdDb = message.clipperThresholdDb;
+        console.log(`🎛️ FLANGER: Set clipperThresholdDb to ${message.clipperThresholdDb}`);
+      }
+      if (typeof message.clipperMaximumDb !== 'undefined') {
+        this.globalFlanger.clipperMaximumDb = message.clipperMaximumDb;
+        console.log(`🎛️ FLANGER: Set clipperMaximumDb to ${message.clipperMaximumDb}`);
+      }
+      if (typeof message.stereo !== 'undefined') {
+        this.globalFlanger.stereo = Boolean(message.stereo);
+        console.log(`🎛️ FLANGER: Set stereo to ${Boolean(message.stereo)}`);
+      }
+      if (typeof message.enabled !== 'undefined') {
+        this.globalFlanger.enabled = Boolean(message.enabled);
+        console.log(`🎛️ FLANGER: Set enabled to ${Boolean(message.enabled)}`);
+      }
+    }
     
     if (message.type === "loadStem") {
       console.log("Loading stem with payload:", message.payload);
@@ -535,6 +609,57 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
         this.reverbs[stemIndex].enabled = value > 0;
         console.log(`Set reverb enabled for stem ${stemIndex} to ${value > 0}`);
       }
+    } else if (id === "globalFlanger") {
+      // Simple global flanger control - just wet level (following official example)
+      console.log(`🎛️ PLAYER PROCESSOR: Received globalFlanger message with value=${value}`);
+      if (this.globalFlanger) {
+        this.globalFlanger.wet = value;
+        // Flanger is always enabled, wet level controls the effect (following official example)
+        console.log(`🎛️ PLAYER PROCESSOR: Set global flanger wet to ${value}`);
+        console.log(`🎛️ PLAYER PROCESSOR: Flanger object:`, {
+          wet: this.globalFlanger.wet,
+          enabled: this.globalFlanger.enabled,
+          depth: this.globalFlanger.depth
+        });
+      } else {
+        console.log(`🎛️ ERROR: Global flanger not initialized!`);
+      }
+    } else if (id === "globalFlangerEnabled") {
+      // Toggle global flanger on/off
+      if (this.globalFlanger) {
+        this.globalFlanger.enabled = value > 0;
+        console.log(`Set global flanger enabled to ${value > 0}`);
+      }
+    } else if (id === "globalFlangerDepth") {
+      if (this.globalFlanger) {
+        this.globalFlanger.depth = value;
+        console.log(`Set global flanger depth to ${value}`);
+      }
+    } else if (id === "globalFlangerLfoBeats") {
+      if (this.globalFlanger) {
+        this.globalFlanger.lfoBeats = value;
+        console.log(`Set global flanger LFO beats to ${value}`);
+      }
+    } else if (id === "globalFlangerBpm") {
+      if (this.globalFlanger) {
+        this.globalFlanger.bpm = value;
+        console.log(`Set global flanger BPM to ${value}`);
+      }
+    } else if (id === "globalFlangerClipperThreshold") {
+      if (this.globalFlanger) {
+        this.globalFlanger.clipperThresholdDb = value;
+        console.log(`Set global flanger clipper threshold to ${value}`);
+      }
+    } else if (id === "globalFlangerClipperMaximum") {
+      if (this.globalFlanger) {
+        this.globalFlanger.clipperMaximumDb = value;
+        console.log(`Set global flanger clipper maximum to ${value}`);
+      }
+    } else if (id === "globalFlangerStereo") {
+      if (this.globalFlanger) {
+        this.globalFlanger.stereo = value > 0;
+        console.log(`Set global flanger stereo to ${value > 0}`);
+      }
     } else if (id === "varispeedMode") {
       // Set the varispeed mode: 0 = timeStretch, 1 = natural
       this.varispeedMode = value === 1 ? 'natural' : 'timeStretch';
@@ -717,6 +842,7 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
                    reverb.samplerate = this.samplerate;
                    reverb.process(stemOutputBuffer.pointer, stemOutputBuffer.pointer, buffersize);
                  }
+                 
                  
                  mixerInputs[localIndex] = stemOutputBuffer.pointer;
                  activeStemsInMixer++;

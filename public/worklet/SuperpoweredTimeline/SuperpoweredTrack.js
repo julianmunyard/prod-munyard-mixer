@@ -137,6 +137,71 @@ class SuperpoweredTrack {
     // Update all regions with new varispeed
     this.regions.forEach(region => region.setVarispeed(speed, isNatural));
   }
+
+  // Flanger control methods
+  setFlangerConfig(config) {
+    // Update all regions with new flanger config
+    this.regions.forEach(region => region.setFlangerConfig(config));
+  }
+
+  setFlangerEnabled(enabled) {
+    // Update all regions with new flanger enabled state
+    this.regions.forEach(region => region.setFlangerEnabled(enabled));
+  }
+
+  // ==================== 🎛️ Reverb Control Methods ====================
+  setReverbMix(mix) {
+    this.regions.forEach(region => region.setReverbMix(mix));
+  }
+
+  setReverbPredelay(predelayMs) {
+    this.regions.forEach(region => region.setReverbPredelay(predelayMs));
+  }
+
+  setReverbRoomSize(roomSize) {
+    this.regions.forEach(region => region.setReverbRoomSize(roomSize));
+  }
+
+  setReverbWidth(width) {
+    this.regions.forEach(region => region.setReverbWidth(width));
+  }
+
+  setReverbDamp(damp) {
+    this.regions.forEach(region => region.setReverbDamp(damp));
+  }
+
+  // ==================== 🎛️ Global Flanger Control Methods ====================
+  setGlobalFlanger(wet) {
+    this.regions.forEach(region => region.setGlobalFlanger(wet));
+  }
+
+  setGlobalFlangerEnabled(enabled) {
+    this.regions.forEach(region => region.setGlobalFlangerEnabled(enabled));
+  }
+
+  setGlobalFlangerDepth(depth) {
+    this.regions.forEach(region => region.setGlobalFlangerDepth(depth));
+  }
+
+  setGlobalFlangerLfoBeats(lfoBeats) {
+    this.regions.forEach(region => region.setGlobalFlangerLfoBeats(lfoBeats));
+  }
+
+  setGlobalFlangerBpm(bpm) {
+    this.regions.forEach(region => region.setGlobalFlangerBpm(bpm));
+  }
+
+  setGlobalFlangerClipperThreshold(threshold) {
+    this.regions.forEach(region => region.setGlobalFlangerClipperThreshold(threshold));
+  }
+
+  setGlobalFlangerClipperMaximum(maximum) {
+    this.regions.forEach(region => region.setGlobalFlangerClipperMaximum(maximum));
+  }
+
+  setGlobalFlangerStereo(stereo) {
+    this.regions.forEach(region => region.setGlobalFlangerStereo(stereo));
+  }
 }
 
 export default SuperpoweredTrack;

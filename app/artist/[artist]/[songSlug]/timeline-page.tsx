@@ -10,6 +10,7 @@ import React, { useEffect, useRef, useState, ChangeEvent } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import DelayKnob from '../../../components/DelayKnob'
 import ReverbConfigModal from '../../../components/ReverbConfigModal'
+import FlangerConfigModal from '../../../components/FlangerConfigModal'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import TransparentMixerLayout from '../../../components/TransparentMixerLayout'
@@ -57,6 +58,16 @@ export default function TimelineMixerPage() {
 
   // ==================== 🎵 UI State ====================
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
+  
+  // ==================== 🎛️ Reverb Modal State ====================
+  const [reverbModalOpen, setReverbModalOpen] = useState(false)
+  const [reverbModalStem, setReverbModalStem] = useState<Stem | null>(null)
+  const [reverbModalStemIndex, setReverbModalStemIndex] = useState<number>(0)
+
+  // ==================== 🎛️ Flanger Modal State ====================
+  const [flangerModalOpen, setFlangerModalOpen] = useState(false)
+  const [flangerModalStem, setFlangerModalStem] = useState<Stem | null>(null)
+  const [flangerModalStemIndex, setFlangerModalStemIndex] = useState<number>(0)
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768
 
   // ==================== 🎵 Load Song Data ====================
@@ -341,7 +352,7 @@ export default function TimelineMixerPage() {
               alignItems: 'center',
             }}
           >
-            {stems.map((stem) => (
+            {stems.map((stem, stemIndex) => (
               <div
                 key={stem.label}
                 className="mixer-module"
@@ -384,6 +395,19 @@ export default function TimelineMixerPage() {
                       step="0.01"
                       defaultValue="1"
                       className="volume-slider"
+                      onChange={(e) => {
+                        if (mixerEngineRef.current && timelineReady) {
+                          mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                            type: "command",
+                            data: { 
+                              command: "setTrackVolume", 
+                              trackId: `track_${stemIndex}`,
+                              volume: parseFloat(e.target.value)
+                            }
+                          });
+                        }
+                        console.log(`Volume for ${stem.label}:`, e.target.value)
+                      }}
                       style={{
                         writingMode: 'bt-lr' as any,
                         WebkitAppearance: 'slider-vertical',
@@ -396,29 +420,108 @@ export default function TimelineMixerPage() {
                 </div>
 
                 {/* Reverb Knob */}
-                <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+                <div style={{ marginBottom: '16px', textAlign: 'center' }}>
                   <div className="flex flex-col items-center text-xs select-none" style={{ color: 'white' }}>
                     <span 
                       className="mb-1 cursor-pointer hover:opacity-75"
                       style={{ fontSize: '10px' }}
+                      onClick={() => {
+                        console.log('🎛️ Opening reverb modal for stem:', stem.label, 'index:', stemIndex);
+                        setReverbModalOpen(true);
+                        setReverbModalStem(stem);
+                        setReverbModalStemIndex(stemIndex);
+                      }}
                     >
                       REVERB
                     </span>
                     <DelayKnob
                       value={0}
                       onChange={(val) => {
-                        // TODO: Connect to timeline system
+                        if (mixerEngineRef.current && timelineReady) {
+                          mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                            type: "command",
+                            data: { 
+                              command: "setReverbMix", 
+                              trackId: `track_${stemIndex}`,
+                              mix: val
+                            }
+                          });
+                        }
                         console.log(`Reverb for ${stem.label}:`, val)
                       }}
                     />
+                    
+                    {/* Pre-Delay Control */}
+                    <div className="flex flex-col items-center text-xs select-none" style={{ color: 'white', marginTop: '8px' }}>
+                      <span className="mb-1" style={{ fontSize: '10px' }}>PRE-DELAY</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="500"
+                        step="10"
+                        defaultValue="0"
+                        className="w-16 h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                        style={{ 
+                          background: 'linear-gradient(to right, #B8001F 0%, #B8001F 0%, #ccc 0%, #ccc 100%)',
+                          outline: 'none'
+                        }}
+                        onChange={(e) => {
+                          if (mixerEngineRef.current && timelineReady) {
+                            mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                              type: "command",
+                              data: { 
+                                command: "setReverbPredelay", 
+                                trackId: `track_${stemIndex}`,
+                                predelayMs: parseFloat(e.target.value)
+                              }
+                            });
+                          }
+                          console.log(`Pre-delay for ${stem.label}:`, e.target.value + 'ms')
+                        }}
+                      />
+                    </div>
                   </div>
+                </div>
+
+                {/* Flanger Button */}
+                <div style={{ marginBottom: '16px', textAlign: 'center' }}>
+                  <button
+                    onClick={() => {
+                      console.log('🎛️ Opening flanger modal for stem:', stem.label, 'index:', stemIndex);
+                      setFlangerModalOpen(true);
+                      setFlangerModalStem(stem);
+                      setFlangerModalStemIndex(stemIndex);
+                    }}
+                    style={{ 
+                      fontSize: '12px', 
+                      padding: '6px 12px', 
+                      borderRadius: '6px', 
+                      marginBottom: '8px',
+                      backgroundColor: '#FF0000',
+                      color: 'white',
+                      border: '2px solid #FF0000',
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    FLANGE
+                  </button>
                 </div>
 
                 {/* Mute & Solo */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <button
                     onClick={() => {
-                      // TODO: Connect to timeline system
+                      if (mixerEngineRef.current && timelineReady) {
+                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                          type: "command",
+                          data: { 
+                            command: "setTrackMute", 
+                            trackId: `track_${stemIndex}`,
+                            muted: true
+                          }
+                        });
+                      }
                       console.log(`Mute ${stem.label}`)
                     }}
                     style={{ 
@@ -436,7 +539,16 @@ export default function TimelineMixerPage() {
                   </button>
                   <button
                     onClick={() => {
-                      // TODO: Connect to timeline system
+                      if (mixerEngineRef.current && timelineReady) {
+                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                          type: "command",
+                          data: { 
+                            command: "setTrackSolo", 
+                            trackId: `track_${stemIndex}`,
+                            soloed: true
+                          }
+                        });
+                      }
                       console.log(`Solo ${stem.label}`)
                     }}
                     style={{ 
@@ -470,6 +582,92 @@ export default function TimelineMixerPage() {
           </div>
         </div>
 
+        {/* Varispeed and Flanger Controls */}
+        {timelineReady && (
+          <div className="flex justify-center items-center gap-8 mt-8">
+            {/* Varispeed Slider */}
+            <div className="flex flex-col items-center">
+              <VarispeedSlider
+                value={1.0}
+                onChange={(val) => {
+                  if (mixerEngineRef.current && timelineReady) {
+                    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                      type: "command",
+                      data: { 
+                        command: "setVarispeed", 
+                        speed: val,
+                        isNatural: false
+                      }
+                    });
+                  }
+                  console.log('Varispeed changed to:', val)
+                }}
+                isIOS={false}
+                primaryColor={primary}
+                bpm={songData.bpm}
+                stemCount={stems.length}
+                varispeedMode="timeStretch"
+                onVarispeedModeChange={(mode) => {
+                  console.log('Varispeed mode changed to:', mode)
+                }}
+              />
+            </div>
+
+            {/* Global Flanger Button */}
+            <div className="flex flex-col items-center">
+              <button
+                onClick={() => {
+                  console.log('🎛️ Toggling global flanger');
+                  if (mixerEngineRef.current && timelineReady) {
+                    // Toggle global flanger enabled state
+                    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                      type: "trackControl",
+                      data: { 
+                        control: "globalFlangerEnabled",
+                        value: true  // Enable global flanger
+                      }
+                    });
+                    
+                    // Set some default global flanger parameters
+                    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                      type: "trackControl",
+                      data: { 
+                        control: "globalFlanger",
+                        value: 0.7  // Wet signal
+                      }
+                    });
+                    
+                    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                      type: "trackControl",
+                      data: { 
+                        control: "globalFlangerDepth",
+                        value: 0.16  // Depth
+                      }
+                    });
+                    
+                    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                      type: "trackControl",
+                      data: { 
+                        control: "globalFlangerBpm",
+                        value: songData.bpm || 128  // BPM
+                      }
+                    });
+                  }
+                }}
+                className="px-8 py-4 rounded-lg font-mono text-lg font-bold transition-all duration-200 hover:opacity-80"
+                style={{
+                  backgroundColor: '#FF0000',
+                  color: 'white',
+                  border: '3px solid #FF0000',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+                }}
+              >
+                FLANGE
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Status */}
         <div className="text-center mt-8 text-sm opacity-70">
           {timelineReady ? (
@@ -479,6 +677,142 @@ export default function TimelineMixerPage() {
           )}
         </div>
       </div>
+
+
+      {/* Reverb Configuration Modal */}
+      {reverbModalOpen && reverbModalStem && (
+        <ReverbConfigModal
+          isOpen={reverbModalOpen}
+          onClose={() => setReverbModalOpen(false)}
+          onSave={(config) => {
+            console.log('🎛️ Reverb config saved:', config);
+            if (mixerEngineRef.current && timelineReady) {
+              console.log(`🎛️ Setting reverb for track ${reverbModalStemIndex}:`, config);
+              
+              // Use the old command system that works
+              mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                type: "command",
+                data: { 
+                  command: "setReverbMix", 
+                  trackId: `track_${reverbModalStemIndex}`,
+                  mix: config.mix
+                }
+              });
+              
+              mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                type: "command",
+                data: { 
+                  command: "setReverbRoomSize", 
+                  trackId: `track_${reverbModalStemIndex}`,
+                  roomSize: config.roomSize
+                }
+              });
+              
+              console.log('🎛️ Sending setReverbPredelay command:', {
+                command: "setReverbPredelay", 
+                trackId: `track_${reverbModalStemIndex}`,
+                predelayMs: config.predelayMs
+              });
+              mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                type: "command",
+                data: { 
+                  command: "setReverbPredelay", 
+                  trackId: `track_${reverbModalStemIndex}`,
+                  predelayMs: config.predelayMs
+                }
+              });
+              
+              mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                type: "command",
+                data: { 
+                  command: "setReverbWidth", 
+                  trackId: `track_${reverbModalStemIndex}`,
+                  width: config.width
+                }
+              });
+              
+              mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                type: "command",
+                data: { 
+                  command: "setReverbDamp", 
+                  trackId: `track_${reverbModalStemIndex}`,
+                  damp: config.damp
+                }
+              });
+            }
+            setReverbModalOpen(false);
+          }}
+          initialConfig={{
+            mix: 0,
+            width: 1,
+            damp: 0.5,
+            roomSize: 0.8,
+            predelayMs: 0,
+            lowCutHz: 0,
+            enabled: true
+          }}
+          stemLabel={reverbModalStem.label}
+        />
+      )}
+
+      {/* Flanger Configuration Modal */}
+      {flangerModalOpen && flangerModalStem && (
+        <FlangerConfigModal
+          isOpen={flangerModalOpen}
+          onClose={() => setFlangerModalOpen(false)}
+          onConfigChange={(config) => {
+            // Real-time flanger updates
+            if (mixerEngineRef.current && timelineReady) {
+              mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                type: "trackControl",
+                data: { 
+                  command: "setFlangerConfig", 
+                  trackId: `track_${flangerModalStemIndex}`,
+                  config: config
+                }
+              });
+            }
+          }}
+          onSave={(config) => {
+            console.log('🎛️ Flanger config saved:', config);
+            if (mixerEngineRef.current && timelineReady) {
+              console.log(`🎛️ Setting flanger for track ${flangerModalStemIndex}:`, config);
+              
+              // Send flanger config to the audio engine for specific track
+              mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                type: "command",
+                data: { 
+                  command: "setFlangerConfig", 
+                  trackId: `track_${flangerModalStemIndex}`,
+                  config: config
+                }
+              });
+              
+              // Also send individual parameter updates for real-time control
+              mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                type: "trackControl",
+                data: { 
+                  command: "setFlangerConfig", 
+                  trackId: `track_${flangerModalStemIndex}`,
+                  config: config
+                }
+              });
+            }
+            setFlangerModalOpen(false);
+          }}
+          initialConfig={{
+            wet: 0.7,
+            depth: 0.16,
+            lfoBeats: 16,
+            bpm: songData.bpm || 128,
+            clipperThresholdDb: -3,
+            clipperMaximumDb: 6,
+            stereo: false,
+            enabled: true  // Enable flanger by default when modal opens
+          }}
+          stemLabel={flangerModalStem.label}
+        />
+      )}
     </div>
   )
 }

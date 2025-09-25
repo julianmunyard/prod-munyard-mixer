@@ -212,6 +212,261 @@ export class RealTimelineMixerEngine {
     return this.isPlaying;
   }
 
+  // Control methods for individual tracks
+  setTrackVolume(trackIndex, volume) {
+    console.log(`🎛️ Setting track ${trackIndex} volume to ${volume}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+    
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        trackIndex,
+        control: "volume",
+        value: volume
+      }
+    });
+  }
+
+  setTrackReverb(trackIndex, reverbMix) {
+    console.log(`🎛️ Setting track ${trackIndex} reverb to ${reverbMix}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+    
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        trackIndex,
+        control: "reverb",
+        value: reverbMix
+      }
+    });
+  }
+
+  setTrackMute(trackIndex, muted) {
+    console.log(`🎛️ Setting track ${trackIndex} mute to ${muted}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+    
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        trackIndex,
+        control: "mute",
+        value: muted
+      }
+    });
+  }
+
+  setTrackSolo(trackIndex, soloed) {
+    console.log(`🎛️ Setting track ${trackIndex} solo to ${soloed}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+    
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        trackIndex,
+        control: "solo",
+        value: soloed
+      }
+    });
+  }
+
+  setTrackReverbPredelay(trackIndex, predelayMs) {
+    console.log(`🎛️ Setting track ${trackIndex} reverb pre-delay to ${predelayMs}ms`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+    
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        trackIndex,
+        control: "reverbPredelay",
+        value: predelayMs
+      }
+    });
+  }
+
+  setTrackReverbWidth(trackIndex, width) {
+    console.log(`🎛️ Setting track ${trackIndex} reverb width to ${width}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+    
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        trackIndex,
+        control: "reverbWidth",
+        value: width
+      }
+    });
+  }
+
+  setTrackReverbRoomSize(trackIndex, roomSize) {
+    console.log(`🎛️ Setting track ${trackIndex} reverb room size to ${roomSize}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+    
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        trackIndex,
+        control: "reverbRoomSize",
+        value: roomSize
+      }
+    });
+  }
+
+  setTrackReverbDamp(trackIndex, damp) {
+    console.log(`🎛️ Setting track ${trackIndex} reverb damp to ${damp}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        trackIndex,
+        control: "reverbDamp",
+        value: damp
+      }
+    });
+  }
+
+  setGlobalFlanger(wet) {
+    console.log(`🎛️ REAL TIMELINE MIXER: Setting global flanger wet to ${wet}`);
+    if (!this.audioEngine) {
+      console.log(`🎛️ ERROR: AudioEngine not initialized!`);
+      throw new Error("AudioEngine not initialized");
+    }
+
+    console.log(`🎛️ Sending trackControl message: globalFlanger=${wet}`);
+    console.log(`🎛️ AudioEngine exists:`, !!this.audioEngine);
+    console.log(`🎛️ sendMessageToAudioProcessor exists:`, typeof this.audioEngine.sendMessageToAudioProcessor);
+    
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalFlanger",
+        value: wet
+      }
+    });
+    console.log(`🎛️ Message sent successfully`);
+  }
+
+  setGlobalFlangerEnabled(enabled) {
+    console.log(`🎛️ Setting global flanger enabled to ${enabled}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalFlangerEnabled",
+        value: enabled
+      }
+    });
+  }
+
+  setGlobalFlangerDepth(depth) {
+    console.log(`🎛️ Setting global flanger depth to ${depth}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalFlangerDepth",
+        value: depth
+      }
+    });
+  }
+
+  setGlobalFlangerLfoBeats(lfoBeats) {
+    console.log(`🎛️ Setting global flanger LFO beats to ${lfoBeats}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalFlangerLfoBeats",
+        value: lfoBeats
+      }
+    });
+  }
+
+  setGlobalFlangerBpm(bpm) {
+    console.log(`🎛️ Setting global flanger BPM to ${bpm}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalFlangerBpm",
+        value: bpm
+      }
+    });
+  }
+
+  setGlobalFlangerClipperThreshold(threshold) {
+    console.log(`🎛️ Setting global flanger clipper threshold to ${threshold}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalFlangerClipperThreshold",
+        value: threshold
+      }
+    });
+  }
+
+  setGlobalFlangerClipperMaximum(maximum) {
+    console.log(`🎛️ Setting global flanger clipper maximum to ${maximum}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalFlangerClipperMaximum",
+        value: maximum
+      }
+    });
+  }
+
+  setGlobalFlangerStereo(stereo) {
+    console.log(`🎛️ Setting global flanger stereo to ${stereo}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalFlangerStereo",
+        value: stereo
+      }
+    });
+  }
+
   // Clean up resources
   dispose() {
     if (this.audioEngine) {

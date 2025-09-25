@@ -30,6 +30,8 @@ class TimelineProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
       this.timeline.handleTimelineDataUpdate(message.data.timelineData);
     } else if (message.type === "command") {
       this.timeline.handleCommand(message.data);
+    } else if (message.type === "trackControl") {
+      this.timeline.handleTrackControl(message.data);
     } else if (message.type === "reset") {
       this.timeline.terminate();
       this.stopped = true;

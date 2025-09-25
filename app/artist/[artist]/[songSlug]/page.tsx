@@ -10,6 +10,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import DelayKnob from '../../../components/DelayKnob'
 import ReverbConfigModal from '../../../components/ReverbConfigModal'
+import FlangerConfigModal from '../../../components/FlangerConfigModal'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import RealTimelineMixerEngine from '../../../../audio/engine/realTimelineMixerEngine'
@@ -81,14 +82,37 @@ class MixerErrorBoundary extends React.Component<
 // ==================== 🎬 Main Component ====================
 function MixerPage() {
   const { artist, songSlug } = useParams() as { artist: string; songSlug: string }
-  
+    
   // -------------------- 🔧 State --------------------
   const [songData, setSongData] = useState<Song | null>(null)
   const [stems, setStems] = useState<Stem[]>([])
   const [volumes, setVolumes] = useState<Record<string, number>>({})
-  const [reverbs, setReverbs] = useState<Record<string, number>>({})
+  const [reverbs, setReverbs] = useState<Record<string, any>>({})
   const [mutes, setMutes] = useState<Record<string, boolean>>({})
   const [solos, setSolos] = useState<Record<string, boolean>>({})
+  
+  // Default reverb config
+  const defaultReverbConfig = {
+    mix: 0,
+    width: 1.0,
+    damp: 0.5,
+    roomSize: 0.8,
+    predelayMs: 0,
+    lowCutHz: 0,
+    enabled: false
+  }
+  
+  // Default flanger config
+  const defaultFlangerConfig = {
+    wet: 0.7,
+    depth: 0.16,
+    lfoBeats: 16,
+    bpm: 128,
+    clipperThresholdDb: -3,
+    clipperMaximumDb: 6,
+    stereo: false,
+    enabled: false
+  }
   const [varispeed, setVarispeed] = useState(1)
   const [isNaturalVarispeed, setIsNaturalVarispeed] = useState(false)
   const [reverbConfigModal, setReverbConfigModal] = useState<{
@@ -97,15 +121,12 @@ function MixerPage() {
     stemIndex: number
     position?: { x: number; y: number }
   }>({ isOpen: false, stemLabel: '', stemIndex: 0 })
-  const [reverbConfigs, setReverbConfigs] = useState<Record<string, {
-    mix: number
-    width: number
-    damp: number
-    roomSize: number
-    predelayMs: number
-    lowCutHz: number
-    enabled: boolean
-  }>>({})
+  
+  // Global flanger state
+  const [globalFlanger, setGlobalFlanger] = useState<any>(null)
+  const [flangerConfigModal, setFlangerConfigModal] = useState<{
+    isOpen: boolean
+  }>({ isOpen: false })
   const [bpm, setBpm] = useState<number | null>(null)
   const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
@@ -258,12 +279,12 @@ function MixerPage() {
         addDebugLog(`❌ Supabase error: ${error.message}`);
         return;
       }
-
+      
       if (!data) {
         addDebugLog('❌ Song not found in database');
         return;
       }
-
+      
       addDebugLog(`✅ Found song: ${data.title} by ${data.artist_name}`);
 
       if (data.bpm) setBpm(data.bpm);
@@ -304,18 +325,38 @@ function MixerPage() {
         lowCutHz: 0,
         enabled: true
       }
-      setReverbConfigs(Object.fromEntries(stemObjs.map(s => [s.label, defaultReverbConfig])));
+      setReverbs(Object.fromEntries(stemObjs.map(s => [s.label, {
+        mix: 0,
+        width: 1.0,
+        damp: 0.5,
+        roomSize: 0.8,
+        predelayMs: 0,
+        lowCutHz: 0,
+        enabled: false
+      }])));
+      
+      // Initialize global flanger config with default values
+      setGlobalFlanger({
+        wet: 0.7,
+        depth: 0.16,
+        lfoBeats: 16,
+        bpm: data.bpm || 128,
+        clipperThresholdDb: -3,
+        clipperMaximumDb: 6,
+        stereo: false,
+        enabled: false
+      });
     }
 
-    fetchSong();
+      fetchSong();
   }, [artist, songSlug])
 
   // ==================== 🎵 Load Stems Function ====================
   const loadStemsIntoTimeline = async () => {
     if (!timelineReady || !stems.length || !mixerEngineRef.current) {
       addDebugLog('❌ Cannot load stems - timeline not ready or no stems');
-      return;
-    }
+        return;
+      }
 
     try {
       addDebugLog(`🎵 Loading ${stems.length} stems into timeline...`);
@@ -346,7 +387,7 @@ function MixerPage() {
           mixerEngineRef.current.audioEngine.onAllAssetsDownloaded = () => {
             addDebugLog('✅ All assets downloaded and decoded!');
             setAllAssetsLoaded(true);
-            setLoadingStems(false);
+        setLoadingStems(false);
             resolve();
           };
         }
@@ -366,9 +407,9 @@ function MixerPage() {
     } catch (error) {
       addDebugLog(`❌ Failed to load stems: ${error}`);
       setAllAssetsLoaded(false);
-      setLoadingStems(false);
-    }
-  };
+        setLoadingStems(false);
+      }
+    };
 
   // ==================== 🎛️ Audio Control Functions ====================
   const setTrackVolume = (stemLabel: string, volume: number) => {
@@ -498,6 +539,47 @@ function MixerPage() {
     addDebugLog(`🎚️ Varispeed set to ${speed.toFixed(2)}x (${isNatural ? 'Natural' : 'Stretch'} mode)`);
   };
 
+  // ==================== 🎛️ Reverb Control Functions ====================
+  const setReverbEnabled = (stemLabel: string, enabled: boolean) => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    
+    const stemIndex = stems.findIndex(s => s.label === stemLabel);
+    if (stemIndex === -1) return;
+    
+    const trackId = `track_${stemIndex}`;
+    
+    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+      type: "command",
+      data: { 
+        command: "setReverbEnabled", 
+        trackId: trackId,
+        enabled: enabled
+      }
+    });
+    
+    addDebugLog(`${enabled ? '🔊' : '🔇'} Reverb ${enabled ? 'enabled' : 'disabled'} for ${stemLabel}`);
+  };
+
+  const setReverbMix = (stemLabel: string, mix: number) => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    
+    const stemIndex = stems.findIndex(s => s.label === stemLabel);
+    if (stemIndex === -1) return;
+    
+    const trackId = `track_${stemIndex}`;
+    
+    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+      type: "command",
+      data: { 
+        command: "setReverbMix", 
+        trackId: trackId,
+        mix: mix
+      }
+    });
+    
+    addDebugLog(`🎚️ Reverb mix set to ${(mix * 100).toFixed(0)}% for ${stemLabel}`);
+  };
+
   // ==================== 🎵 Playback Functions ====================
   const playAll = async () => {
     if (!mixerEngineRef.current || !timelineReady) return;
@@ -564,16 +646,102 @@ function MixerPage() {
     enabled: boolean
   }) => {
     const stemLabel = reverbConfigModal.stemLabel
-    const stemIndex = reverbConfigModal.stemIndex
     
     // Update the reverb config state
-    setReverbConfigs(prev => ({
+    setReverbs(prev => ({
       ...prev,
       [stemLabel]: config
     }))
     
-    // TODO: Connect to timeline system for reverb parameters
-    console.log('Reverb config saved:', config);
+    // Apply reverb settings to audio engine using the new system
+    if (mixerEngineRef.current?.audioEngine) {
+      const stemIndex = stems.findIndex(s => s.label === stemLabel)
+      if (stemIndex !== -1) {
+        const trackId = `track_${stemIndex}`
+        
+        // Send all reverb parameters to the audio processor
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setReverbEnabled", 
+            trackId: trackId,
+            enabled: config.enabled
+          }
+        })
+        
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setReverbMix", 
+            trackId: trackId,
+            mix: config.mix
+          }
+        })
+        
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setReverbRoomSize", 
+            trackId: trackId,
+            roomSize: config.roomSize
+          }
+        })
+        
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setReverbDamp", 
+            trackId: trackId,
+            damp: config.damp
+          }
+        })
+        
+        console.log(`Applied reverb config to ${stemLabel}:`, config)
+      }
+    }
+  }
+
+  // ==================== 🎛️ GLOBAL FLANGER CONFIGURATION ====================
+  const handleFlangerConfigOpen = () => {
+    setFlangerConfigModal({
+      isOpen: true
+    })
+  }
+
+  const handleFlangerConfigClose = () => {
+    setFlangerConfigModal({
+      isOpen: false
+    })
+  }
+
+  const handleFlangerConfigSave = (config: {
+    wet: number
+    depth: number
+    lfoBeats: number
+    bpm: number
+    clipperThresholdDb: number
+    clipperMaximumDb: number
+    stereo: boolean
+    enabled: boolean
+  }) => {
+    // Update the global flanger config state
+    setGlobalFlanger(config)
+    
+    // Apply global flanger using correct message format
+    if (mixerEngineRef.current?.audioEngine) {
+      console.log(`🎛️ Saving global flanger config:`, config);
+      mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+        type: "flanger",
+        wet: config.wet,
+        depth: config.depth,
+        lfoBeats: config.lfoBeats,
+        bpm: config.bpm,
+        clipperThresholdDb: config.clipperThresholdDb,
+        clipperMaximumDb: config.clipperMaximumDb,
+        stereo: config.stereo,
+        enabled: config.enabled
+      });
+    }
   }
 
   // ==================== 🎨 UTILITY FUNCTIONS ====================
@@ -755,6 +923,45 @@ function MixerPage() {
               >
                 UNSOLO
               </button>
+
+              <button
+                onClick={(e) => {
+                  // Toggle flanger on/off when button is clicked
+                  const currentEnabled = globalFlanger?.enabled || false
+                  const newWet = currentEnabled ? 0 : 0.7 // Set to 70% wet when turning on
+                  console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
+                  
+                  const newConfig = {
+                    ...globalFlanger,
+                    wet: newWet,
+                    enabled: !currentEnabled
+                  }
+                  setGlobalFlanger(newConfig)
+                  
+                  // Apply global flanger using existing message pattern
+                  if (mixerEngineRef.current?.audioEngine) {
+                    console.log(`🎛️ SENDING FLANGER MESSAGE: wet=${newWet}`);
+                    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                      type: "flanger",
+                      wet: newWet
+                    });
+                    console.log(`🎛️ FLANGER MESSAGE SENT!`);
+                  } else {
+                    console.log(`🎛️ ERROR: Audio engine not available!`);
+                  }
+                  
+                  // Also open the modal for fine-tuning
+                  handleFlangerConfigOpen()
+                }}
+                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
+                style={{ 
+                  backgroundColor: '#FCFAEE',
+                  color: '#B8001F',
+                  border: '1px solid #B8001F'
+                }}
+              >
+                FLANGE
+              </button>
             </div>
 
             {/* 🎵 Status */}
@@ -835,7 +1042,7 @@ function MixerPage() {
                           min="0"
                           max="1"
                           step="0.01"
-                          value={volumes[stem.label] || 1}
+                          value={volumes[stem.label] ?? 1}
                           onChange={(e) => {
                             const volume = parseFloat(e.target.value);
                             setVolumes((prev) => ({ ...prev, [stem.label]: volume }));
@@ -874,9 +1081,16 @@ function MixerPage() {
                           REVERB
                         </span>
                         <DelayKnob
-                          value={reverbs[stem.label] || 0}
+                          value={reverbs[stem.label]?.mix || 0}
                           onChange={(val) => {
-                            setReverbs((prev) => ({ ...prev, [stem.label]: val }))
+                            console.log(`🎛️ UI: Reverb knob changed for ${stem.label} to ${val}`);
+                            const currentConfig = reverbs[stem.label] || defaultReverbConfig
+                            const newConfig = { ...currentConfig, mix: val }
+                            setReverbs((prev) => ({ ...prev, [stem.label]: newConfig }))
+                            // Enable reverb if value > 0, disable if 0
+                            setReverbEnabled(stem.label, val > 0)
+                            // Set reverb mix to the knob value
+                            setReverbMix(stem.label, val)
                           }}
                         />
                       </div>
@@ -891,10 +1105,10 @@ function MixerPage() {
                           setSolos(prev => ({ ...prev, [stem.label]: false })); // Clear solo when muting
                           setTrackMute(stem.label, newMuteState);
                         }}
-                        style={{ 
-                          fontSize: '12px', 
-                          padding: '4px 10px', 
-                          borderRadius: '4px', 
+                        style={{
+                          fontSize: '12px',
+                          padding: '4px 10px',
+                          borderRadius: '4px',
                           marginBottom: '8px',
                           backgroundColor: '#FCFAEE',
                           color: primary,
@@ -911,10 +1125,10 @@ function MixerPage() {
                           setMutes(prev => ({ ...prev, [stem.label]: false })); // Clear mute when soloing
                           setTrackSolo(stem.label, newSoloState);
                         }}
-                        style={{ 
-                          fontSize: '12px', 
-                          padding: '4px 10px', 
-                          borderRadius: '4px', 
+                        style={{
+                          fontSize: '12px',
+                          padding: '4px 10px',
+                          borderRadius: '4px',
                           marginBottom: '8px',
                           backgroundColor: '#FCFAEE',
                           color: primary,
@@ -1040,9 +1254,9 @@ function MixerPage() {
             {/* 🎚️ Desktop Varispeed Slider - Bottom Center */}
             {!isMobile && (
               <div className="w-full flex justify-center">
-                <div
+              <div
                   className="relative"
-                  style={{
+                style={{
                     marginTop: '20px',
                     width: '350px',
                     height: '140px',
@@ -1053,15 +1267,15 @@ function MixerPage() {
                     style={{
                       pointerEvents: 'none',
                       marginTop: '0px',
-                    }}
-                  >
-                    {bpm !== null && (
+                }}
+              >
+                {bpm !== null && (
                       <div className="text-xs font-mono mb-1" style={{ color: primary }}>
-                        {Math.round(bpm * varispeed)} BPM
-                      </div>
-                    )}
+                    {Math.round(bpm * varispeed)} BPM
+                  </div>
+                )}
                     <div className="text-sm tracking-wider" style={{ color: primary }}>
-                      VARISPEED
+                  VARISPEED
                     </div>
                   </div>
 
@@ -1072,40 +1286,40 @@ function MixerPage() {
                       top: '-118px',
                     }}
                   >
-                    <VarispeedSlider
+                <VarispeedSlider
                       value={2 - varispeed}
                       onChange={val => {
                         const newVarispeed = 2 - val;
                         setVarispeed(newVarispeed);
                         setVarispeedControl(newVarispeed, isNaturalVarispeed);
                       }}
-                      isIOS={isIOS}
-                      primaryColor={primary}
+                  isIOS={isIOS}
+                  primaryColor={primary}
                       stemCount={stems.length}
                     />
                   </div>
                   
                   {/* Mode Toggle Button - Centered below slider for desktop */}
                   <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-                    <button
+                  <button
                       onClick={() => {
                         const newMode = !isNaturalVarispeed;
                         setIsNaturalVarispeed(newMode);
                         setVarispeedControl(varispeed, newMode);
                       }}
-                      className="px-3 py-2 text-xs font-mono rounded border"
-                      style={{ 
-                        color: primary,
-                        borderColor: primary,
-                        backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
+                    className="px-3 py-2 text-xs font-mono rounded border"
+                    style={{ 
+                      color: primary,
+                      borderColor: primary,
+                      backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
                         pointerEvents: 'auto',
                         minHeight: '32px',
                         minWidth: '70px'
-                      }}
-                      title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
-                    >
-                      {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
-                    </button>
+                    }}
+                    title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
+                  >
+                    {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
+                  </button>
                   </div>
                 </div>
               </div>
@@ -1191,17 +1405,19 @@ function MixerPage() {
             isOpen={reverbConfigModal.isOpen}
             onClose={handleReverbConfigClose}
             onSave={handleReverbConfigSave}
-            initialConfig={reverbConfigs[reverbConfigModal.stemLabel] || {
-              mix: 0.4,
-              width: 1.0,
-              damp: 0.5,
-              roomSize: 0.8,
-              predelayMs: 0,
-              lowCutHz: 0,
-              enabled: true
-            }}
+            initialConfig={reverbs[reverbConfigModal.stemLabel] || defaultReverbConfig}
             stemLabel={reverbConfigModal.stemLabel}
             position={reverbConfigModal.position}
+          />
+
+          {/* 🎛️ Global Flanger Configuration Modal */}
+          <FlangerConfigModal
+            isOpen={flangerConfigModal.isOpen}
+            onClose={handleFlangerConfigClose}
+            onSave={handleFlangerConfigSave}
+            initialConfig={globalFlanger || defaultFlangerConfig}
+            stemLabel="Global Mix"
+            position={{ x: window.innerWidth / 2, y: window.innerHeight / 2 }}
           />
 
         </>

@@ -23,6 +23,7 @@ class SuperpoweredTimeline {
     this.trackLoaderID = Date.now();
     this.totalAssetsToFetch = 0;
     this.assetsDownloaded = 0;
+    
   }
 
   handleLoadTimeline(timelineData) {
@@ -110,6 +111,7 @@ class SuperpoweredTimeline {
       );
     }
 
+
     this.currentFrameCursor += buffersize;
     if (
       this.currentFrameCursor %
@@ -159,6 +161,12 @@ class SuperpoweredTimeline {
     }
     if (message.command === "setVarispeed") {
       this.setVarispeed(message.speed, message.isNatural);
+    }
+    if (message.command === "setFlangerConfig") {
+      this.setFlangerConfig(message.trackId, message.config);
+    }
+    if (message.command === "setFlangerEnabled") {
+      this.setFlangerEnabled(message.trackId, message.enabled);
     }
   }
 
@@ -220,6 +228,173 @@ class SuperpoweredTimeline {
     // Update all tracks with new varispeed
     this.tracks.forEach(track => track.setVarispeed(speed, isNatural));
   }
+
+  setFlangerConfig(trackId, config) {
+    console.log(`🎛️ setFlangerConfig called: trackId=${trackId}, config=`, config);
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      console.log(`🎛️ Found track ${trackId}, setting flanger config`);
+      track.setFlangerConfig(config);
+    } else {
+      console.log(`🎛️ Track ${trackId} not found!`);
+    }
+  }
+
+  setFlangerEnabled(trackId, enabled) {
+    console.log(`🎛️ setFlangerEnabled called: trackId=${trackId}, enabled=${enabled}`);
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      console.log(`🎛️ Found track ${trackId}, setting flanger enabled to ${enabled}`);
+      track.setFlangerEnabled(enabled);
+    } else {
+      console.log(`🎛️ Track ${trackId} not found!`);
+    }
+  }
+
+  // ==================== 🎛️ Track Control Handler ====================
+  handleTrackControl(message) {
+    console.log(`🎛️ handleTrackControl called with:`, message);
+    
+    if (message.command === "setTrackVolume") {
+      this.setTrackVolume(message.trackId, message.volume);
+    } else if (message.command === "setTrackMute") {
+      this.setTrackMute(message.trackId, message.muted);
+    } else if (message.command === "setTrackSolo") {
+      this.setTrackSolo(message.trackId, message.soloed);
+    } else if (message.command === "setReverbMix") {
+      this.setTrackReverbMix(message.trackId, message.mix);
+    } else if (message.command === "setReverbPredelay") {
+      this.setTrackReverbPredelay(message.trackId, message.predelayMs);
+    } else if (message.command === "setReverbRoomSize") {
+      this.setTrackReverbRoomSize(message.trackId, message.roomSize);
+    } else if (message.command === "setReverbWidth") {
+      this.setTrackReverbWidth(message.trackId, message.width);
+    } else if (message.command === "setReverbDamp") {
+      this.setTrackReverbDamp(message.trackId, message.damp);
+    } else if (message.command === "setFlangerConfig") {
+      this.setFlangerConfig(message.trackId, message.config);
+    } else if (message.command === "setFlangerEnabled") {
+      this.setFlangerEnabled(message.trackId, message.enabled);
+    } else if (message.control === "globalFlanger") {
+      this.setGlobalFlanger(message.value);
+    } else if (message.control === "globalFlangerEnabled") {
+      this.setGlobalFlangerEnabled(message.value);
+    } else if (message.control === "globalFlangerDepth") {
+      this.setGlobalFlangerDepth(message.value);
+    } else if (message.control === "globalFlangerLfoBeats") {
+      this.setGlobalFlangerLfoBeats(message.value);
+    } else if (message.control === "globalFlangerBpm") {
+      this.setGlobalFlangerBpm(message.value);
+    } else if (message.control === "globalFlangerClipperThreshold") {
+      this.setGlobalFlangerClipperThreshold(message.value);
+    } else if (message.control === "globalFlangerClipperMaximum") {
+      this.setGlobalFlangerClipperMaximum(message.value);
+    } else if (message.control === "globalFlangerStereo") {
+      this.setGlobalFlangerStereo(message.value);
+    } else {
+      console.log(`🎛️ Unknown track control command:`, message);
+    }
+  }
+
+  // ==================== 🎛️ Reverb Control Methods ====================
+  setTrackReverbMix(trackId, mix) {
+    console.log(`🎛️ setTrackReverbMix called: trackId=${trackId}, mix=${mix}`);
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setReverbMix(mix);
+    }
+  }
+
+  setTrackReverbPredelay(trackId, predelayMs) {
+    console.log(`🎛️ setTrackReverbPredelay called: trackId=${trackId}, predelayMs=${predelayMs}`);
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setReverbPredelay(predelayMs);
+    }
+  }
+
+  setTrackReverbRoomSize(trackId, roomSize) {
+    console.log(`🎛️ setTrackReverbRoomSize called: trackId=${trackId}, roomSize=${roomSize}`);
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setReverbRoomSize(roomSize);
+    }
+  }
+
+  setTrackReverbWidth(trackId, width) {
+    console.log(`🎛️ setTrackReverbWidth called: trackId=${trackId}, width=${width}`);
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setReverbWidth(width);
+    }
+  }
+
+  setTrackReverbDamp(trackId, damp) {
+    console.log(`🎛️ setTrackReverbDamp called: trackId=${trackId}, damp=${damp}`);
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setReverbDamp(damp);
+    }
+  }
+
+  // ==================== 🎛️ Global Flanger Control Methods ====================
+  setGlobalFlanger(wet) {
+    console.log(`🎛️ Setting global flanger wet to ${wet}`);
+    // Apply flanger to all tracks
+    this.tracks.forEach(track => {
+      track.setGlobalFlanger(wet);
+    });
+  }
+
+  setGlobalFlangerEnabled(enabled) {
+    console.log(`🎛️ Setting global flanger enabled to ${enabled}`);
+    this.tracks.forEach(track => {
+      track.setGlobalFlangerEnabled(enabled);
+    });
+  }
+
+  setGlobalFlangerDepth(depth) {
+    console.log(`🎛️ Setting global flanger depth to ${depth}`);
+    this.tracks.forEach(track => {
+      track.setGlobalFlangerDepth(depth);
+    });
+  }
+
+  setGlobalFlangerLfoBeats(lfoBeats) {
+    console.log(`🎛️ Setting global flanger LFO beats to ${lfoBeats}`);
+    this.tracks.forEach(track => {
+      track.setGlobalFlangerLfoBeats(lfoBeats);
+    });
+  }
+
+  setGlobalFlangerBpm(bpm) {
+    console.log(`🎛️ Setting global flanger BPM to ${bpm}`);
+    this.tracks.forEach(track => {
+      track.setGlobalFlangerBpm(bpm);
+    });
+  }
+
+  setGlobalFlangerClipperThreshold(threshold) {
+    console.log(`🎛️ Setting global flanger clipper threshold to ${threshold}`);
+    this.tracks.forEach(track => {
+      track.setGlobalFlangerClipperThreshold(threshold);
+    });
+  }
+
+  setGlobalFlangerClipperMaximum(maximum) {
+    console.log(`🎛️ Setting global flanger clipper maximum to ${maximum}`);
+    this.tracks.forEach(track => {
+      track.setGlobalFlangerClipperMaximum(maximum);
+    });
+  }
+
+  setGlobalFlangerStereo(stereo) {
+    console.log(`🎛️ Setting global flanger stereo to ${stereo}`);
+    this.tracks.forEach(track => {
+      track.setGlobalFlangerStereo(stereo);
+    });
+  }
+
 }
 
 export default SuperpoweredTimeline;
