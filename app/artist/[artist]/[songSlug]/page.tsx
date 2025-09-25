@@ -158,6 +158,35 @@ function MixerPage() {
   const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
 
+  // ==================== 🛑 Page Visibility Cleanup ====================
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && mixerEngineRef.current && isPlaying) {
+        // Page is hidden and audio is playing - pause it
+        mixerEngineRef.current.pause()
+        setIsPlaying(false)
+        addDebugLog('🛑 Paused playback - page hidden')
+      }
+    }
+
+    const handleBeforeUnload = () => {
+      // Page is being unloaded - stop everything
+      if (mixerEngineRef.current) {
+        mixerEngineRef.current.pause()
+        mixerEngineRef.current.stop()
+        addDebugLog('🛑 Stopped playback - page unloading')
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [isPlaying])
+
 
   // ==================== 🎵 Timeline Engine Initialization ====================
   useEffect(() => {
@@ -184,6 +213,19 @@ function MixerPage() {
     }
 
     initializeTimeline()
+
+    // Cleanup function to stop playback when component unmounts
+    return () => {
+      if (mixerEngineRef.current) {
+        try {
+          mixerEngineRef.current.pause()
+          mixerEngineRef.current.stop()
+          addDebugLog('🛑 Stopped playback on page exit')
+        } catch (error) {
+          console.error('Error stopping playback on cleanup:', error)
+        }
+      }
+    }
   }, [])
 
   // ==================== 🧠 Data Loading ====================
