@@ -6,24 +6,14 @@ class SuperpoweredTrack {
   volume = 1.0;
   muted = false;
   soloed = false;
-  reverb = null;
-  reverbEnabled = false;
+  // Note: Reverb is now handled by shared reverb in SuperpoweredTimeline
+  // Individual reverb instances removed for CPU efficiency
 
   constructor(id, samplerate, numOfFrames, superpowered) {
     this.id = id;
     this.samplerate = samplerate;
     this.Superpowered = superpowered;
     this.numOfFrames = numOfFrames;
-    
-    // Initialize reverb effect
-    this.reverb = new this.Superpowered.Reverb(samplerate, 44100);
-    this.reverb.enabled = false;
-    this.reverb.mix = 0.0;    // No mix initially (this sets dry/wet automatically)
-    this.reverb.roomSize = 0.8;
-    this.reverb.damp = 0.5;
-    this.reverb.width = 1.0;
-    this.reverb.reverbPredelayMs = 0;
-    this.reverb.lowCutHz = 0;
 
     // Initialize flanger effect
     this.flanger = new this.Superpowered.Flanger(samplerate);
@@ -36,10 +26,7 @@ class SuperpoweredTrack {
     this.flanger.clipperMaximumDb = 6;
     this.flanger.stereo = false;
     
-    console.log(`🎛️ Initialized reverb for track ${this.id} with dry: ${this.reverb.dry}, wet: ${this.reverb.wet}, mix: ${this.reverb.mix}`);
-    
-    // Create temporary buffer for reverb processing
-    this.reverbBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
+    console.log(`🎛️ Initialized track ${this.id} with shared reverb system`);
   }
 
   addPlayer(regionData) {
@@ -162,49 +149,34 @@ class SuperpoweredTrack {
   }
 
   setReverbMix(mix) {
-    if (this.reverb) {
-      this.reverb.mix = mix;
-      // Enable reverb if mix > 0, disable if mix = 0
-      this.reverb.enabled = mix > 0;
-      // The mix property automatically sets dry/wet values
-      console.log(`🎛️ Track ${this.id} reverb mix: ${mix}, enabled: ${this.reverb.enabled}, dry: ${this.reverb.dry}, wet: ${this.reverb.wet}`);
-    }
+    // Store reverb send level for this track
+    this.reverbSendLevel = Math.max(0, Math.min(1, mix));
+    console.log(`🎛️ Track ${this.id} reverb send level set to:`, this.reverbSendLevel);
   }
 
   setReverbRoomSize(roomSize) {
-    if (this.reverb) {
-      this.reverb.roomSize = roomSize;
-    }
+    // Note: Room size is now controlled by shared reverb in SuperpoweredTimeline
+    console.log(`🎛️ Track ${this.id} reverb room size request:`, roomSize, "(handled by shared reverb)");
   }
 
   setReverbDamp(damp) {
-    if (this.reverb) {
-      this.reverb.damp = damp;
-    }
+    // Note: Damp is now controlled by shared reverb in SuperpoweredTimeline
+    console.log(`🎛️ Track ${this.id} reverb damp request:`, damp, "(handled by shared reverb)");
   }
 
   setReverbWidth(width) {
-    if (this.reverb) {
-      this.reverb.width = width;
-      console.log(`🎛️ Track ${this.id} reverb width set to: ${width}, actual value: ${this.reverb.width}`);
-    } else {
-      console.error(`❌ Track ${this.id} reverb not found`);
-    }
+    // Note: Width is now controlled by shared reverb in SuperpoweredTimeline
+    console.log(`🎛️ Track ${this.id} reverb width request:`, width, "(handled by shared reverb)");
   }
 
   setReverbPredelay(predelayMs) {
-    if (this.reverb) {
-      this.reverb.reverbPredelayMs = predelayMs;
-      console.log(`🎛️ Track ${this.id} reverb pre-delay set to: ${predelayMs}ms, actual value: ${this.reverb.reverbPredelayMs}`);
-    } else {
-      console.error(`❌ Track ${this.id} reverb not found`);
-    }
+    // Note: Predelay is now controlled by shared reverb in SuperpoweredTimeline
+    console.log(`🎛️ Track ${this.id} reverb predelay request:`, predelayMs, "(handled by shared reverb)");
   }
 
   setReverbLowCut(lowCutHz) {
-    if (this.reverb) {
-      this.reverb.lowCutHz = lowCutHz;
-    }
+    // Note: Low cut is now controlled by shared reverb in SuperpoweredTimeline
+    console.log(`🎛️ Track ${this.id} reverb low cut request:`, lowCutHz, "(handled by shared reverb)");
   }
 
   setFlangerConfig(config) {

@@ -568,16 +568,17 @@ function MixerPage() {
     
     const trackId = `track_${stemIndex}`;
     
+    // Use the new reverb send system instead of per-track mix
     mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
       type: "command",
       data: { 
-        command: "setReverbMix", 
+        command: "setReverbSend", 
         trackId: trackId,
-        mix: mix
+        sendLevel: mix
       }
     });
     
-    addDebugLog(`🎚️ Reverb mix set to ${(mix * 100).toFixed(0)}% for ${stemLabel}`);
+    addDebugLog(`🎚️ Reverb send set to ${(mix * 100).toFixed(0)}% for ${stemLabel}`);
   };
 
   // ==================== 🎵 Playback Functions ====================
@@ -693,6 +694,24 @@ function MixerPage() {
             command: "setReverbDamp", 
             trackId: trackId,
             damp: config.damp
+          }
+        })
+        
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setReverbPredelay", 
+            trackId: trackId,
+            predelayMs: config.predelayMs
+          }
+        })
+        
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setReverbWidth", 
+            trackId: trackId,
+            width: config.width
           }
         })
         
@@ -1102,7 +1121,6 @@ function MixerPage() {
                         onClick={() => {
                           const newMuteState = !mutes[stem.label];
                           setMutes(prev => ({ ...prev, [stem.label]: newMuteState }));
-                          setSolos(prev => ({ ...prev, [stem.label]: false })); // Clear solo when muting
                           setTrackMute(stem.label, newMuteState);
                         }}
                         style={{
@@ -1110,10 +1128,11 @@ function MixerPage() {
                           padding: '4px 10px',
                           borderRadius: '4px',
                           marginBottom: '8px',
-                          backgroundColor: '#FCFAEE',
-                          color: primary,
-                          border: `1px solid ${primary}`,
+                          backgroundColor: mutes[stem.label] ? '#6B7280' : '#FCFAEE',
+                          color: mutes[stem.label] ? 'white' : primary,
+                          border: `1px solid ${mutes[stem.label] ? '#6B7280' : primary}`,
                           cursor: 'pointer',
+                          transition: 'all 0.2s ease',
                         }}
                       >
                         MUTE
@@ -1122,7 +1141,6 @@ function MixerPage() {
                         onClick={() => {
                           const newSoloState = !solos[stem.label];
                           setSolos(prev => ({ ...prev, [stem.label]: newSoloState }));
-                          setMutes(prev => ({ ...prev, [stem.label]: false })); // Clear mute when soloing
                           setTrackSolo(stem.label, newSoloState);
                         }}
                         style={{
@@ -1130,10 +1148,11 @@ function MixerPage() {
                           padding: '4px 10px',
                           borderRadius: '4px',
                           marginBottom: '8px',
-                          backgroundColor: '#FCFAEE',
-                          color: primary,
-                          border: `1px solid ${primary}`,
+                          backgroundColor: solos[stem.label] ? '#22C55E' : '#FCFAEE',
+                          color: solos[stem.label] ? 'white' : primary,
+                          border: `1px solid ${solos[stem.label] ? '#22C55E' : primary}`,
                           cursor: 'pointer',
+                          transition: 'all 0.2s ease',
                         }}
                       >
                         SOLO
