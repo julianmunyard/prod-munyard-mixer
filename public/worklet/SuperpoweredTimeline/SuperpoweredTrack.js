@@ -38,8 +38,9 @@ class SuperpoweredTrack {
     
     console.log(`🎛️ Initialized reverb for track ${this.id} with dry: ${this.reverb.dry}, wet: ${this.reverb.wet}, mix: ${this.reverb.mix}`);
     
-    // Create temporary buffer for reverb processing
-    this.reverbBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
+    // Pre-allocate reverb buffers (NEVER allocate in audio loop!)
+    this.reverbInputBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
+    this.reverbOutputBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
   }
 
   addPlayer(regionData) {
@@ -68,6 +69,28 @@ class SuperpoweredTrack {
       region.terminate();
     }
     this.regions = [];
+    
+    // Clean up reverb resources
+    if (this.reverb) {
+      this.reverb.destruct();
+      this.reverb = null;
+    }
+    
+    // Clean up pre-allocated reverb buffers
+    if (this.reverbInputBuffer) {
+      this.reverbInputBuffer.free();
+      this.reverbInputBuffer = null;
+    }
+    if (this.reverbOutputBuffer) {
+      this.reverbOutputBuffer.free();
+      this.reverbOutputBuffer = null;
+    }
+    
+    // Clean up flanger
+    if (this.flanger) {
+      this.flanger.destruct();
+      this.flanger = null;
+    }
   }
 
   updateRegions(newRegionsData) {
@@ -126,8 +149,8 @@ class SuperpoweredTrack {
         // Determine if this track should be audible (not muted and either soloed or no solo active)
         const shouldPlay = !this.muted && (this.soloed || !this.isAnyTrackSoloed(timeline));
         
-        // Process the region with volume, mute, and reverb parameters (flanger is now global)
-        region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay, this.reverb);
+        // Process the region with volume, mute, reverb, and pre-allocated buffers (flanger is now global)
+        region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay, this.reverb, this.reverbInputBuffer, this.reverbOutputBuffer);
       }
     }
     

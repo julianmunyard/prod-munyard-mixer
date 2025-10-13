@@ -58,7 +58,7 @@ class SuperpoweredRegion {
     this.player.destruct();
   }
 
-  processRegion(inputBuffer, outputBuffer, volume = 1.0, muted = false, reverb = null) {
+  processRegion(inputBuffer, outputBuffer, volume = 1.0, muted = false, reverb = null, reverbInputBuffer = null, reverbOutputBuffer = null) {
     // We're not doing anything with the input audio in this example!
     if (!this.terminated) {
       this.player.processStereo(
@@ -78,10 +78,11 @@ class SuperpoweredRegion {
         }
         
         // If reverb is enabled, also add reverb send
-        if (reverb && reverb.enabled && reverb.mix > 0) {
-          // Create a temporary buffer for reverb processing using Superpowered buffer
-          const reverbInputBuffer = new this.Superpowered.Float32Buffer(outputBuffer.array.length);
-          const reverbOutputBuffer = new this.Superpowered.Float32Buffer(outputBuffer.array.length);
+        if (reverb && reverb.enabled && reverb.mix > 0 && reverbInputBuffer && reverbOutputBuffer) {
+          // Use pre-allocated buffers (passed from track - NO allocation in audio loop!)
+          // Clear the buffers before use
+          this.Superpowered.memorySet(reverbInputBuffer.pointer, 0, outputBuffer.array.length * 4);
+          this.Superpowered.memorySet(reverbOutputBuffer.pointer, 0, outputBuffer.array.length * 4);
           
           // Copy region audio to reverb input buffer
           for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
