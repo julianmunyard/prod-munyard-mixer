@@ -23,6 +23,20 @@ class SuperpoweredTimeline {
     this.trackLoaderID = Date.now();
     this.totalAssetsToFetch = 0;
     this.assetsDownloaded = 0;
+    
+    // Initialize GLOBAL flanger effect (applied to final mix output)
+    this.globalFlanger = new this.Superpowered.Flanger(samplerate);
+    this.globalFlanger.enabled = false;
+    this.globalFlanger.wet = 0.5; // Start at 50% wet when enabled
+    this.globalFlanger.depth = 0.16; // 0-1, default 0.16
+    this.globalFlanger.lfoBeats = 16; // 0.25-128, default 16
+    this.globalFlanger.bpm = 128; // 40-250, default 128
+    this.globalFlanger.clipperThresholdDb = -3; // Default -3
+    this.globalFlanger.clipperMaximumDb = 6; // Default 6
+    this.globalFlanger.stereo = true; // Use stereo for better effect
+    
+    // Pre-allocate flanger buffer (never allocate in audio loop!)
+    this.flangerBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
   }
 
   handleLoadTimeline(timelineData) {
@@ -108,6 +122,16 @@ class SuperpoweredTimeline {
         this.currentFrameCursor,
         buffersize
       );
+    }
+
+    // Apply GLOBAL flanger to the final mixed output (if enabled)
+    if (this.globalFlanger && this.globalFlanger.enabled) {
+      // Update samplerate (required by Superpowered for every process call)
+      this.globalFlanger.samplerate = this.samplerate;
+      
+      // Process flanger in-place (input and output can be the same buffer)
+      // According to Superpowered docs: "Can point to the same location with input (in-place processing)"
+      this.globalFlanger.process(outputBuffer.pointer, outputBuffer.pointer, buffersize);
     }
 
     this.currentFrameCursor += buffersize;
@@ -256,6 +280,19 @@ class SuperpoweredTimeline {
     for (const track of this.tracks) {
       track.terminate();
     }
+    
+    // Clean up global flanger
+    if (this.globalFlanger) {
+      this.globalFlanger.destruct();
+      this.globalFlanger = null;
+    }
+    
+    // Clean up flanger buffer
+    if (this.flangerBuffer) {
+      this.flangerBuffer.free();
+      this.flangerBuffer = null;
+    }
+    
     this.currentFrameCursor = 0;
     this.tracks = [];
   }
@@ -279,15 +316,8 @@ class SuperpoweredTimeline {
     const track = this.tracks.find(t => t.id === trackId);
     if (track) {
       track.setSolo(soloed);
-      
-      // If this track is being soloed, unsolo all other tracks
-      if (soloed) {
-        this.tracks.forEach(t => {
-          if (t.id !== trackId) {
-            t.setSolo(false);
-          }
-        });
-      }
+      // Allow multiple tracks to be soloed simultaneously
+      // (removed auto-unsolo logic to enable multi-solo)
     }
   }
 
@@ -339,14 +369,21 @@ class SuperpoweredTimeline {
   }
 
   setFlangerConfig(config) {
-    console.log(`🎛️ Setting flanger config:`, config);
-    // Store flanger config for use in processing
-    this.flangerConfig = config;
+    console.log(`🎛️ Setting GLOBAL flanger config:`, config);
     
-    // Apply to all tracks
-    this.tracks.forEach(track => {
-      track.setFlangerConfig(config);
-    });
+    if (this.globalFlanger) {
+      // Apply config to global flanger
+      this.globalFlanger.enabled = config.enabled;
+      this.globalFlanger.wet = config.wet;
+      this.globalFlanger.depth = config.depth;
+      this.globalFlanger.lfoBeats = config.lfoBeats;
+      this.globalFlanger.bpm = config.bpm;
+      this.globalFlanger.clipperThresholdDb = config.clipperThresholdDb;
+      this.globalFlanger.clipperMaximumDb = config.clipperMaximumDb;
+      this.globalFlanger.stereo = config.stereo;
+      
+      console.log(`✅ Global flanger updated - enabled: ${this.globalFlanger.enabled}, wet: ${this.globalFlanger.wet}`);
+    }
   }
 }
 

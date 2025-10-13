@@ -714,6 +714,32 @@ function MixerPage() {
     })
   }
 
+  const handleFlangerConfigChange = (config: {
+    wet: number
+    depth: number
+    lfoBeats: number
+    bpm: number
+    clipperThresholdDb: number
+    clipperMaximumDb: number
+    stereo: boolean
+    enabled: boolean
+  }) => {
+    // Update the global flanger config state in real-time
+    setGlobalFlanger(config)
+    
+    // Apply global flanger using correct message format
+    if (mixerEngineRef.current?.audioEngine) {
+      console.log(`🎛️ Updating global flanger config in real-time:`, config);
+      mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+        type: "command",
+        data: { 
+          command: "setFlangerConfig", 
+          config: config
+        }
+      })
+    }
+  }
+
   const handleFlangerConfigSave = (config: {
     wet: number
     depth: number
@@ -928,26 +954,29 @@ function MixerPage() {
                 onClick={(e) => {
                   // Toggle flanger on/off when button is clicked
                   const currentEnabled = globalFlanger?.enabled || false
-                  const newWet = currentEnabled ? 0 : 0.7 // Set to 70% wet when turning on
+                  const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
                   console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
                   
                   const newConfig = {
-                    ...globalFlanger,
+                    ...(globalFlanger || defaultFlangerConfig),
                     wet: newWet,
                     enabled: !currentEnabled
                   }
                   setGlobalFlanger(newConfig)
                   
-                  // Apply global flanger using existing message pattern
+                  // Apply global flanger using correct command format
                   if (mixerEngineRef.current?.audioEngine) {
-                    console.log(`🎛️ SENDING FLANGER MESSAGE: wet=${newWet}`);
+                    console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
                     mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                      type: "flanger",
-                      wet: newWet
+                      type: "command",
+                      data: { 
+                        command: "setFlangerConfig", 
+                        config: newConfig
+                      }
                     });
-                    console.log(`🎛️ FLANGER MESSAGE SENT!`);
+                    console.log(`✅ FLANGER CONFIG SENT!`);
                   } else {
-                    console.log(`🎛️ ERROR: Audio engine not available!`);
+                    console.log(`❌ ERROR: Audio engine not available!`);
                   }
                   
                   // Also open the modal for fine-tuning
@@ -1110,8 +1139,8 @@ function MixerPage() {
                           padding: '4px 10px',
                           borderRadius: '4px',
                           marginBottom: '8px',
-                          backgroundColor: '#FCFAEE',
-                          color: primary,
+                          backgroundColor: mutes[stem.label] ? '#FFD700' : '#FCFAEE',
+                          color: mutes[stem.label] ? 'black' : primary,
                           border: `1px solid ${primary}`,
                           cursor: 'pointer',
                         }}
@@ -1130,8 +1159,8 @@ function MixerPage() {
                           padding: '4px 10px',
                           borderRadius: '4px',
                           marginBottom: '8px',
-                          backgroundColor: '#FCFAEE',
-                          color: primary,
+                          backgroundColor: solos[stem.label] ? '#00FF99' : '#FCFAEE',
+                          color: solos[stem.label] ? 'black' : primary,
                           border: `1px solid ${primary}`,
                           cursor: 'pointer',
                         }}
@@ -1415,6 +1444,7 @@ function MixerPage() {
             isOpen={flangerConfigModal.isOpen}
             onClose={handleFlangerConfigClose}
             onSave={handleFlangerConfigSave}
+            onConfigChange={handleFlangerConfigChange}
             initialConfig={globalFlanger || defaultFlangerConfig}
             stemLabel="Global Mix"
             position={{ x: window.innerWidth / 2, y: window.innerHeight / 2 }}

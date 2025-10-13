@@ -58,7 +58,7 @@ class SuperpoweredRegion {
     this.player.destruct();
   }
 
-  processRegion(inputBuffer, outputBuffer, volume = 1.0, muted = false, reverb = null, flanger = null) {
+  processRegion(inputBuffer, outputBuffer, volume = 1.0, muted = false, reverb = null) {
     // We're not doing anything with the input audio in this example!
     if (!this.terminated) {
       this.player.processStereo(
@@ -71,9 +71,6 @@ class SuperpoweredRegion {
       // Apply volume and mute before adding to output buffer
       if (!muted) {
         const sampleOffset = this.startFrameOffset * 2;
-        if (this.id === "region_0" && volume !== 1.0) {
-          console.log(`🔊 Region ${this.id} applying volume: ${volume}`);
-        }
         
         // Add dry signal to output buffer
         for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
@@ -82,8 +79,6 @@ class SuperpoweredRegion {
         
         // If reverb is enabled, also add reverb send
         if (reverb && reverb.enabled && reverb.mix > 0) {
-          console.log(`🎛️ Adding reverb send for region ${this.id}, mix: ${reverb.mix}`);
-          
           // Create a temporary buffer for reverb processing using Superpowered buffer
           const reverbInputBuffer = new this.Superpowered.Float32Buffer(outputBuffer.array.length);
           const reverbOutputBuffer = new this.Superpowered.Float32Buffer(outputBuffer.array.length);
@@ -102,33 +97,6 @@ class SuperpoweredRegion {
             for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
               outputBuffer.array[i] += reverbOutputBuffer.array[i];
             }
-            console.log(`🎛️ Reverb send added to region ${this.id}`);
-          }
-        }
-
-        // If flanger is enabled, apply flanger effect
-        if (flanger && flanger.enabled) {
-          console.log(`🎛️ Adding flanger effect for region ${this.id}`);
-          
-          // Create a temporary buffer for flanger processing
-          const flangerInputBuffer = new this.Superpowered.Float32Buffer(outputBuffer.array.length);
-          const flangerOutputBuffer = new this.Superpowered.Float32Buffer(outputBuffer.array.length);
-          
-          // Copy region audio to flanger input buffer
-          for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
-            flangerInputBuffer.array[i] = this.playerBuffer.array[i] * volume;
-          }
-          
-          // Process through flanger using pointers
-          flanger.samplerate = this.samplerate;
-          const bufferSize = (outputBuffer.array.length - sampleOffset) / 2;
-          
-          if (flanger.process(flangerInputBuffer.pointer, flangerOutputBuffer.pointer, bufferSize)) {
-            // Replace the output with flanger output
-            for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
-              outputBuffer.array[i] = flangerOutputBuffer.array[i];
-            }
-            console.log(`🎛️ Flanger effect applied to region ${this.id}`);
           }
         }
       }

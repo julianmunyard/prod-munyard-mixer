@@ -126,8 +126,8 @@ class SuperpoweredTrack {
         // Determine if this track should be audible (not muted and either soloed or no solo active)
         const shouldPlay = !this.muted && (this.soloed || !this.isAnyTrackSoloed(timeline));
         
-        // Process the region with volume, mute, reverb, and flanger parameters
-        region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay, this.reverb, this.flanger);
+        // Process the region with volume, mute, and reverb parameters (flanger is now global)
+        region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay, this.reverb);
       }
     }
     

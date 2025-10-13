@@ -6,15 +6,40 @@ class SuperpoweredTrack {
   volume = 1.0;
   muted = false;
   soloed = false;
+  reverb = null;
+  reverbEnabled = false;
 
   constructor(id, samplerate, numOfFrames, superpowered) {
     this.id = id;
     this.samplerate = samplerate;
     this.Superpowered = superpowered;
     this.numOfFrames = numOfFrames;
-    this.volume = 1.0;
-    this.muted = false;
-    this.soloed = false;
+    
+    // Initialize reverb effect
+    this.reverb = new this.Superpowered.Reverb(samplerate, 44100);
+    this.reverb.enabled = false;
+    this.reverb.mix = 0.0;    // No mix initially (this sets dry/wet automatically)
+    this.reverb.roomSize = 0.8;
+    this.reverb.damp = 0.5;
+    this.reverb.width = 1.0;
+    this.reverb.reverbPredelayMs = 0;
+    this.reverb.lowCutHz = 0;
+
+    // Initialize flanger effect
+    this.flanger = new this.Superpowered.Flanger(samplerate);
+    this.flanger.enabled = false;
+    this.flanger.wet = 0.7;
+    this.flanger.depth = 0.16;
+    this.flanger.lfoBeats = 16;
+    this.flanger.bpm = 128;
+    this.flanger.clipperThresholdDb = -3;
+    this.flanger.clipperMaximumDb = 6;
+    this.flanger.stereo = false;
+    
+    console.log(`🎛️ Initialized reverb for track ${this.id} with dry: ${this.reverb.dry}, wet: ${this.reverb.wet}, mix: ${this.reverb.mix}`);
+    
+    // Create temporary buffer for reverb processing
+    this.reverbBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
   }
 
   addPlayer(regionData) {
@@ -52,7 +77,7 @@ class SuperpoweredTrack {
     }
   }
 
-  processTrack(inputBuffer, outputBuffer, currentFrameCursor, buffersize, timeline = null) {
+  processTrack(inputBuffer, outputBuffer, currentFrameCursor, buffersize, timeline) {
     // We're not doing anythign with the input buffers yet!
 
     for (const [index, region] of this.regions.entries()) {
@@ -101,10 +126,11 @@ class SuperpoweredTrack {
         // Determine if this track should be audible (not muted and either soloed or no solo active)
         const shouldPlay = !this.muted && (this.soloed || !this.isAnyTrackSoloed(timeline));
         
-        // Process the region with volume and mute parameters
-        region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay);
+        // Process the region with volume, mute, and reverb parameters (flanger is now global)
+        region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay, this.reverb);
       }
     }
+    
   }
 
   // Helper method to check if any track is soloed
@@ -115,92 +141,84 @@ class SuperpoweredTrack {
 
   // ==================== 🎛️ Audio Control Methods ====================
   setVolume(volume) {
-    console.log(`🎛️ Track ${this.id} volume set to:`, volume);
     this.volume = volume;
-    // Update all regions with the new volume
-    this.regions.forEach(region => region.setVolume(volume));
+    console.log(`🎛️ Track ${this.id} volume set to: ${volume}`);
   }
 
   setMute(muted) {
-    console.log(`🎛️ Track ${this.id} mute set to:`, muted);
     this.muted = muted;
-    // Update all regions with the new mute state
-    this.regions.forEach(region => region.setMute(muted));
   }
 
   setSolo(soloed) {
-    console.log(`🎛️ Track ${this.id} solo set to:`, soloed);
     this.soloed = soloed;
   }
 
-  setVarispeed(speed, isNatural) {
-    // Update all regions with new varispeed
-    this.regions.forEach(region => region.setVarispeed(speed, isNatural));
-  }
-
-  // Flanger control methods
-  setFlangerConfig(config) {
-    // Update all regions with new flanger config
-    this.regions.forEach(region => region.setFlangerConfig(config));
-  }
-
-  setFlangerEnabled(enabled) {
-    // Update all regions with new flanger enabled state
-    this.regions.forEach(region => region.setFlangerEnabled(enabled));
-  }
-
   // ==================== 🎛️ Reverb Control Methods ====================
-  setReverbMix(mix) {
-    this.regions.forEach(region => region.setReverbMix(mix));
+  setReverbEnabled(enabled) {
+    if (this.reverb) {
+      this.reverb.enabled = enabled;
+      console.log(`🎛️ Track ${this.id} reverb enabled: ${enabled}`);
+    }
   }
 
-  setReverbPredelay(predelayMs) {
-    this.regions.forEach(region => region.setReverbPredelay(predelayMs));
+  setReverbMix(mix) {
+    if (this.reverb) {
+      this.reverb.mix = mix;
+      // Enable reverb if mix > 0, disable if mix = 0
+      this.reverb.enabled = mix > 0;
+      // The mix property automatically sets dry/wet values
+      console.log(`🎛️ Track ${this.id} reverb mix: ${mix}, enabled: ${this.reverb.enabled}, dry: ${this.reverb.dry}, wet: ${this.reverb.wet}`);
+    }
   }
 
   setReverbRoomSize(roomSize) {
-    this.regions.forEach(region => region.setReverbRoomSize(roomSize));
-  }
-
-  setReverbWidth(width) {
-    this.regions.forEach(region => region.setReverbWidth(width));
+    if (this.reverb) {
+      this.reverb.roomSize = roomSize;
+    }
   }
 
   setReverbDamp(damp) {
-    this.regions.forEach(region => region.setReverbDamp(damp));
+    if (this.reverb) {
+      this.reverb.damp = damp;
+    }
   }
 
-  // ==================== 🎛️ Global Flanger Control Methods ====================
-  setGlobalFlanger(wet) {
-    this.regions.forEach(region => region.setGlobalFlanger(wet));
+  setReverbWidth(width) {
+    if (this.reverb) {
+      this.reverb.width = width;
+      console.log(`🎛️ Track ${this.id} reverb width set to: ${width}, actual value: ${this.reverb.width}`);
+    } else {
+      console.error(`❌ Track ${this.id} reverb not found`);
+    }
   }
 
-  setGlobalFlangerEnabled(enabled) {
-    this.regions.forEach(region => region.setGlobalFlangerEnabled(enabled));
+  setReverbPredelay(predelayMs) {
+    if (this.reverb) {
+      this.reverb.reverbPredelayMs = predelayMs;
+      console.log(`🎛️ Track ${this.id} reverb pre-delay set to: ${predelayMs}ms, actual value: ${this.reverb.reverbPredelayMs}`);
+    } else {
+      console.error(`❌ Track ${this.id} reverb not found`);
+    }
   }
 
-  setGlobalFlangerDepth(depth) {
-    this.regions.forEach(region => region.setGlobalFlangerDepth(depth));
+  setReverbLowCut(lowCutHz) {
+    if (this.reverb) {
+      this.reverb.lowCutHz = lowCutHz;
+    }
   }
 
-  setGlobalFlangerLfoBeats(lfoBeats) {
-    this.regions.forEach(region => region.setGlobalFlangerLfoBeats(lfoBeats));
-  }
-
-  setGlobalFlangerBpm(bpm) {
-    this.regions.forEach(region => region.setGlobalFlangerBpm(bpm));
-  }
-
-  setGlobalFlangerClipperThreshold(threshold) {
-    this.regions.forEach(region => region.setGlobalFlangerClipperThreshold(threshold));
-  }
-
-  setGlobalFlangerClipperMaximum(maximum) {
-    this.regions.forEach(region => region.setGlobalFlangerClipperMaximum(maximum));
-  }
-
-  setGlobalFlangerStereo(stereo) {
-    this.regions.forEach(region => region.setGlobalFlangerStereo(stereo));
+  setFlangerConfig(config) {
+    if (this.flanger) {
+      this.flanger.enabled = config.enabled;
+      this.flanger.wet = config.wet;
+      this.flanger.depth = config.depth;
+      this.flanger.lfoBeats = config.lfoBeats;
+      this.flanger.bpm = config.bpm;
+      this.flanger.clipperThresholdDb = config.clipperThresholdDb;
+      this.flanger.clipperMaximumDb = config.clipperMaximumDb;
+      this.flanger.stereo = config.stereo;
+      console.log(`🎛️ Track ${this.id} flanger config updated:`, config);
+    }
   }
 }
 

@@ -24,6 +24,19 @@ class SuperpoweredTimeline {
     this.totalAssetsToFetch = 0;
     this.assetsDownloaded = 0;
     
+    // Initialize GLOBAL flanger effect (applied to final mix output)
+    this.globalFlanger = new this.Superpowered.Flanger(samplerate);
+    this.globalFlanger.enabled = false;
+    this.globalFlanger.wet = 0.5; // Start at 50% wet when enabled
+    this.globalFlanger.depth = 0.16; // 0-1, default 0.16
+    this.globalFlanger.lfoBeats = 16; // 0.25-128, default 16
+    this.globalFlanger.bpm = 128; // 40-250, default 128
+    this.globalFlanger.clipperThresholdDb = -3; // Default -3
+    this.globalFlanger.clipperMaximumDb = 6; // Default 6
+    this.globalFlanger.stereo = true; // Use stereo for better effect
+    
+    // Pre-allocate flanger buffer (never allocate in audio loop!)
+    this.flangerBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
   }
 
   handleLoadTimeline(timelineData) {
@@ -111,6 +124,15 @@ class SuperpoweredTimeline {
       );
     }
 
+    // Apply GLOBAL flanger to the final mixed output (if enabled)
+    if (this.globalFlanger && this.globalFlanger.enabled) {
+      // Update samplerate (required by Superpowered for every process call)
+      this.globalFlanger.samplerate = this.samplerate;
+      
+      // Process flanger in-place (input and output can be the same buffer)
+      // According to Superpowered docs: "Can point to the same location with input (in-place processing)"
+      this.globalFlanger.process(outputBuffer.pointer, outputBuffer.pointer, buffersize);
+    }
 
     this.currentFrameCursor += buffersize;
     if (
@@ -151,22 +173,96 @@ class SuperpoweredTimeline {
       }
     }
     if (message.command === "setTrackVolume") {
+      console.log(`🎛️ Timeline received setTrackVolume: trackId=${message.trackId}, volume=${message.volume}`);
       this.setTrackVolume(message.trackId, message.volume);
     }
     if (message.command === "setTrackMute") {
+      console.log(`🎛️ Timeline received setTrackMute: trackId=${message.trackId}, muted=${message.muted}`);
       this.setTrackMute(message.trackId, message.muted);
     }
     if (message.command === "setTrackSolo") {
+      console.log(`🎛️ Timeline received setTrackSolo: trackId=${message.trackId}, soloed=${message.soloed}`);
       this.setTrackSolo(message.trackId, message.soloed);
     }
     if (message.command === "setVarispeed") {
+      console.log(`🎛️ Timeline received setVarispeed: speed=${message.speed}, isNatural=${message.isNatural}`);
       this.setVarispeed(message.speed, message.isNatural);
     }
-    if (message.command === "setFlangerConfig") {
-      this.setFlangerConfig(message.trackId, message.config);
+    if (message.command === "setReverbEnabled") {
+      console.log(`🎛️ Timeline received setReverbEnabled: trackId=${message.trackId}, enabled=${message.enabled}`);
+      this.setReverbEnabled(message.trackId, message.enabled);
     }
-    if (message.command === "setFlangerEnabled") {
-      this.setFlangerEnabled(message.trackId, message.enabled);
+    if (message.command === "setReverbMix") {
+      console.log(`🎛️ Timeline received setReverbMix: trackId=${message.trackId}, mix=${message.mix}`);
+      this.setReverbMix(message.trackId, message.mix);
+    }
+    if (message.command === "setReverbRoomSize") {
+      this.setReverbRoomSize(message.trackId, message.roomSize);
+    }
+    if (message.command === "setReverbDamp") {
+      this.setReverbDamp(message.trackId, message.damp);
+    }
+    if (message.command === "setReverbPredelay") {
+      console.log(`🎛️ Timeline received setReverbPredelay: trackId=${message.trackId}, predelayMs=${message.predelayMs}`);
+      this.setReverbPredelay(message.trackId, message.predelayMs);
+    }
+    if (message.command === "setReverbWidth") {
+      console.log(`🎛️ Timeline received setReverbWidth: trackId=${message.trackId}, width=${message.width}`);
+      this.setReverbWidth(message.trackId, message.width);
+    }
+    if (message.command === "setFlangerConfig") {
+      console.log(`🎛️ Timeline received setFlangerConfig:`, message.config);
+      this.setFlangerConfig(message.config);
+    }
+  }
+
+  handleTrackControl(data) {
+    console.log(`🎛️ Timeline received trackControl:`, data);
+    
+    const { trackIndex, control, value } = data;
+    
+    // Find the track by index (tracks array index)
+    const track = this.tracks[trackIndex];
+    if (!track) {
+      console.error(`❌ Track at index ${trackIndex} not found`);
+      return;
+    }
+    
+    switch (control) {
+      case "volume":
+        console.log(`🎛️ Setting track ${trackIndex} volume to ${value}`);
+        track.setVolume(value);
+        break;
+      case "reverb":
+        console.log(`🎛️ Setting track ${trackIndex} reverb mix to ${value}`);
+        track.setReverbMix(value);
+        break;
+      case "mute":
+        console.log(`🎛️ Setting track ${trackIndex} mute to ${value}`);
+        track.setMute(value);
+        break;
+      case "solo":
+        console.log(`🎛️ Setting track ${trackIndex} solo to ${value}`);
+        track.setSolo(value);
+        break;
+      case "reverbPredelay":
+        console.log(`🎛️ Setting track ${trackIndex} reverb pre-delay to ${value}ms`);
+        track.setReverbPredelay(value);
+        break;
+      case "reverbWidth":
+        console.log(`🎛️ Setting track ${trackIndex} reverb width to ${value}`);
+        track.setReverbWidth(value);
+        break;
+      case "reverbRoomSize":
+        console.log(`🎛️ Setting track ${trackIndex} reverb room size to ${value}`);
+        track.setReverbRoomSize(value);
+        break;
+      case "reverbDamp":
+        console.log(`🎛️ Setting track ${trackIndex} reverb damp to ${value}`);
+        track.setReverbDamp(value);
+        break;
+      default:
+        console.error(`❌ Unknown track control: ${control}`);
     }
   }
 
@@ -184,20 +280,28 @@ class SuperpoweredTimeline {
     for (const track of this.tracks) {
       track.terminate();
     }
+    
+    // Clean up global flanger
+    if (this.globalFlanger) {
+      this.globalFlanger.destruct();
+      this.globalFlanger = null;
+    }
+    
+    // Clean up flanger buffer
+    if (this.flangerBuffer) {
+      this.flangerBuffer.free();
+      this.flangerBuffer = null;
+    }
+    
     this.currentFrameCursor = 0;
     this.tracks = [];
   }
 
   // ==================== 🎛️ Audio Control Methods ====================
   setTrackVolume(trackId, volume) {
-    console.log(`🎛️ setTrackVolume called: trackId=${trackId}, volume=${volume}`);
-    console.log(`🎛️ Available tracks:`, this.tracks.map(t => t.id));
     const track = this.tracks.find(t => t.id === trackId);
     if (track) {
-      console.log(`🎛️ Found track ${trackId}, setting volume to ${volume}`);
       track.setVolume(volume);
-    } else {
-      console.log(`🎛️ Track ${trackId} not found!`);
     }
   }
 
@@ -212,189 +316,75 @@ class SuperpoweredTimeline {
     const track = this.tracks.find(t => t.id === trackId);
     if (track) {
       track.setSolo(soloed);
-      
-      // If this track is being soloed, unsolo all other tracks
-      if (soloed) {
-        this.tracks.forEach(t => {
-          if (t.id !== trackId) {
-            t.setSolo(false);
-          }
-        });
-      }
+      // Allow multiple tracks to be soloed simultaneously
+      // (removed auto-unsolo logic to enable multi-solo)
     }
   }
 
   setVarispeed(speed, isNatural) {
-    // Update all tracks with new varispeed
     this.tracks.forEach(track => track.setVarispeed(speed, isNatural));
   }
 
-  setFlangerConfig(trackId, config) {
-    console.log(`🎛️ setFlangerConfig called: trackId=${trackId}, config=`, config);
-    const track = this.tracks.find(t => t.id === trackId);
-    if (track) {
-      console.log(`🎛️ Found track ${trackId}, setting flanger config`);
-      track.setFlangerConfig(config);
-    } else {
-      console.log(`🎛️ Track ${trackId} not found!`);
-    }
-  }
-
-  setFlangerEnabled(trackId, enabled) {
-    console.log(`🎛️ setFlangerEnabled called: trackId=${trackId}, enabled=${enabled}`);
-    const track = this.tracks.find(t => t.id === trackId);
-    if (track) {
-      console.log(`🎛️ Found track ${trackId}, setting flanger enabled to ${enabled}`);
-      track.setFlangerEnabled(enabled);
-    } else {
-      console.log(`🎛️ Track ${trackId} not found!`);
-    }
-  }
-
-  // ==================== 🎛️ Track Control Handler ====================
-  handleTrackControl(message) {
-    console.log(`🎛️ handleTrackControl called with:`, message);
-    
-    if (message.command === "setTrackVolume") {
-      this.setTrackVolume(message.trackId, message.volume);
-    } else if (message.command === "setTrackMute") {
-      this.setTrackMute(message.trackId, message.muted);
-    } else if (message.command === "setTrackSolo") {
-      this.setTrackSolo(message.trackId, message.soloed);
-    } else if (message.command === "setReverbMix") {
-      this.setTrackReverbMix(message.trackId, message.mix);
-    } else if (message.command === "setReverbPredelay") {
-      this.setTrackReverbPredelay(message.trackId, message.predelayMs);
-    } else if (message.command === "setReverbRoomSize") {
-      this.setTrackReverbRoomSize(message.trackId, message.roomSize);
-    } else if (message.command === "setReverbWidth") {
-      this.setTrackReverbWidth(message.trackId, message.width);
-    } else if (message.command === "setReverbDamp") {
-      this.setTrackReverbDamp(message.trackId, message.damp);
-    } else if (message.command === "setFlangerConfig") {
-      this.setFlangerConfig(message.trackId, message.config);
-    } else if (message.command === "setFlangerEnabled") {
-      this.setFlangerEnabled(message.trackId, message.enabled);
-    } else if (message.control === "globalFlanger") {
-      this.setGlobalFlanger(message.value);
-    } else if (message.control === "globalFlangerEnabled") {
-      this.setGlobalFlangerEnabled(message.value);
-    } else if (message.control === "globalFlangerDepth") {
-      this.setGlobalFlangerDepth(message.value);
-    } else if (message.control === "globalFlangerLfoBeats") {
-      this.setGlobalFlangerLfoBeats(message.value);
-    } else if (message.control === "globalFlangerBpm") {
-      this.setGlobalFlangerBpm(message.value);
-    } else if (message.control === "globalFlangerClipperThreshold") {
-      this.setGlobalFlangerClipperThreshold(message.value);
-    } else if (message.control === "globalFlangerClipperMaximum") {
-      this.setGlobalFlangerClipperMaximum(message.value);
-    } else if (message.control === "globalFlangerStereo") {
-      this.setGlobalFlangerStereo(message.value);
-    } else {
-      console.log(`🎛️ Unknown track control command:`, message);
-    }
-  }
-
   // ==================== 🎛️ Reverb Control Methods ====================
-  setTrackReverbMix(trackId, mix) {
-    console.log(`🎛️ setTrackReverbMix called: trackId=${trackId}, mix=${mix}`);
+  setReverbEnabled(trackId, enabled) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setReverbEnabled(enabled);
+    }
+  }
+
+  setReverbMix(trackId, mix) {
     const track = this.tracks.find(t => t.id === trackId);
     if (track) {
       track.setReverbMix(mix);
     }
   }
 
-  setTrackReverbPredelay(trackId, predelayMs) {
-    console.log(`🎛️ setTrackReverbPredelay called: trackId=${trackId}, predelayMs=${predelayMs}`);
-    const track = this.tracks.find(t => t.id === trackId);
-    if (track) {
-      track.setReverbPredelay(predelayMs);
-    }
-  }
-
-  setTrackReverbRoomSize(trackId, roomSize) {
-    console.log(`🎛️ setTrackReverbRoomSize called: trackId=${trackId}, roomSize=${roomSize}`);
+  setReverbRoomSize(trackId, roomSize) {
     const track = this.tracks.find(t => t.id === trackId);
     if (track) {
       track.setReverbRoomSize(roomSize);
     }
   }
 
-  setTrackReverbWidth(trackId, width) {
-    console.log(`🎛️ setTrackReverbWidth called: trackId=${trackId}, width=${width}`);
-    const track = this.tracks.find(t => t.id === trackId);
-    if (track) {
-      track.setReverbWidth(width);
-    }
-  }
-
-  setTrackReverbDamp(trackId, damp) {
-    console.log(`🎛️ setTrackReverbDamp called: trackId=${trackId}, damp=${damp}`);
+  setReverbDamp(trackId, damp) {
     const track = this.tracks.find(t => t.id === trackId);
     if (track) {
       track.setReverbDamp(damp);
     }
   }
 
-  // ==================== 🎛️ Global Flanger Control Methods ====================
-  setGlobalFlanger(wet) {
-    console.log(`🎛️ Setting global flanger wet to ${wet}`);
-    // Apply flanger to all tracks
-    this.tracks.forEach(track => {
-      track.setGlobalFlanger(wet);
-    });
+  setReverbPredelay(trackId, predelayMs) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setReverbPredelay(predelayMs);
+    }
   }
 
-  setGlobalFlangerEnabled(enabled) {
-    console.log(`🎛️ Setting global flanger enabled to ${enabled}`);
-    this.tracks.forEach(track => {
-      track.setGlobalFlangerEnabled(enabled);
-    });
+  setReverbWidth(trackId, width) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setReverbWidth(width);
+    }
   }
 
-  setGlobalFlangerDepth(depth) {
-    console.log(`🎛️ Setting global flanger depth to ${depth}`);
-    this.tracks.forEach(track => {
-      track.setGlobalFlangerDepth(depth);
-    });
+  setFlangerConfig(config) {
+    console.log(`🎛️ Setting GLOBAL flanger config:`, config);
+    
+    if (this.globalFlanger) {
+      // Apply config to global flanger
+      this.globalFlanger.enabled = config.enabled;
+      this.globalFlanger.wet = config.wet;
+      this.globalFlanger.depth = config.depth;
+      this.globalFlanger.lfoBeats = config.lfoBeats;
+      this.globalFlanger.bpm = config.bpm;
+      this.globalFlanger.clipperThresholdDb = config.clipperThresholdDb;
+      this.globalFlanger.clipperMaximumDb = config.clipperMaximumDb;
+      this.globalFlanger.stereo = config.stereo;
+      
+      console.log(`✅ Global flanger updated - enabled: ${this.globalFlanger.enabled}, wet: ${this.globalFlanger.wet}`);
+    }
   }
-
-  setGlobalFlangerLfoBeats(lfoBeats) {
-    console.log(`🎛️ Setting global flanger LFO beats to ${lfoBeats}`);
-    this.tracks.forEach(track => {
-      track.setGlobalFlangerLfoBeats(lfoBeats);
-    });
-  }
-
-  setGlobalFlangerBpm(bpm) {
-    console.log(`🎛️ Setting global flanger BPM to ${bpm}`);
-    this.tracks.forEach(track => {
-      track.setGlobalFlangerBpm(bpm);
-    });
-  }
-
-  setGlobalFlangerClipperThreshold(threshold) {
-    console.log(`🎛️ Setting global flanger clipper threshold to ${threshold}`);
-    this.tracks.forEach(track => {
-      track.setGlobalFlangerClipperThreshold(threshold);
-    });
-  }
-
-  setGlobalFlangerClipperMaximum(maximum) {
-    console.log(`🎛️ Setting global flanger clipper maximum to ${maximum}`);
-    this.tracks.forEach(track => {
-      track.setGlobalFlangerClipperMaximum(maximum);
-    });
-  }
-
-  setGlobalFlangerStereo(stereo) {
-    console.log(`🎛️ Setting global flanger stereo to ${stereo}`);
-    this.tracks.forEach(track => {
-      track.setGlobalFlangerStereo(stereo);
-    });
-  }
-
 }
 
 export default SuperpoweredTimeline;
