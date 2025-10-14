@@ -176,6 +176,14 @@ class SuperpoweredTrack {
     this.soloed = soloed;
   }
 
+  setVarispeed(speed, isNatural) {
+    // Apply varispeed to all regions in this track
+    this.regions.forEach(region => {
+      region.setVarispeed(speed, isNatural);
+    });
+    console.log(`🎛️ Track ${this.id} varispeed set to: ${speed} (natural: ${isNatural})`);
+  }
+
   // ==================== 🎛️ Reverb Control Methods ====================
   setReverbEnabled(enabled) {
     if (this.reverb) {

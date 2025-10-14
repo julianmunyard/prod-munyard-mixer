@@ -114,7 +114,7 @@ function MixerPage() {
     enabled: false
   }
   const [varispeed, setVarispeed] = useState(1)
-  const [isNaturalVarispeed, setIsNaturalVarispeed] = useState(false)
+  const [isNaturalVarispeed, setIsNaturalVarispeed] = useState(true)
   const [reverbConfigModal, setReverbConfigModal] = useState<{
     isOpen: boolean
     stemLabel: string
@@ -518,7 +518,7 @@ function MixerPage() {
       data: { 
         command: "setVarispeed", 
         speed: speed,
-        isNatural: isNatural 
+        isNatural: isNatural
       }
     });
     

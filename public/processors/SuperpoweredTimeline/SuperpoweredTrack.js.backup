@@ -176,14 +176,6 @@ class SuperpoweredTrack {
     this.soloed = soloed;
   }
 
-  setVarispeed(speed, isNatural) {
-    // Apply varispeed to all regions in this track
-    this.regions.forEach(region => {
-      region.setVarispeed(speed, isNatural);
-    });
-    console.log(`🎛️ Track ${this.id} varispeed set to: ${speed} (natural: ${isNatural})`);
-  }
-
   // ==================== 🎛️ Reverb Control Methods ====================
   setReverbEnabled(enabled) {
     if (this.reverb) {
@@ -250,6 +242,11 @@ class SuperpoweredTrack {
       this.flanger.stereo = config.stereo;
       console.log(`🎛️ Track ${this.id} flanger config updated:`, config);
     }
+  }
+
+  setVarispeed(speed, isNatural) {
+    this.regions.forEach(region => region.setVarispeed(speed, isNatural));
+    console.log(`🎛️ Track ${this.id} varispeed set to: ${speed} (natural: ${isNatural})`);
   }
 }
 

@@ -25,7 +25,7 @@ class PlayerProcessor extends SuperpoweredWebAudio.AudioWorkletProcessor {
     this.finalMixers = []; // Array of final mixers for multiple groups
     this.currentPosition = 0; // Current playback position in seconds
     this.duration = 0; // Total duration of the audio
-    this.varispeedMode = 'timeStretch'; // 'timeStretch' or 'natural' - controls how varispeed behaves
+    this.varispeedMode = 'natural'; // 'timeStretch' or 'natural' - controls how varispeed behaves
   }
 
   // Runs after the constructor

@@ -20,6 +20,11 @@ class SuperpoweredRegion {
       false
     );
     this.player.outputSamplerate = this.samplerate;
+    
+    // Initialize varispeed properties on the AdvancedAudioPlayer
+    this.player.playbackRate = 1.0; // Start at normal speed
+    this.player.timeStretching = false; // Start with Natural mode (speed and pitch change together)
+    this.player.pitchShiftCents = 0; // No pitch shift initially
     this.id = regionData.id;
     this.start = regionData.start;
     this.end = regionData.end;
@@ -53,6 +58,23 @@ class SuperpoweredRegion {
     this.player.setPosition(positionMs);
   }
 
+  setVarispeed(speed, isNatural) {
+    // Apply varispeed using AdvancedAudioPlayer built-in properties
+    this.player.playbackRate = speed;
+    
+    if (isNatural) {
+      // Natural mode: speed and pitch change together (disable time-stretching)
+      this.player.timeStretching = false;
+      this.player.pitchShiftCents = 0;
+    } else {
+      // Stretch mode: enable time-stretching to maintain original pitch
+      this.player.timeStretching = true;
+      this.player.pitchShiftCents = 0; // Time-stretching handles pitch compensation automatically
+    }
+    
+    console.log(`🎛️ Region ${this.id} varispeed set to: ${speed} (natural: ${isNatural}, timeStretching: ${this.player.timeStretching})`);
+  }
+
   terminate() {
     this.terminated = true;
     this.player.destruct();
@@ -61,6 +83,7 @@ class SuperpoweredRegion {
   processRegion(inputBuffer, outputBuffer, volume = 1.0, muted = false, reverb = null, reverbInputBuffer = null, reverbOutputBuffer = null) {
     // We're not doing anything with the input audio in this example!
     if (!this.terminated) {
+      // Get audio from the player (AdvancedAudioPlayer handles time-stretching internally)
       this.player.processStereo(
         this.playerBuffer.pointer,
         true,
