@@ -53,6 +53,7 @@ class SuperpoweredTimeline {
       for (const action of timelineTrack.actions) {
         this.totalAssetsToFetch++;
         track.addPlayer(action);
+        console.log(`🎵 Starting download/decode for stem ${this.totalAssetsToFetch}/${this.timelineData.tracks.length}: ${action.url}`);
         this.Superpowered.downloadAndDecode(action.url, this.processorScope);
       }
       this.tracks.push(track);
@@ -86,19 +87,23 @@ class SuperpoweredTimeline {
           if (region.url === SuperpoweredLoaded.url) {
             track.loadAudio(SuperpoweredLoaded.url, SuperpoweredLoaded.buffer);
             SuperpoweredLoaded.buffer = null;
+            console.log(`✅ Stem ${this.assetsDownloaded + 1}/${this.totalAssetsToFetch} decoded and loaded: ${region.id}`);
           }
         }
       }
       if (this.timelineData.metronome) {
         if (this.timelineData.metronome.blipUrl === SuperpoweredLoaded.url) {
           this.metronomeTrack.loadBlipBuffer(SuperpoweredLoaded.buffer);
+          console.log(`✅ Metronome blip decoded and loaded`);
         }
       }
       this.assetsDownloaded++;
     }
 
-    if (this.assetsDownloaded === this.totalAssetsToFetch)
+    if (this.assetsDownloaded === this.totalAssetsToFetch) {
+      console.log(`🎉 All ${this.totalAssetsToFetch} stems decoded and ready!`);
       this.processorScope.allAssetsDownloaded();
+    }
   }
 
   processTimeline(inputBuffer, outputBuffer, buffersize) {
