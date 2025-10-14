@@ -191,7 +191,7 @@ export default function TransparentMixerLayout({
   <div className="absolute right-4 top-[260px] flex flex-col items-center">
     {bpm !== undefined && (
       <div className="mb-1 text-xs font-mono" style={{ color: primaryColor }}>
-        {Math.round(bpm! * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))}
+        {Math.round(bpm! * varispeed)}
       </div>
     )}
     <div className="mb-3 text-sm tracking-wider" style={{ color: primaryColor }}>
@@ -216,7 +216,7 @@ export default function TransparentMixerLayout({
       {/* Labels */}
       <div className="absolute top-0 left-0 w-full flex flex-col items-center" style={{ pointerEvents: 'none' }}>
         <div className="text-xs font-mono" style={{ color: primaryColor }}>
-          {Math.round(bpm! * (isInstagram ? varispeed : isIOS ? 2 - varispeed : varispeed))}
+          {Math.round(bpm! * varispeed)}
         </div>
         <div className="text-sm tracking-wider" style={{ color: primaryColor }}>
           VARISPEED
@@ -225,8 +225,8 @@ export default function TransparentMixerLayout({
       {/* Slider */}
       <div className="absolute left-1/2" style={{ transform: 'translateX(-50%) rotate(-90deg)', top: '-118px' }}>
         <VarispeedSlider
-          value={2 - varispeed}
-          onChange={val => setVarispeed(2 - val)}
+          value={varispeed}
+          onChange={val => setVarispeed(val)}
           isIOS={isIOS}
           primaryColor={primaryColor}
           stemCount={stems.length}
