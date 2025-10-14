@@ -211,6 +211,12 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           -webkit-appearance: none;
           appearance: none;
         }
+        
+        /* Force Safari to show red thumbs */
+        .slider-horizontal::-webkit-slider-thumb {
+          background: #B8001F !important;
+          border: 2px solid #FCFAEE !important;
+        }
       `}</style>
       <div 
         className="fixed inset-0 z-50 pointer-events-none"
