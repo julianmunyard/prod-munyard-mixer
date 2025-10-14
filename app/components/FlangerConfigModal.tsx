@@ -165,6 +165,38 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
 
   return (
     <>
+      <style jsx>{`
+        .slider-horizontal::-webkit-slider-thumb {
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #B8001F;
+          border: 2px solid #FCFAEE;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slider-horizontal::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #B8001F;
+          border: 2px solid #FCFAEE;
+          cursor: pointer;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .slider-horizontal::-webkit-slider-thumb:hover {
+          background: #8B0015;
+          transform: scale(1.1);
+        }
+        
+        .slider-horizontal::-moz-range-thumb:hover {
+          background: #8B0015;
+          transform: scale(1.1);
+        }
+      `}</style>
       <div 
         className="fixed inset-0 z-50 pointer-events-none"
         onClick={handleClose}
