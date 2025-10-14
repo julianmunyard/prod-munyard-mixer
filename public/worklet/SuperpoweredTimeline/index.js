@@ -135,6 +135,19 @@ class SuperpoweredTimeline {
     }
 
     this.currentFrameCursor += buffersize;
+    
+    // Check if we've reached the end of the timeline and loop if needed
+    if (this.timelineData && this.timelineData.duration) {
+      const timelineEndFrame = this.timelineData.duration * this.samplerate;
+      if (this.currentFrameCursor >= timelineEndFrame) {
+        // Loop back to the beginning
+        this.currentFrameCursor = 0;
+        // Reset all regions to their starting positions
+        this.resetAllRegions();
+        console.log('🔄 Timeline looped back to beginning');
+      }
+    }
+    
     if (
       this.currentFrameCursor %
         (buffersize * this.cursorUpdateFrequencyRatio) ===
@@ -384,6 +397,17 @@ class SuperpoweredTimeline {
       
       console.log(`✅ Global flanger updated - enabled: ${this.globalFlanger.enabled}, wet: ${this.globalFlanger.wet}`);
     }
+  }
+
+  resetAllRegions() {
+    // Reset all regions in all tracks to their starting positions
+    for (const track of this.tracks) {
+      for (const region of track.regions) {
+        region.resetPosition();
+        region.playing = false; // Will be set to true when timeline cursor reaches frameStart
+      }
+    }
+    console.log('🔄 Reset all regions to starting positions');
   }
 }
 
