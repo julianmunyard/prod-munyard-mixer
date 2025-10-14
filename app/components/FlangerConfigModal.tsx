@@ -165,53 +165,50 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
 
   return (
     <>
-      <style jsx>{`
-        /* Safari/WebKit specific styling */
-        .slider-horizontal::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #B8001F;
-          border: 2px solid #FCFAEE;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-          transition: all 0.2s ease;
-        }
-        
-        /* Firefox specific styling */
-        .slider-horizontal::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #B8001F;
-          border: 2px solid #FCFAEE;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-          transition: all 0.2s ease;
-        }
-        
-        /* Safari hover effects */
-        .slider-horizontal::-webkit-slider-thumb:hover {
-          background: #8B0015;
-          transform: scale(1.1);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        /* Firefox hover effects */
-        .slider-horizontal::-moz-range-thumb:hover {
-          background: #8B0015;
-          transform: scale(1.1);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        /* Ensure Safari removes default styling */
-        .slider-horizontal::-webkit-slider-track {
-          -webkit-appearance: none;
-          appearance: none;
-        }
-      `}</style>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .flanger-slider::-webkit-slider-thumb {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            background: #B8001F !important;
+            border: 2px solid #FCFAEE !important;
+            cursor: pointer !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+            transition: all 0.2s ease !important;
+          }
+          
+          .flanger-slider::-moz-range-thumb {
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            background: #B8001F !important;
+            border: 2px solid #FCFAEE !important;
+            cursor: pointer !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+            transition: all 0.2s ease !important;
+          }
+          
+          .flanger-slider::-webkit-slider-thumb:hover {
+            background: #8B0015 !important;
+            transform: scale(1.1) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+          }
+          
+          .flanger-slider::-moz-range-thumb:hover {
+            background: #8B0015 !important;
+            transform: scale(1.1) !important;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+          }
+          
+          .flanger-slider::-webkit-slider-track {
+            -webkit-appearance: none !important;
+            appearance: none !important;
+          }
+        `
+      }} />
       <div 
         className="fixed inset-0 z-50 pointer-events-none"
         onClick={handleClose}
@@ -274,7 +271,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
                 setConfig(newConfig)
                 if (onConfigChange) onConfigChange(newConfig)
               }}
-              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
+              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer flanger-slider"
               style={{
                 background: `linear-gradient(to right, #B8001F 0%, #B8001F ${config.wet * 100}%, #D1D5DB ${config.wet * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
@@ -301,7 +298,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
                 setConfig(newConfig)
                 if (onConfigChange) onConfigChange(newConfig)
               }}
-              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
+              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer flanger-slider"
               style={{
                 background: `linear-gradient(to right, #B8001F 0%, #B8001F ${config.depth * 100}%, #D1D5DB ${config.depth * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
@@ -328,7 +325,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
                 setConfig(newConfig)
                 if (onConfigChange) onConfigChange(newConfig)
               }}
-              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
+              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer flanger-slider"
               style={{
                 background: `linear-gradient(to right, #B8001F 0%, #B8001F ${(config.lfoBeats / 128) * 100}%, #D1D5DB ${(config.lfoBeats / 128) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
@@ -355,7 +352,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
                 setConfig(newConfig)
                 if (onConfigChange) onConfigChange(newConfig)
               }}
-              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
+              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer flanger-slider"
               style={{
                 background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.bpm - 40) / 210) * 100}%, #D1D5DB ${((config.bpm - 40) / 210) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
@@ -382,7 +379,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
                 setConfig(newConfig)
                 if (onConfigChange) onConfigChange(newConfig)
               }}
-              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
+              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer flanger-slider"
               style={{
                 background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.clipperThresholdDb + 20) / 20) * 100}%, #D1D5DB ${((config.clipperThresholdDb + 20) / 20) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
@@ -409,7 +406,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
                 setConfig(newConfig)
                 if (onConfigChange) onConfigChange(newConfig)
               }}
-              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
+              className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer flanger-slider"
               style={{
                 background: `linear-gradient(to right, #B8001F 0%, #B8001F ${(config.clipperMaximumDb / 20) * 100}%, #D1D5DB ${(config.clipperMaximumDb / 20) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
