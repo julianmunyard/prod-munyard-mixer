@@ -365,7 +365,7 @@ function MixerPage() {
       setLoadedStemsCount(0);
       
       // Convert stems to timeline format
-      const stemData = stems.map(stem => ({
+      let stemData = stems.map(stem => ({
         name: stem.label,
         url: stem.file, // file field already contains full Supabase storage URL
         label: stem.label
@@ -384,10 +384,16 @@ function MixerPage() {
       // Set up the callback to wait for all assets to be downloaded
       let assetsDownloadedPromise = new Promise<void>((resolve) => {
         if (mixerEngineRef.current?.audioEngine) {
-          mixerEngineRef.current.audioEngine.onAllAssetsDownloaded = () => {
+          // Set up progress tracking for individual stems
+          (mixerEngineRef.current.audioEngine as any).onStemDecoded = (decodedCount: number, totalCount: number) => {
+            setLoadedStemsCount(decodedCount);
+            addDebugLog(`✅ Stem ${decodedCount}/${totalCount} decoded and loaded`);
+          };
+          
+          (mixerEngineRef.current.audioEngine as any).onAllAssetsDownloaded = () => {
             addDebugLog('✅ All assets downloaded and decoded!');
             setAllAssetsLoaded(true);
-        setLoadingStems(false);
+            setLoadingStems(false);
             resolve();
           };
         }
@@ -397,8 +403,8 @@ function MixerPage() {
       addDebugLog(`🎵 Sending ${stemData.length} stems to timeline processor...`);
       await mixerEngineRef.current.loadStemsFromSupabase(stemData);
       
-      // Update progress as we send the data
-      setLoadedStemsCount(stemData.length);
+      // Initialize progress counter
+      setLoadedStemsCount(0);
       addDebugLog(`📤 Sent ${stemData.length} stems to processor - waiting for download...`);
 
       // Wait for all assets to be actually downloaded and decoded

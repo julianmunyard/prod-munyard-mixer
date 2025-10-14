@@ -7,6 +7,7 @@ class AudioEngine {
   webaudioManager = null;
   started = false;
   onTimelineFrameCursorUpdate;
+  onStemDecoded;
 
   async init() {
     if (!this.started) {
@@ -30,6 +31,11 @@ class AudioEngine {
         }
         if (message.event === "assets-downloaded") {
           this.onAllAssetsDownloaded();
+        }
+        if (message.event === "stem-decoded") {
+          if (this.onStemDecoded) {
+            this.onStemDecoded(message.data.decodedCount, message.data.totalCount);
+          }
         }
         if (message.event === "timeline-reset") {
           this.resetCallback();

@@ -98,6 +98,15 @@ class SuperpoweredTimeline {
         }
       }
       this.assetsDownloaded++;
+      
+      // Send progress update to main thread
+      this.processorScope.sendMessageToMainScope({
+        event: "stem-decoded",
+        data: {
+          decodedCount: this.assetsDownloaded,
+          totalCount: this.totalAssetsToFetch
+        }
+      });
     }
 
     if (this.assetsDownloaded === this.totalAssetsToFetch) {

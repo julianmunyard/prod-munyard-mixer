@@ -15,3 +15,18 @@ declare module '@superpoweredsdk/web' {
     ): Promise<AudioNode>;
   }
 }
+
+// AudioEngine type declaration
+declare class AudioEngine {
+  webaudioManager: any;
+  started: boolean;
+  onTimelineFrameCursorUpdate?: (data: any) => void;
+  onStemDecoded?: (decodedCount: number, totalCount: number) => void;
+  onAllAssetsDownloaded?: () => void;
+  resetCallback?: () => void;
+  onRegionBufferDataCallback?: (data: any) => void;
+  
+  init(): Promise<void>;
+  sendMessageToAudioProcessor(message: any): void;
+  downloadBuffer(trackId: string, regionId: string, sampleRate: number, buffer: any): void;
+}
