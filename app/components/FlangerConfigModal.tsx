@@ -165,59 +165,6 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
 
   return (
     <>
-      <style jsx>{`
-        /* Safari/WebKit specific styling */
-        .slider-horizontal::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #B8001F;
-          border: 2px solid #FCFAEE;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-          transition: all 0.2s ease;
-        }
-        
-        /* Firefox specific styling */
-        .slider-horizontal::-moz-range-thumb {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          background: #B8001F;
-          border: 2px solid #FCFAEE;
-          cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-          transition: all 0.2s ease;
-        }
-        
-        /* Safari hover effects */
-        .slider-horizontal::-webkit-slider-thumb:hover {
-          background: #8B0015;
-          transform: scale(1.1);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        /* Firefox hover effects */
-        .slider-horizontal::-moz-range-thumb:hover {
-          background: #8B0015;
-          transform: scale(1.1);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        /* Ensure Safari removes default styling */
-        .slider-horizontal::-webkit-slider-track {
-          -webkit-appearance: none;
-          appearance: none;
-        }
-        
-        /* Force Safari to show red thumbs */
-        .slider-horizontal::-webkit-slider-thumb {
-          background: #B8001F !important;
-          border: 2px solid #FCFAEE !important;
-        }
-      `}</style>
       <div 
         className="fixed inset-0 z-50 pointer-events-none"
         onClick={handleClose}
