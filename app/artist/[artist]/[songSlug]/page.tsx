@@ -443,20 +443,6 @@ function MixerPage() {
     addDebugLog(`🎚️ Volume set to ${(volume * 100).toFixed(0)}% for ${stemLabel}`);
   };
 
-  // Test function to set volume to very low value
-  const testVolumeLow = () => {
-    if (stems.length > 0) {
-      setTrackVolume(stems[0].label, 0.1);
-      console.log(`🧪 TEST: Set ${stems[0].label} volume to 0.1 (very quiet)`);
-    }
-  };
-
-  const testVolumeHigh = () => {
-    if (stems.length > 0) {
-      setTrackVolume(stems[0].label, 1.0);
-      console.log(`🧪 TEST: Set ${stems[0].label} volume to 1.0 (full volume)`);
-    }
-  };
 
   const setTrackMute = (stemLabel: string, muted: boolean) => {
     if (!mixerEngineRef.current?.audioEngine) return;
@@ -812,42 +798,6 @@ function MixerPage() {
             }
           `}</style>
           
-          {/* Volume Test Buttons */}
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', justifyContent: 'center' }}>
-            <button
-              onClick={testVolumeLow}
-              disabled={!timelineReady || !allAssetsLoaded}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#B8001F',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                fontSize: '12px',
-              }}
-            >
-              Test Quiet (0.1)
-            </button>
-            
-            <button
-              onClick={testVolumeHigh}
-              disabled={!timelineReady || !allAssetsLoaded}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#B8001F',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontFamily: 'monospace',
-                fontSize: '12px',
-              }}
-            >
-              Test Loud (1.0)
-            </button>
-          </div>
 
           {/* 🎥 Background Video */}
           {songData?.background_video &&

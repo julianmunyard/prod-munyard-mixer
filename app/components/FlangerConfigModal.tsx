@@ -155,16 +155,19 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
   const handleSave = () => {
     setDragPosition(null) // Reset position when closing
     onSave(config)
+    onClose() // Close the modal after saving
+  }
+
+  const handleClose = () => {
+    setDragPosition(null) // Reset position when closing
+    onClose()
   }
 
   return (
     <>
       <div 
         className="fixed inset-0 z-50 pointer-events-none"
-        onClick={() => {
-          setDragPosition(null) // Reset position when closing
-          onClose()
-        }}
+        onClick={handleClose}
       >
       <div 
         ref={modalRef}
@@ -193,11 +196,14 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
             </span>
           </div>
           <button
-            onClick={() => {
-              setDragPosition(null) // Reset position when closing
-              onClose()
+            onClick={handleClose}
+            onTouchEnd={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleClose()
             }}
-            className="text-[#B8001F] hover:text-red-700 text-lg font-bold"
+            className="text-[#B8001F] hover:text-[#8B0015] text-xs font-bold touch-manipulation"
+            style={{ minWidth: '24px', minHeight: '24px' }}
           >
             ×
           </button>
@@ -366,21 +372,6 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
             />
           </div>
 
-          {/* Enabled Toggle */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#B8001F] font-mono">ENABLED</span>
-            <input
-              type="checkbox"
-              checked={config.enabled}
-              onChange={(e) => {
-                const newConfig = { ...config, enabled: e.target.checked }
-                setConfig(newConfig)
-                if (onConfigChange) onConfigChange(newConfig)
-              }}
-              className="w-4 h-4"
-              style={{ accentColor: '#B8001F' }}
-            />
-          </div>
 
           {/* Stereo Toggle */}
           <div className="flex items-center justify-between">
@@ -399,28 +390,15 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-end space-x-2 mt-4">
-          <button
-            onClick={() => {
-              setDragPosition(null) // Reset position when closing
-              onClose()
-            }}
-            className="px-3 py-1 text-xs font-mono font-bold transition-all duration-200 hover:opacity-80"
-            style={{
-              backgroundColor: '#ccc',
-              color: '#333',
-              border: '1px solid #ccc'
-            }}
-          >
-            CANCEL
-          </button>
+        <div className="flex justify-end mt-4">
           <button
             onClick={handleSave}
-            className="px-3 py-1 text-xs font-mono font-bold transition-all duration-200 hover:opacity-80"
+            className="px-4 py-2 text-xs font-mono font-bold transition-all duration-200 hover:opacity-80"
             style={{
               backgroundColor: '#B8001F',
               color: '#FCFAEE',
-              border: '1px solid #B8001F'
+              border: '1px solid #B8001F',
+              borderRadius: '4px'
             }}
           >
             SAVE
