@@ -7,7 +7,9 @@
 
 // ==================== 📦 Imports ====================
 import React, { useEffect, useRef, useState } from 'react'
+// @ts-ignore - Supabase type issues
 import { supabase } from '@/lib/supabaseClient'
+
 import DelayKnob from '../../../components/DelayKnob'
 import ReverbConfigModal from '../../../components/ReverbConfigModal'
 import FlangerConfigModal from '../../../components/FlangerConfigModal'
@@ -370,6 +372,49 @@ function MixerPage() {
         url: stem.file, // file field already contains full Supabase storage URL
         label: stem.label
       }));
+
+      // 🚀 OPTIMIZATION: Sort stems by file size (smallest first) for faster loading
+      addDebugLog('📊 Fetching file sizes to optimize loading order...');
+      try {
+        const stemsWithSizes = await Promise.all(
+          stemData.map(async (stem) => {
+            try {
+              // Extract file path from Supabase URL
+              const url = new URL(stem.url);
+              const filePath = url.pathname.split('/').pop();
+              
+              // Get file metadata from Supabase storage
+              // @ts-ignore - Supabase type issues
+              const { data: fileData, error } = await supabase.storage
+                .from('stems')
+                .list('', {
+                  search: filePath
+                });
+              
+              if (error || !fileData || fileData.length === 0) {
+                console.warn(`⚠️ Could not get size for ${stem.label}, using default order`);
+                return { ...stem, size: 999999999 }; // Put unknown sizes at end
+              }
+              
+              const size = fileData[0].metadata?.size || 999999999;
+              addDebugLog(`📁 ${stem.label}: ${(size / 1024 / 1024).toFixed(1)}MB`);
+              return { ...stem, size };
+            } catch (error) {
+              console.warn(`⚠️ Error getting size for ${stem.label}:`, error);
+              return { ...stem, size: 999999999 }; // Put error cases at end
+            }
+          })
+        );
+        
+        // Sort by file size (smallest first)
+        stemData = stemsWithSizes
+          .sort((a, b) => a.size - b.size)
+          .map(({ size, ...stem }) => stem); // Remove size property
+        
+        addDebugLog(`🚀 Optimized loading order: smallest files first`);
+      } catch (error) {
+        addDebugLog(`⚠️ Could not optimize loading order: ${error}. Using original order.`);
+      }
 
       // Check mobile memory limits
       const maxStemsForMobile = 15; // Limit to prevent 1GB+ memory usage
