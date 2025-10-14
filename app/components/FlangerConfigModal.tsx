@@ -166,7 +166,9 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
   return (
     <>
       <style jsx>{`
+        /* Safari/WebKit specific styling */
         .slider-horizontal::-webkit-slider-thumb {
+          -webkit-appearance: none;
           appearance: none;
           width: 20px;
           height: 20px;
@@ -175,8 +177,10 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           border: 2px solid #FCFAEE;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          transition: all 0.2s ease;
         }
         
+        /* Firefox specific styling */
         .slider-horizontal::-moz-range-thumb {
           width: 20px;
           height: 20px;
@@ -185,16 +189,27 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           border: 2px solid #FCFAEE;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          transition: all 0.2s ease;
         }
         
+        /* Safari hover effects */
         .slider-horizontal::-webkit-slider-thumb:hover {
           background: #8B0015;
           transform: scale(1.1);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         
+        /* Firefox hover effects */
         .slider-horizontal::-moz-range-thumb:hover {
           background: #8B0015;
           transform: scale(1.1);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Ensure Safari removes default styling */
+        .slider-horizontal::-webkit-slider-track {
+          -webkit-appearance: none;
+          appearance: none;
         }
       `}</style>
       <div 
