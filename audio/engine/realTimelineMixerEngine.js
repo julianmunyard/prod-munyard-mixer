@@ -71,6 +71,7 @@ export class RealTimelineMixerEngine {
 
     // Convert stems to Thomas's timeline format
     this.timelineData = {
+      duration: 255, // Timeline duration in seconds - will be updated with actual duration
       tracks: stems.map((stem, index) => ({
         id: `track_${index}`,
         actions: [{

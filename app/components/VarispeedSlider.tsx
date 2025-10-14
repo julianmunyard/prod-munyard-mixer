@@ -130,7 +130,7 @@ const tickLabels = shouldFlipLabels
       {bpm != null && (
         <div className="absolute -top-10 flex flex-col items-center">
           <span className="text-[13px] font-mono" style={{ color: primaryColor }}>
-            {Math.round(bpm * value)} BPM
+            {Math.round(bpm * (isIOS ? value : 2 - value))} BPM
           </span>
           <span className="text-[12px] font-mono tracking-wider mt-1" style={{ color: primaryColor }}>
             VARISPEED

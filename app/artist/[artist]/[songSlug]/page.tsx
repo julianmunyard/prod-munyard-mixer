@@ -1266,10 +1266,11 @@ function MixerPage() {
                     }}
                   >
                 <VarispeedSlider
-                      value={varispeed}
+                      value={isIOS ? varispeed : 2 - varispeed}
                       onChange={val => {
-                        setVarispeed(val);
-                        setVarispeedControl(val, isNaturalVarispeed);
+                        const newVarispeed = isIOS ? val : 2 - val;
+                        setVarispeed(newVarispeed);
+                        setVarispeedControl(newVarispeed, isNaturalVarispeed);
                       }}
                   isIOS={isIOS}
                   primaryColor={primary}
@@ -1339,10 +1340,11 @@ function MixerPage() {
                     }}
                   >
                     <VarispeedSlider
-                      value={varispeed}
+                      value={isIOS ? varispeed : 2 - varispeed}
                       onChange={val => {
-                        setVarispeed(val);
-                        setVarispeedControl(val, isNaturalVarispeed);
+                        const newVarispeed = isIOS ? val : 2 - val;
+                        setVarispeed(newVarispeed);
+                        setVarispeedControl(newVarispeed, isNaturalVarispeed);
                       }}
                       isIOS={isIOS}
                       primaryColor={primary}
