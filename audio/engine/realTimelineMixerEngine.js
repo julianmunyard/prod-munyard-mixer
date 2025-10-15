@@ -38,7 +38,6 @@ export class RealTimelineMixerEngine {
       // Set up callbacks
       this.audioEngine.onTimelineFrameCursorUpdate = (timelineFrameCursor) => {
         this.currentTime = timelineFrameCursor / this.options.sampleRate;
-        console.log("Timeline cursor:", this.currentTime);
       };
       
       this.audioEngine.onAllAssetsDownloaded = () => {
@@ -159,7 +158,6 @@ export class RealTimelineMixerEngine {
 
   // Seek to position (in seconds) using Thomas's system
   seek(timeInSeconds) {
-    console.log("🎵 Seeking to:", timeInSeconds, "using Thomas's system");
     if (!this.audioEngine) {
       throw new Error("AudioEngine not initialized");
     }

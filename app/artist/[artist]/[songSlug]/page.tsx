@@ -134,7 +134,7 @@ function MixerPage() {
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
   const [timelineReady, setTimelineReady] = useState(false)
   const [allAssetsLoaded, setAllAssetsLoaded] = useState(false)
   const [loadingStems, setLoadingStems] = useState(false)
@@ -232,10 +232,12 @@ function MixerPage() {
         mixerEngineRef.current = new RealTimelineMixerEngine()
         await mixerEngineRef.current.init()
         
-        // Set up timeline cursor updates
+        // Set up timeline cursor updates and duration callback
         if (mixerEngineRef.current.audioEngine) {
-          mixerEngineRef.current.audioEngine.onTimelineFrameCursorUpdate = (cursor: number) => {
-            setCurrentTime(cursor / 48000) // Convert samples to seconds
+          
+          mixerEngineRef.current.audioEngine.onTimelineDurationSet = (durationSec: number) => {
+            setDuration(durationSec)
+            addDebugLog(`🔄 Timeline duration: ${durationSec.toFixed(2)}s`)
           }
         }
 
@@ -576,6 +578,24 @@ function MixerPage() {
     addDebugLog(`🎚️ Varispeed set to ${speed.toFixed(2)}x (${isNatural ? 'Natural' : 'Stretch'} mode)`);
   };
 
+  // ==================== 🎧 DJ Scratching Functions ====================
+  const handleScratchBegin = () => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    mixerEngineRef.current.audioEngine.scratchBegin();
+    console.log('🎧 Starting scratch mode');
+  };
+
+  const handleScratch = (velocity: number, time: number) => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    mixerEngineRef.current.audioEngine.scratchMove(velocity, time);
+  };
+
+  const handleScratchEnd = () => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    mixerEngineRef.current.audioEngine.scratchEnd();
+    console.log('🎧 Ending scratch mode');
+  };
+
   // ==================== 🎛️ Reverb Control Functions ====================
   const setReverbEnabled = (stemLabel: string, enabled: boolean) => {
     if (!mixerEngineRef.current?.audioEngine) return;
@@ -648,12 +668,14 @@ function MixerPage() {
     try {
       mixerEngineRef.current.stop();
       setIsPlaying(false);
-      setCurrentTime(0);
+      // Don't set currentTime here - let the audio engine handle it
+      // This ensures consistency with the seek behavior
       addDebugLog('⏹️ Playback stopped');
     } catch (error) {
       addDebugLog(`❌ Failed to stop: ${error}`);
     }
   };
+
 
   // ==================== 🎛️ REVERB CONFIGURATION ====================
   const handleReverbConfigOpen = (stemLabel: string, stemIndex: number, position?: { x: number; y: number }) => {
@@ -994,15 +1016,9 @@ function MixerPage() {
               </button>
             </div>
 
-            {/* 🎵 Status */}
-            <div className="text-center mb-8">
-              <p className="text-lg">
-                Status: {!timelineReady ? '⏳ Initializing...' : loadingStems ? `⏳ Downloading & Decoding Audio... (${loadedStemsCount}/${stems.length})` : !allAssetsLoaded ? '⏳ Ready to Load Stems' : '✅ Ready to Play'}
-              </p>
-              <p className="text-sm opacity-70">
-                Current Time: {currentTime.toFixed(2)}s
-              </p>
-            </div>
+
+            {/* Spacing for modules */}
+            <div className="mb-8 mt-8"></div>
 
             {/* 🎚️ Mixer Modules */}
             <div

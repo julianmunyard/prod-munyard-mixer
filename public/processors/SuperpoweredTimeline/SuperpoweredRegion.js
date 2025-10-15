@@ -2,6 +2,7 @@ class SuperpoweredRegion {
   startFrameOffset = 0;
   bufferPointer = 0;
   terminated = false;
+  scratchingActive = false;
   constructor(regionData, samplerate, numOfFrames, superpowered) {
     this.samplerate = samplerate;
     this.numOfFrames = numOfFrames;
@@ -75,9 +76,97 @@ class SuperpoweredRegion {
     console.log(`🎛️ Region ${this.id} varispeed set to: ${speed} (natural: ${isNatural}, timeStretching: ${this.player.timeStretching})`);
   }
 
+  // ==================== 🎧 DJ Scratching Methods ====================
+  
+  /**
+   * Start scratching mode
+   * Call this when user starts dragging the scrubber
+   */
+  scratchBegin() {
+    // Store the current state before entering scratch mode
+    this.wasPlayingBeforeScratch = this.playing;
+    
+    // Pause the player to prevent normal progression
+    this.player.pause();
+    
+    // DISABLE time-stretching for vinyl-style scratching
+    // This makes the pitch change with speed (like a real turntable!)
+    this.player.timeStretching = false;
+    this.scratchingActive = true;
+    
+    console.log(`🎧 Vinyl scratch mode started for region ${this.id}`);
+  }
+
+  /**
+   * Update scratch position with velocity
+   * @param {number} velocity - Playback rate (-10 to 10, negative = reverse)
+   * @param {number} positionMs - Position in milliseconds
+   */
+  scratchMove(velocity, positionMs) {
+    if (!this.scratchingActive) return;
+    
+    // For vinyl-style scratching, we let the velocity control the playback rate
+    // The pitch will naturally change with speed (like a real turntable!)
+    
+    const absVelocity = Math.abs(velocity);
+    
+    // Scale velocity for more natural scratching feel
+    // Apply a curve to make slow scratches more controllable
+    let scratchRate = absVelocity;
+    if (absVelocity < 1) {
+      // Slow movements: use a gentler curve
+      scratchRate = absVelocity * 0.7;
+    } else {
+      // Fast movements: allow more range
+      scratchRate = 0.7 + (absVelocity - 1) * 0.5;
+    }
+    
+    // Clamp to reasonable range (0.1x to 8x for vinyl-like scratching)
+    scratchRate = Math.max(0.1, Math.min(8, scratchRate));
+    
+    // Set playback rate (pitch will change naturally!)
+    this.player.playbackRate = scratchRate;
+    
+    // Seek to the position
+    this.player.setPosition(positionMs);
+    
+    // Always play during scratching to create the "rarrrrr" sound
+    this.player.play();
+    
+    // console.log(`🎧 Vinyl scratch: velocity=${velocity.toFixed(2)}, rate=${scratchRate.toFixed(2)}, pos=${positionMs.toFixed(0)}ms`);
+  }
+
+  /**
+   * End scratching mode
+   * Call this when user releases the scrubber
+   */
+  scratchEnd() {
+    this.scratchingActive = false;
+    
+    // Reset to normal playback rate
+    this.player.playbackRate = 1.0;
+    
+    // Restore previous time-stretching setting (usually false for natural mode)
+    this.player.timeStretching = false;
+    
+    // Resume playback if it was playing before scratching
+    if (this.wasPlayingBeforeScratch) {
+      this.player.play();
+    } else {
+      this.player.pause();
+    }
+    
+    console.log(`🎧 Scratch mode ended for region ${this.id}, resuming ${this.wasPlayingBeforeScratch ? 'playback' : 'pause'}`);
+  }
+
   terminate() {
     this.terminated = true;
     this.player.destruct();
+    // Free the player buffer to prevent memory leaks
+    if (this.playerBuffer) {
+      this.playerBuffer.free();
+      this.playerBuffer = null;
+    }
   }
 
   processRegion(inputBuffer, outputBuffer, volume = 1.0, muted = false, reverb = null, reverbInputBuffer = null, reverbOutputBuffer = null) {

@@ -60,6 +60,38 @@ class SuperpoweredTrack {
         const regionPointer = this.Superpowered.arrayBufferToWASM(buffer);
         region.player.openMemory(regionPointer, false, false);
         region.regionPointer = regionPointer;
+        
+        // Try multiple methods to get the duration
+        let durationSeconds = 0;
+        
+        // Method 1: Try player's durationMs property (authoritative if present)
+        const playerMs = region.player.durationMs || 0;
+        if (playerMs > 0) {
+          durationSeconds = playerMs / 1000;
+          console.log(`✅ Got duration from player.durationMs: ${durationSeconds.toFixed(2)}s`);
+        } else {
+          // Method 2: Try AudioInMemory API; different Superpowered builds may return
+          // either total interleaved samples or frames. Compute both candidates and pick best.
+          const sizeInSamples = this.Superpowered.AudioInMemory.getSize(regionPointer);
+          const sampleRate = this.Superpowered.AudioInMemory.getSamplerate(regionPointer);
+          if (sizeInSamples > 0 && sampleRate > 0) {
+            const candidateFrames = sizeInSamples / sampleRate; // if value is frames
+            const candidateInterleaved = sizeInSamples / (sampleRate * 2); // if value is total samples (stereo)
+            // Pick a sane value (> 1s) and prefer the smaller (safer upper bound)
+            const candidates = [candidateFrames, candidateInterleaved].filter(v => v > 1);
+            durationSeconds = candidates.length ? Math.min(...candidates) : 0;
+            console.log(`✅ Duration heuristic: frames=${candidateFrames.toFixed(2)}s interleaved=${candidateInterleaved.toFixed(2)}s → chosen ${durationSeconds.toFixed(2)}s`);
+          } else {
+            console.error(`❌ Could not get duration for region ${region.id} - sizeInSamples: ${sizeInSamples}, sampleRate: ${sampleRate}`);
+          }
+        }
+        
+        if (durationSeconds > 0) {
+          region.audioDuration = durationSeconds;
+          console.log(`✅ Audio duration for region ${region.id}: ${durationSeconds.toFixed(2)}s`);
+        } else {
+          console.error(`❌ Failed to get duration for region ${region.id}`);
+        }
       }
     }
   }
@@ -250,6 +282,39 @@ class SuperpoweredTrack {
       this.flanger.stereo = config.stereo;
       console.log(`🎛️ Track ${this.id} flanger config updated:`, config);
     }
+  }
+
+  // ==================== 🎧 DJ Scratching Control ====================
+  
+  /**
+   * Start scratching mode on all regions in this track
+   */
+  scratchBegin() {
+    this.regions.forEach(region => {
+      region.scratchBegin();
+    });
+    console.log(`🎧 Track ${this.id} scratch mode started`);
+  }
+
+  /**
+   * Update scratch velocity on all regions
+   * @param {number} velocity - Playback rate (negative = reverse)
+   * @param {number} positionMs - Position in milliseconds
+   */
+  scratchMove(velocity, positionMs) {
+    this.regions.forEach(region => {
+      region.scratchMove(velocity, positionMs);
+    });
+  }
+
+  /**
+   * End scratching mode on all regions
+   */
+  scratchEnd() {
+    this.regions.forEach(region => {
+      region.scratchEnd();
+    });
+    console.log(`🎧 Track ${this.id} scratch mode ended`);
   }
 }
 

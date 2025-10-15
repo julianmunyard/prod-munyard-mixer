@@ -8,6 +8,7 @@ class AudioEngine {
   started = false;
   onTimelineFrameCursorUpdate;
   onStemDecoded;
+  onTimelineDurationSet;
 
   async init() {
     if (!this.started) {
@@ -35,6 +36,12 @@ class AudioEngine {
         if (message.event === "stem-decoded") {
           if (this.onStemDecoded) {
             this.onStemDecoded(message.data.decodedCount, message.data.totalCount);
+          }
+        }
+        if (message.event === "timeline-duration-set") {
+          console.log(`🔄 Timeline duration set to ${message.data.duration.toFixed(2)}s - looping enabled!`);
+          if (this.onTimelineDurationSet) {
+            this.onTimelineDurationSet(message.data.duration);
           }
         }
         if (message.event === "timeline-reset") {
@@ -96,6 +103,46 @@ class AudioEngine {
 
   sendMessageToAudioProcessor(message) {
     this.timelineProcessorNode.sendMessageToAudioScope(message);
+  }
+
+  // ==================== 🎧 DJ Scratching Methods ====================
+  
+  /**
+   * Start scratching mode
+   * Call when user starts dragging the scrubber
+   */
+  scratchBegin() {
+    this.sendMessageToAudioProcessor({
+      type: "command",
+      data: { command: "scratchBegin" }
+    });
+  }
+
+  /**
+   * Update scratch velocity
+   * @param {number} velocity - Playback rate (negative = reverse)
+   * @param {number} time - Position in seconds
+   */
+  scratchMove(velocity, time) {
+    this.sendMessageToAudioProcessor({
+      type: "command",
+      data: { 
+        command: "scratchMove",
+        velocity: velocity,
+        time: time
+      }
+    });
+  }
+
+  /**
+   * End scratching mode
+   * Call when user releases the scrubber
+   */
+  scratchEnd() {
+    this.sendMessageToAudioProcessor({
+      type: "command",
+      data: { command: "scratchEnd" }
+    });
   }
 }
 

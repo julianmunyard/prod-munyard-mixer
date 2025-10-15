@@ -23,6 +23,8 @@ class SuperpoweredTimeline {
     this.trackLoaderID = Date.now();
     this.totalAssetsToFetch = 0;
     this.assetsDownloaded = 0;
+    this.maxAudioDuration = 0; // Track the longest audio duration for looping
+    this.lastCursorUpdateFrame = 0; // Track when we last sent a cursor update
     
     // Initialize GLOBAL flanger effect (applied to final mix output)
     this.globalFlanger = new this.Superpowered.Flanger(samplerate);
@@ -88,6 +90,12 @@ class SuperpoweredTimeline {
             track.loadAudio(SuperpoweredLoaded.url, SuperpoweredLoaded.buffer);
             SuperpoweredLoaded.buffer = null;
             console.log(`✅ Stem ${this.assetsDownloaded + 1}/${this.totalAssetsToFetch} decoded and loaded: ${region.id}`);
+            
+            // Track the longest audio duration for looping
+            if (region.audioDuration && region.audioDuration > this.maxAudioDuration) {
+              this.maxAudioDuration = region.audioDuration;
+              console.log(`📏 Updated max audio duration: ${this.maxAudioDuration.toFixed(2)}s`);
+            }
           }
         }
       }
@@ -111,6 +119,29 @@ class SuperpoweredTimeline {
 
     if (this.assetsDownloaded === this.totalAssetsToFetch) {
       console.log(`🎉 All ${this.totalAssetsToFetch} stems decoded and ready!`);
+      
+      // Update timeline duration to match the longest audio file
+      if (this.maxAudioDuration > 0) {
+        this.timelineData.duration = this.maxAudioDuration;
+        console.log(`🔄 Timeline duration set to ${this.maxAudioDuration.toFixed(2)}s for looping`);
+        
+        // Update all region end times to match the audio duration
+        for (const track of this.tracks) {
+          for (const region of track.regions) {
+            region.end = this.maxAudioDuration;
+            region.frameEnd = this.maxAudioDuration * this.samplerate;
+          }
+        }
+        
+        // Send duration info to main thread (will show in console)
+        this.processorScope.sendMessageToMainScope({
+          event: "timeline-duration-set",
+          data: {
+            duration: this.maxAudioDuration
+          }
+        });
+      }
+      
       this.processorScope.allAssetsDownloaded();
     }
   }
@@ -148,7 +179,10 @@ class SuperpoweredTimeline {
       this.globalFlanger.process(outputBuffer.pointer, outputBuffer.pointer, buffersize);
     }
 
-    this.currentFrameCursor += buffersize;
+    // Freeze timeline cursor while scratching to avoid double-audio feel
+    if (!this.isScratching) {
+      this.currentFrameCursor += buffersize;
+    }
     
     // Check if we've reached the end of the timeline and loop if needed
     if (this.timelineData && this.timelineData.duration) {
@@ -156,20 +190,27 @@ class SuperpoweredTimeline {
       if (this.currentFrameCursor >= timelineEndFrame) {
         // Loop back to the beginning
         this.currentFrameCursor = 0;
+        this.lastCursorUpdateFrame = 0; // Reset last update frame on loop
         // Reset all regions to their starting positions
         this.resetAllRegions();
         console.log('🔄 Timeline looped back to beginning');
+        
+        // ✅ CRITICAL FIX: Immediately send cursor update after looping
+        // This ensures the UI shows 0:00 instead of the old time
+        this.processorScope.sendTimelineFrameCursorUpdate(this.currentFrameCursor);
       }
     }
     
-    if (
-      this.currentFrameCursor %
-        (buffersize * this.cursorUpdateFrequencyRatio) ===
-      0
-    )
-      this.processorScope.sendTimelineFrameCursorUpdate(
-        this.currentFrameCursor
-      );
+    // ✅ FIX: Check frames elapsed since LAST update, not absolute cursor position
+    // This ensures cursor updates continue after seeking to any position
+    const updateInterval = buffersize * this.cursorUpdateFrequencyRatio;
+    const framesSinceLastUpdate = this.currentFrameCursor - this.lastCursorUpdateFrame;
+    
+    if (framesSinceLastUpdate >= updateInterval) {
+      this.processorScope.sendTimelineFrameCursorUpdate(this.currentFrameCursor);
+      this.lastCursorUpdateFrame = this.currentFrameCursor;
+    }
+    
     return true;
   }
 
@@ -179,7 +220,36 @@ class SuperpoweredTimeline {
     }
     if (message.command === "updateCursor") {
       // Here we handle the updated cursor position
-      this.currentFrameCursor = Math.floor(message.cursorSec * this.samplerate);
+      const seekTimeSeconds = message.cursorSec;
+      this.currentFrameCursor = Math.floor(seekTimeSeconds * this.samplerate);
+      
+      // Seek all regions to the correct position in their audio
+      // This is critical for seeking to work properly
+      for (const track of this.tracks) {
+        for (const region of track.regions) {
+          // Calculate the position within the region
+          // Since all regions start at 0, the seek position is just the timeline time
+          const regionPositionMs = seekTimeSeconds * 1000;
+          
+          // Seek the region's player to this position
+          region.setPositionMs(regionPositionMs);
+          
+          // Set region playing state and ensure it plays if within bounds
+          if (this.currentFrameCursor >= region.frameStart && this.currentFrameCursor < region.frameEnd) {
+            region.playing = true; // Keep playing after seek
+            region.play(); // Ensure player is in play state
+          } else {
+            region.playing = false;
+            region.pause();
+          }
+        }
+      }
+      
+      // ✅ CRITICAL FIX: Reset the last update frame tracker so cursor updates continue from new position
+      this.lastCursorUpdateFrame = this.currentFrameCursor;
+      
+      // Immediately send cursor update after seeking
+      this.processorScope.sendTimelineFrameCursorUpdate(this.currentFrameCursor);
     }
     if (message.command === "updateMetronome") {
       this.metronomeTrack.setTempo(message.bpm);
@@ -240,6 +310,18 @@ class SuperpoweredTimeline {
     if (message.command === "setFlangerConfig") {
       console.log(`🎛️ Timeline received setFlangerConfig:`, message.config);
       this.setFlangerConfig(message.config);
+    }
+    if (message.command === "scratchBegin") {
+      console.log(`🎧 Timeline received scratchBegin`);
+      this.scratchBegin();
+    }
+    if (message.command === "scratchMove") {
+      // console.log(`🎧 Timeline received scratchMove: velocity=${message.velocity}, time=${message.time}`);
+      this.scratchMove(message.velocity, message.time);
+    }
+    if (message.command === "scratchEnd") {
+      console.log(`🎧 Timeline received scratchEnd`);
+      this.scratchEnd();
     }
   }
 
@@ -422,6 +504,42 @@ class SuperpoweredTimeline {
       }
     }
     console.log('🔄 Reset all regions to starting positions');
+  }
+
+  // ==================== 🎧 DJ Scratching Methods ====================
+  
+  /**
+   * Start scratching mode on all tracks
+   */
+  scratchBegin() {
+    this.isScratching = true;
+    this.tracks.forEach(track => {
+      track.scratchBegin();
+    });
+    console.log('🎧 Timeline scratch mode started');
+  }
+
+  /**
+   * Update scratch velocity on all tracks
+   * @param {number} velocity - Playback rate (negative = reverse)
+   * @param {number} time - Position in seconds
+   */
+  scratchMove(velocity, time) {
+    const positionMs = time * 1000;
+    this.tracks.forEach(track => {
+      track.scratchMove(velocity, positionMs);
+    });
+  }
+
+  /**
+   * End scratching mode on all tracks
+   */
+  scratchEnd() {
+    this.tracks.forEach(track => {
+      track.scratchEnd();
+    });
+    this.isScratching = false;
+    console.log('🎧 Timeline scratch mode ended');
   }
 }
 
