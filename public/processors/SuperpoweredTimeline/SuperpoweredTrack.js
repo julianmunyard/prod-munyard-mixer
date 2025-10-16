@@ -77,10 +77,10 @@ class SuperpoweredTrack {
           if (sizeInSamples > 0 && sampleRate > 0) {
             const candidateFrames = sizeInSamples / sampleRate; // if value is frames
             const candidateInterleaved = sizeInSamples / (sampleRate * 2); // if value is total samples (stereo)
-            // Pick a sane value (> 1s) and prefer the smaller (safer upper bound)
+            // Pick a sane value (> 1s) and prefer the larger to avoid early cutoffs
             const candidates = [candidateFrames, candidateInterleaved].filter(v => v > 1);
-            durationSeconds = candidates.length ? Math.min(...candidates) : 0;
-            console.log(`✅ Duration heuristic: frames=${candidateFrames.toFixed(2)}s interleaved=${candidateInterleaved.toFixed(2)}s → chosen ${durationSeconds.toFixed(2)}s`);
+            durationSeconds = candidates.length ? Math.max(...candidates) : 0;
+            console.log(`✅ Duration heuristic (favor max): frames=${candidateFrames.toFixed(2)}s interleaved=${candidateInterleaved.toFixed(2)}s → chosen ${durationSeconds.toFixed(2)}s`);
           } else {
             console.error(`❌ Could not get duration for region ${region.id} - sizeInSamples: ${sizeInSamples}, sampleRate: ${sampleRate}`);
           }
@@ -89,6 +89,16 @@ class SuperpoweredTrack {
         if (durationSeconds > 0) {
           region.audioDuration = durationSeconds;
           console.log(`✅ Audio duration for region ${region.id}: ${durationSeconds.toFixed(2)}s`);
+          // Update region end/frameEnd immediately so playback doesn't cut off early
+          region.end = durationSeconds;
+          region.frameEnd = durationSeconds * this.samplerate;
+          // Enable sample-precise seamless looping over the full file
+          // Superpowered expects loop points in milliseconds
+          try {
+            region.player.loopBetween(0, Math.ceil(durationSeconds * 1000), true);
+          } catch (e) {
+            console.warn(`⚠️ loopBetween not available; relying on loopOnEOF.`, e);
+          }
         } else {
           console.error(`❌ Failed to get duration for region ${region.id}`);
         }
@@ -168,11 +178,8 @@ class SuperpoweredTrack {
         region.playing = true;
       }
 
-      if (currentFrameCursor >= region.frameEnd && region.playing) {
-        // console.log("Pausing region player", region.id);
-        region.playing = false;
-        region.pause();
-      }
+      // Do not stop the region based on frameEnd; let the audio player play out fully.
+      // Global timeline looping will reset regions at loop boundaries.
 
       if (region.playing) {
         // console.log("Region shuyld play from offset", region.startFrameOffset);

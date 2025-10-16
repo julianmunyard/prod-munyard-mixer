@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import RealTimelineMixerEngine from '../../audio/engine/realTimelineMixerEngine'
+import FullWaveformScrubber from '../components/FullWaveformScrubber'
 
 export default function TimelineMixerPage() {
   const mixerEngineRef = useRef<RealTimelineMixerEngine | null>(null)
@@ -9,6 +10,8 @@ export default function TimelineMixerPage() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [debugLogs, setDebugLogs] = useState<string[]>([])
+  const [duration, setDuration] = useState<number>(0)
+  const [buffer, setBuffer] = useState<AudioBuffer | null>(null)
 
   const addDebugLog = (message: string) => {
     setDebugLogs(prev => [...prev.slice(-9), `${new Date().toLocaleTimeString()}: ${message}`])
@@ -26,6 +29,11 @@ export default function TimelineMixerPage() {
         // Set up timeline cursor updates
         mixerEngineRef.current.audioEngine.onTimelineFrameCursorUpdate = (cursor: number) => {
           setCurrentTime(cursor / 48000) // Convert samples to seconds
+        }
+
+        // Capture timeline duration when available
+        mixerEngineRef.current.audioEngine.onTimelineDurationSet = (d: number) => {
+          setDuration(d)
         }
 
         setTimelineReady(true)
@@ -75,6 +83,16 @@ export default function TimelineMixerPage() {
       ]
 
       await mixerEngineRef.current.loadStemsFromSupabase(testStems)
+      // Optional: fetch one stem to draw waveform (first track)
+      try {
+        const res = await fetch(testStems[0].url)
+        const arr = await res.arrayBuffer()
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const decoded = await ctx.decodeAudioData(arr.slice(0))
+        setBuffer(decoded)
+      } catch (e) {
+        // ignore waveform preview errors
+      }
       addDebugLog('✅ Stems loaded')
       
     } catch (error) {
@@ -119,6 +137,11 @@ export default function TimelineMixerPage() {
     }
   }
 
+  const handleScrub = (seconds: number) => {
+    if (!mixerEngineRef.current) return
+    mixerEngineRef.current.audioEngine.updateCursor(seconds)
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-4xl mx-auto">
@@ -157,6 +180,31 @@ export default function TimelineMixerPage() {
           >
             ⏹️ Stop
           </button>
+        </div>
+
+        {/* Scrubber */}
+        <div className="flex justify-center mb-6">
+          {duration > 0 && buffer ? (
+            <FullWaveformScrubber
+              buffer={buffer}
+              duration={duration}
+              position={currentTime % Math.max(0.0001, duration)}
+              onScrub={handleScrub}
+            />
+          ) : duration > 0 ? (
+            <div className="w-full max-w-xl px-4">
+              <input
+                type="range"
+                min={0}
+                max={duration}
+                step={0.01}
+                value={currentTime % Math.max(0.0001, duration)}
+                onChange={(e) => handleScrub(parseFloat(e.target.value))}
+                className="w-full"
+              />
+              <div className="text-center text-sm opacity-70 mt-1">Scrub (waveform loading...)</div>
+            </div>
+          ) : null}
         </div>
 
         {/* Status */}

@@ -134,7 +134,11 @@ function MixerPage() {
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const [isPlaying, setIsPlaying] = useState(false)
+  
   const [duration, setDuration] = useState(0)
+  const [baseDuration, setBaseDuration] = useState(0) // Base duration not affected by varispeed
+  const [currentTime, setCurrentTime] = useState(0)
+  const [waveformBuffer, setWaveformBuffer] = useState<AudioBuffer | null>(null)
   const [timelineReady, setTimelineReady] = useState(false)
   const [allAssetsLoaded, setAllAssetsLoaded] = useState(false)
   const [loadingStems, setLoadingStems] = useState(false)
@@ -234,10 +238,20 @@ function MixerPage() {
         
         // Set up timeline cursor updates and duration callback
         if (mixerEngineRef.current.audioEngine) {
-          
+          mixerEngineRef.current.audioEngine.onTimelineFrameCursorUpdate = (cursor: number) => {
+            setCurrentTime(cursor / 48000)
+          }
           mixerEngineRef.current.audioEngine.onTimelineDurationSet = (durationSec: number) => {
             setDuration(durationSec)
+            // Set base duration only once (first time we get it)
+            if (baseDuration === 0) {
+              setBaseDuration(durationSec)
+            }
             addDebugLog(`🔄 Timeline duration: ${durationSec.toFixed(2)}s`)
+          }
+          ;(mixerEngineRef.current.audioEngine as any).onTimelineBaseDurationSet = (baseSec: number) => {
+            setBaseDuration(baseSec)
+            addDebugLog(`📏 Base timeline duration: ${baseSec.toFixed(2)}s`)
           }
         }
 
@@ -354,6 +368,8 @@ function MixerPage() {
 
       fetchSong();
   }, [artist, songSlug])
+
+  // (Waveform not desired for this scrubber)
 
   // ==================== 🎵 Load Stems Function ====================
   const loadStemsIntoTimeline = async () => {
@@ -676,6 +692,8 @@ function MixerPage() {
     }
   };
 
+  // (Scrubber removed)
+
 
   // ==================== 🎛️ REVERB CONFIGURATION ====================
   const handleReverbConfigOpen = (stemLabel: string, stemIndex: number, position?: { x: number; y: number }) => {
@@ -921,6 +939,8 @@ function MixerPage() {
             >
               {songData?.title}
             </h1>
+
+            {/* Scrubber removed */}
 
             {/* ▶️ Playback Controls */}
             <div className={`flex justify-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>

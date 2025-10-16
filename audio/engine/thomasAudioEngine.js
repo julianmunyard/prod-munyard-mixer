@@ -44,6 +44,12 @@ class AudioEngine {
             this.onTimelineDurationSet(message.data.duration);
           }
         }
+        if (message.event === "timeline-base-duration-set") {
+          console.log(`📏 Base timeline duration set to ${message.data.duration.toFixed(2)}s`);
+          if (this.onTimelineBaseDurationSet) {
+            this.onTimelineBaseDurationSet(message.data.duration);
+          }
+        }
         if (message.event === "timeline-reset") {
           this.resetCallback();
         }
@@ -142,6 +148,17 @@ class AudioEngine {
     this.sendMessageToAudioProcessor({
       type: "command",
       data: { command: "scratchEnd" }
+    });
+  }
+
+  // ==================== ⏱️ Seeking / Cursor Control ====================
+  /**
+   * Seek timeline cursor to specific time (seconds)
+   */
+  updateCursor(seconds) {
+    this.sendMessageToAudioProcessor({
+      type: "command",
+      data: { command: "updateCursor", cursorSec: seconds }
     });
   }
 }

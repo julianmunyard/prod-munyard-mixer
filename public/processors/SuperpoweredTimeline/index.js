@@ -25,6 +25,8 @@ class SuperpoweredTimeline {
     this.assetsDownloaded = 0;
     this.maxAudioDuration = 0; // Track the longest audio duration for looping
     this.lastCursorUpdateFrame = 0; // Track when we last sent a cursor update
+    this.currentPlaybackRate = 1.0; // Global varispeed factor
+    this.varispeedNatural = false; // If true, duration scales with rate
     
     // Initialize GLOBAL flanger effect (applied to final mix output)
     this.globalFlanger = new this.Superpowered.Flanger(samplerate);
@@ -39,6 +41,10 @@ class SuperpoweredTimeline {
     
     // Pre-allocate flanger buffer (never allocate in audio loop!)
     this.flangerBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
+    
+    // Disable post-loop fade to avoid any perceived dip
+    this.fadeInSamples = 0;
+    this.justLoopedSamplesRemaining = 0;
   }
 
   handleLoadTimeline(timelineData) {
@@ -122,8 +128,9 @@ class SuperpoweredTimeline {
       
       // Update timeline duration to match the longest audio file
       if (this.maxAudioDuration > 0) {
-        this.timelineData.duration = this.maxAudioDuration;
-        console.log(`🔄 Timeline duration set to ${this.maxAudioDuration.toFixed(2)}s for looping`);
+        const effective = this.varispeedNatural ? (this.maxAudioDuration / Math.max(0.001, this.currentPlaybackRate)) : this.maxAudioDuration;
+        this.timelineData.duration = effective;
+        console.log(`🔄 Timeline duration set to ${effective.toFixed(2)}s for looping (base=${this.maxAudioDuration.toFixed(2)}s, rate=${this.currentPlaybackRate}, natural=${this.varispeedNatural})`);
         
         // Update all region end times to match the audio duration
         for (const track of this.tracks) {
@@ -133,13 +140,15 @@ class SuperpoweredTimeline {
           }
         }
         
-        // Send duration info to main thread (will show in console)
-        this.processorScope.sendMessageToMainScope({
-          event: "timeline-duration-set",
-          data: {
-            duration: this.maxAudioDuration
-          }
-        });
+      // Send base and effective durations to main thread
+      this.processorScope.sendMessageToMainScope({
+        event: "timeline-base-duration-set",
+        data: { duration: this.maxAudioDuration }
+      });
+      this.processorScope.sendMessageToMainScope({
+        event: "timeline-duration-set",
+        data: { duration: this.timelineData.duration }
+      });
       }
       
       this.processorScope.allAssetsDownloaded();
@@ -179,6 +188,19 @@ class SuperpoweredTimeline {
       this.globalFlanger.process(outputBuffer.pointer, outputBuffer.pointer, buffersize);
     }
 
+    // Apply a tiny fade-in on the first buffer after looping to avoid any residual click
+    if (this.justLoopedSamplesRemaining > 0) {
+      const samplesToFade = Math.min(this.justLoopedSamplesRemaining, buffersize);
+      const total = samplesToFade;
+      for (let i = 0; i < total; i++) {
+        const gain = i / total; // 0..1 ramp
+        const base = i * 2;
+        outputBuffer.array[base] *= gain;
+        outputBuffer.array[base + 1] *= gain;
+      }
+      this.justLoopedSamplesRemaining -= samplesToFade;
+    }
+
     // Freeze timeline cursor while scratching to avoid double-audio feel
     if (!this.isScratching) {
       this.currentFrameCursor += buffersize;
@@ -186,17 +208,14 @@ class SuperpoweredTimeline {
     
     // Check if we've reached the end of the timeline and loop if needed
     if (this.timelineData && this.timelineData.duration) {
-      const timelineEndFrame = this.timelineData.duration * this.samplerate;
+      const timelineEndFrame = Math.ceil(this.timelineData.duration * this.samplerate);
       if (this.currentFrameCursor >= timelineEndFrame) {
-        // Loop back to the beginning
-        this.currentFrameCursor = 0;
-        this.lastCursorUpdateFrame = 0; // Reset last update frame on loop
-        // Reset all regions to their starting positions
-        this.resetAllRegions();
+        // Wrap cursor modulo end to avoid dropping a partial buffer and ensure no early cutoff
+        this.currentFrameCursor = this.currentFrameCursor - timelineEndFrame;
+        this.justLoopedSamplesRemaining = this.fadeInSamples;
+        this.lastCursorUpdateFrame = 0;
         console.log('🔄 Timeline looped back to beginning');
-        
-        // ✅ CRITICAL FIX: Immediately send cursor update after looping
-        // This ensures the UI shows 0:00 instead of the old time
+        // Immediately send cursor update after looping
         this.processorScope.sendTimelineFrameCursorUpdate(this.currentFrameCursor);
       }
     }
@@ -231,16 +250,17 @@ class SuperpoweredTimeline {
           // Since all regions start at 0, the seek position is just the timeline time
           const regionPositionMs = seekTimeSeconds * 1000;
           
-          // Seek the region's player to this position
+          // Pause first to avoid overlap, then position, then resume if in-bounds
+          region.pause();
           region.setPositionMs(regionPositionMs);
+          if (typeof region.onSeek === 'function') region.onSeek();
           
-          // Set region playing state and ensure it plays if within bounds
           if (this.currentFrameCursor >= region.frameStart && this.currentFrameCursor < region.frameEnd) {
-            region.playing = true; // Keep playing after seek
-            region.play(); // Ensure player is in play state
+            region.playing = true;
+            region.play();
           } else {
             region.playing = false;
-            region.pause();
+            // stay paused when out of bounds
           }
         }
       }
@@ -248,8 +268,7 @@ class SuperpoweredTimeline {
       // ✅ CRITICAL FIX: Reset the last update frame tracker so cursor updates continue from new position
       this.lastCursorUpdateFrame = this.currentFrameCursor;
       
-      // Immediately send cursor update after seeking
-      this.processorScope.sendTimelineFrameCursorUpdate(this.currentFrameCursor);
+      // DON'T immediately send cursor update after seeking - let the UI control the position
     }
     if (message.command === "updateMetronome") {
       this.metronomeTrack.setTempo(message.bpm);
@@ -432,6 +451,19 @@ class SuperpoweredTimeline {
 
   setVarispeed(speed, isNatural) {
     this.tracks.forEach(track => track.setVarispeed(speed, isNatural));
+    // Update effective looping duration when using natural varispeed (no time-stretching)
+    this.currentPlaybackRate = speed;
+    this.varispeedNatural = !!isNatural;
+    if (this.maxAudioDuration > 0 && this.timelineData) {
+      const effective = this.varispeedNatural ? (this.maxAudioDuration / Math.max(0.001, speed)) : this.maxAudioDuration;
+      this.timelineData.duration = effective;
+      console.log(`🔁 Updated timeline duration for varispeed: ${effective.toFixed(2)}s (base=${this.maxAudioDuration.toFixed(2)}s, rate=${speed}, natural=${this.varispeedNatural})`);
+      // Notify UI so scrubber range updates immediately
+      this.processorScope.sendMessageToMainScope({
+        event: "timeline-duration-set",
+        data: { duration: effective }
+      });
+    }
   }
 
   // ==================== 🎛️ Reverb Control Methods ====================
@@ -499,8 +531,11 @@ class SuperpoweredTimeline {
     // Reset all regions in all tracks to their starting positions
     for (const track of this.tracks) {
       for (const region of track.regions) {
+        // Set position to 0 and keep playing to ensure seamless loop
         region.resetPosition();
-        region.playing = false; // Will be set to true when timeline cursor reaches frameStart
+        region.startFrameOffset = 0;
+        region.playing = true;
+        region.play();
       }
     }
     console.log('🔄 Reset all regions to starting positions');

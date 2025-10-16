@@ -3,6 +3,7 @@ class SuperpoweredRegion {
   bufferPointer = 0;
   terminated = false;
   scratchingActive = false;
+  justSeekedSamples = 0;
   constructor(regionData, samplerate, numOfFrames, superpowered) {
     this.samplerate = samplerate;
     this.numOfFrames = numOfFrames;
@@ -21,6 +22,12 @@ class SuperpoweredRegion {
       false
     );
     this.player.outputSamplerate = this.samplerate;
+    // Enable seamless looping at the end of file
+    this.player.loopOnEOF = true;
+    try {
+      // Prefer explicit loop points once duration is known (set in track.loadAudio)
+      // loopBetween(0, endMs, true) is called there; keep loopOnEOF as a fallback here
+    } catch {}
     
     // Initialize varispeed properties on the AdvancedAudioPlayer
     this.player.playbackRate = 1.0; // Start at normal speed
@@ -57,6 +64,12 @@ class SuperpoweredRegion {
 
   setPositionMs(positionMs) {
     this.player.setPosition(positionMs);
+  }
+
+  // Call when timeline performs a discrete seek
+  onSeek() {
+    // Mute one block to prevent overlap/echo from pre-seek buffer
+    this.justSeekedSamples = this.numOfFrames;
   }
 
   setVarispeed(speed, isNatural) {
@@ -184,9 +197,15 @@ class SuperpoweredRegion {
       if (!muted) {
         const sampleOffset = this.startFrameOffset * 2;
         
-        // Add dry signal to output buffer
-        for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
-          outputBuffer.array[i] += this.playerBuffer.array[i] * volume;
+        // If we just seeked, skip mixing for the next block to avoid echo
+        if (this.justSeekedSamples > 0) {
+          // Consume one block worth of samples
+          this.justSeekedSamples = Math.max(0, this.justSeekedSamples - (outputBuffer.array.length - sampleOffset) / 2);
+        } else {
+          // Add dry signal to output buffer
+          for (let i = sampleOffset; i < outputBuffer.array.length; i++) {
+            outputBuffer.array[i] += this.playerBuffer.array[i] * volume;
+          }
         }
         
         // If reverb is enabled, also add reverb send
