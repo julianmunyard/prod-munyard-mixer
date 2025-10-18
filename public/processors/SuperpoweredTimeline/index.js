@@ -39,8 +39,31 @@ class SuperpoweredTimeline {
     this.globalFlanger.clipperMaximumDb = 6; // Default 6
     this.globalFlanger.stereo = true; // Use stereo for better effect
     
+    // Initialize GLOBAL compressor effect (applied to final mix output)
+    this.globalCompressor = new this.Superpowered.Compressor(samplerate);
+    this.globalCompressor.enabled = false;
+    this.globalCompressor.inputGainDb = 0; // -24 to 24, default 0
+    this.globalCompressor.outputGainDb = 0; // -24 to 24, default 0
+    this.globalCompressor.wet = 1.0; // 0-1, default 1 (completely wet)
+    this.globalCompressor.attackSec = 0.003; // 0.0001-1, default 0.003 (3ms)
+    this.globalCompressor.releaseSec = 0.3; // 0.1-4, default 0.3 (300ms)
+    this.globalCompressor.ratio = 3.0; // 1.5,2,3,4,5,10, default 3
+    this.globalCompressor.thresholdDb = 0; // 0 to -40, default 0
+    this.globalCompressor.hpCutOffHz = 1; // 1-10000, default 1
+    
     // Pre-allocate flanger buffer (never allocate in audio loop!)
     this.flangerBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
+    
+    // Pre-allocate compressor buffer (never allocate in audio loop!)
+    this.compressorBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
+    
+    // Initialize waveform analyzer for scrubber visualization
+    this.waveform = new this.Superpowered.Waveform(
+      samplerate, // The sample rate of the audio input
+      300 // The length in seconds of the audio input (5 minutes max)
+    );
+    this.waveformDataGenerated = false;
+    this.waveformRequested = false;
     
     // Disable post-loop fade to avoid any perceived dip
     this.fadeInSamples = 0;
@@ -188,6 +211,25 @@ class SuperpoweredTimeline {
       this.globalFlanger.process(outputBuffer.pointer, outputBuffer.pointer, buffersize);
     }
 
+    // Apply GLOBAL compressor to the final mixed output (if enabled)
+    if (this.globalCompressor && this.globalCompressor.enabled) {
+      // Update samplerate (required by Superpowered for every process call)
+      this.globalCompressor.samplerate = this.samplerate;
+      
+      // Process compressor in-place (input and output can be the same buffer)
+      // According to Superpowered docs: "Can point to the same location with input (in-place processing)"
+      this.globalCompressor.process(outputBuffer.pointer, outputBuffer.pointer, buffersize);
+    }
+
+    // Process waveform data for scrubber visualization (only when not scratching)
+    if (this.waveform && !this.isScratching && !this.waveformDataGenerated) {
+      this.waveform.process(
+        outputBuffer.pointer,
+        buffersize,
+        -1 // Use -1 for real-time processing
+      );
+    }
+
     // Apply a tiny fade-in on the first buffer after looping to avoid any residual click
     if (this.justLoopedSamplesRemaining > 0) {
       const samplesToFade = Math.min(this.justLoopedSamplesRemaining, buffersize);
@@ -201,33 +243,77 @@ class SuperpoweredTimeline {
       this.justLoopedSamplesRemaining -= samplesToFade;
     }
 
-    // Freeze timeline cursor while scratching to avoid double-audio feel
+    // CORRECT APPROACH: Read actual audio position from audio engine
+    // Always advance cursor at normal rate for display
     if (!this.isScratching) {
       this.currentFrameCursor += buffersize;
     }
     
-    // Check if we've reached the end of the timeline and loop if needed
-    if (this.timelineData && this.timelineData.duration) {
-      const timelineEndFrame = Math.ceil(this.timelineData.duration * this.samplerate);
-      if (this.currentFrameCursor >= timelineEndFrame) {
-        // Wrap cursor modulo end to avoid dropping a partial buffer and ensure no early cutoff
-        this.currentFrameCursor = this.currentFrameCursor - timelineEndFrame;
-        this.justLoopedSamplesRemaining = this.fadeInSamples;
-        this.lastCursorUpdateFrame = 0;
-        console.log('🔄 Timeline looped back to beginning');
-        // Immediately send cursor update after looping
-        this.processorScope.sendTimelineFrameCursorUpdate(this.currentFrameCursor);
-      }
-    }
-    
-    // ✅ FIX: Check frames elapsed since LAST update, not absolute cursor position
-    // This ensures cursor updates continue after seeking to any position
+    // Send cursor updates at regular intervals
     const updateInterval = buffersize * this.cursorUpdateFrequencyRatio;
     const framesSinceLastUpdate = this.currentFrameCursor - this.lastCursorUpdateFrame;
     
     if (framesSinceLastUpdate >= updateInterval) {
+      // Get the actual audio position from the first playing region
+      let actualPositionMs = 0;
+      for (const track of this.tracks) {
+        for (const region of track.regions) {
+          if (region.playing && region.player) {
+            actualPositionMs = region.player.getDisplayPositionMs();
+            break; // Use first playing region's position
+          }
+        }
+        if (actualPositionMs > 0) break;
+      }
+      
+      // Convert actual audio position to frames for display
+      const actualPositionFrames = Math.floor((actualPositionMs / 1000) * this.samplerate);
+      this.currentFrameCursor = actualPositionFrames;
+      
       this.processorScope.sendTimelineFrameCursorUpdate(this.currentFrameCursor);
       this.lastCursorUpdateFrame = this.currentFrameCursor;
+    }
+    
+    // Loop detection based on actual audio position (file end)
+    if (this.timelineData && this.timelineData.duration) {
+      // Get actual audio position from regions
+      let actualPositionMs = 0;
+      let actualDurationMs = 0;
+      for (const track of this.tracks) {
+        for (const region of track.regions) {
+          if (region.playing && region.player) {
+            actualPositionMs = region.player.getDisplayPositionMs();
+            actualDurationMs = region.player.getDurationMs();
+            break;
+          }
+        }
+        if (actualPositionMs > 0) break;
+      }
+      
+      // Check if we've reached the end of the actual audio file
+      // Use a small buffer to ensure we catch the end
+      if (actualPositionMs >= actualDurationMs - 100) {
+        // Loop: reset all regions to beginning
+        for (const track of this.tracks) {
+          for (const region of track.regions) {
+            if (region.playing) {
+              region.pause();
+              region.setPositionMs(0);
+              if (typeof region.onSeek === 'function') region.onSeek();
+              region.play();
+            }
+          }
+        }
+
+        this.currentFrameCursor = 0;
+        this.lastCursorUpdateFrame = 0;
+        this.justLoopedSamplesRemaining = this.fadeInSamples;
+
+        console.log(`🔄 Loop at actual file end (${actualDurationMs}ms, pos: ${actualPositionMs}ms): reset to beginning`);
+
+        // Immediately send cursor update
+        this.processorScope.sendTimelineFrameCursorUpdate(this.currentFrameCursor);
+      }
     }
     
     return true;
@@ -238,37 +324,62 @@ class SuperpoweredTimeline {
       // this.currentFrameCursor = 0;
     }
     if (message.command === "updateCursor") {
-      // Here we handle the updated cursor position
+      // VARISPEED-AWARE SAMPLE-ACCURATE SEEKING: Ensure all stems start from the same computed absolute time
       const seekTimeSeconds = message.cursorSec;
-      this.currentFrameCursor = Math.floor(seekTimeSeconds * this.samplerate);
+      const seekPositionMs = seekTimeSeconds * 1000;
+      const seekFramePosition = Math.floor(seekTimeSeconds * this.samplerate);
       
-      // Seek all regions to the correct position in their audio
-      // This is critical for seeking to work properly
+      // CRITICAL: Seek all regions atomically to prevent drift
+      const seekStartTime = performance.now();
+      
+      // Phase 1: Pause all regions to prevent audio overlap
       for (const track of this.tracks) {
         for (const region of track.regions) {
-          // Calculate the position within the region
-          // Since all regions start at 0, the seek position is just the timeline time
-          const regionPositionMs = seekTimeSeconds * 1000;
-          
-          // Pause first to avoid overlap, then position, then resume if in-bounds
-          region.pause();
-          region.setPositionMs(regionPositionMs);
-          if (typeof region.onSeek === 'function') region.onSeek();
-          
-          if (this.currentFrameCursor >= region.frameStart && this.currentFrameCursor < region.frameEnd) {
-            region.playing = true;
-            region.play();
-          } else {
-            region.playing = false;
-            // stay paused when out of bounds
+          if (region.playing) {
+            region.pause();
           }
         }
       }
       
-      // ✅ CRITICAL FIX: Reset the last update frame tracker so cursor updates continue from new position
+      // Phase 2: Set position on all regions (sample-accurate)
+      // Superpowered handles varispeed internally, so we seek to the actual time position
+      for (const track of this.tracks) {
+        for (const region of track.regions) {
+          region.setPositionMs(seekPositionMs);
+          if (typeof region.onSeek === 'function') region.onSeek();
+        }
+      }
+      
+      // Phase 2.5: Re-arm loop regions if they exist and seek position is within loop range
+      if (this.loopStartMs !== undefined && this.loopEndMs !== undefined) {
+        if (seekPositionMs >= this.loopStartMs && seekPositionMs <= this.loopEndMs) {
+          // Re-arm loop points for all regions
+          for (const track of this.tracks) {
+            for (const region of track.regions) {
+              if (region.player && region.player.loopBetween) {
+                region.player.loopBetween(this.loopStartMs, this.loopEndMs, true);
+              }
+            }
+          }
+          console.log(`🔄 Loop re-armed after seek: ${this.loopStartMs}ms - ${this.loopEndMs}ms`);
+        }
+      }
+      
+      // Phase 3: Resume playback on all regions simultaneously
+      for (const track of this.tracks) {
+        for (const region of track.regions) {
+          if (region.playing) {
+            region.play();
+          }
+        }
+      }
+      
+      // Update timeline cursor to match the seek position (sample-accurate)
+      this.currentFrameCursor = seekFramePosition;
       this.lastCursorUpdateFrame = this.currentFrameCursor;
       
-      // DON'T immediately send cursor update after seeking - let the UI control the position
+      const seekDuration = performance.now() - seekStartTime;
+      console.log(`🎯 Varispeed-aware seek: ${seekTimeSeconds.toFixed(3)}s (${seekPositionMs}ms) at ${this.currentPlaybackRate}x in ${seekDuration.toFixed(1)}ms`);
     }
     if (message.command === "updateMetronome") {
       this.metronomeTrack.setTempo(message.bpm);
@@ -322,6 +433,30 @@ class SuperpoweredTimeline {
       console.log(`🎛️ Timeline received setReverbPredelay: trackId=${message.trackId}, predelayMs=${message.predelayMs}`);
       this.setReverbPredelay(message.trackId, message.predelayMs);
     }
+    if (message.command === "setEchoEnabled") {
+      console.log(`🎛️ Timeline received setEchoEnabled: trackId=${message.trackId}, enabled=${message.enabled}`);
+      this.setEchoEnabled(message.trackId, message.enabled);
+    }
+    if (message.command === "setEchoDry") {
+      console.log(`🎛️ Timeline received setEchoDry: trackId=${message.trackId}, dry=${message.dry}`);
+      this.setEchoDry(message.trackId, message.dry);
+    }
+    if (message.command === "setEchoWet") {
+      console.log(`🎛️ Timeline received setEchoWet: trackId=${message.trackId}, wet=${message.wet}`);
+      this.setEchoWet(message.trackId, message.wet);
+    }
+    if (message.command === "setEchoBpm") {
+      console.log(`🎛️ Timeline received setEchoBpm: trackId=${message.trackId}, bpm=${message.bpm}`);
+      this.setEchoBpm(message.trackId, message.bpm);
+    }
+    if (message.command === "setEchoBeats") {
+      console.log(`🎛️ Timeline received setEchoBeats: trackId=${message.trackId}, beats=${message.beats}`);
+      this.setEchoBeats(message.trackId, message.beats);
+    }
+    if (message.command === "setEchoDecay") {
+      console.log(`🎛️ Timeline received setEchoDecay: trackId=${message.trackId}, decay=${message.decay}`);
+      this.setEchoDecay(message.trackId, message.decay);
+    }
     if (message.command === "setReverbWidth") {
       console.log(`🎛️ Timeline received setReverbWidth: trackId=${message.trackId}, width=${message.width}`);
       this.setReverbWidth(message.trackId, message.width);
@@ -329,6 +464,10 @@ class SuperpoweredTimeline {
     if (message.command === "setFlangerConfig") {
       console.log(`🎛️ Timeline received setFlangerConfig:`, message.config);
       this.setFlangerConfig(message.config);
+    }
+    if (message.command === "setCompressorConfig") {
+      console.log(`🎛️ Timeline received setCompressorConfig:`, message.config);
+      this.setCompressorConfig(message.config);
     }
     if (message.command === "scratchBegin") {
       console.log(`🎧 Timeline received scratchBegin`);
@@ -341,6 +480,10 @@ class SuperpoweredTimeline {
     if (message.command === "scratchEnd") {
       console.log(`🎧 Timeline received scratchEnd`);
       this.scratchEnd();
+    }
+    if (message.command === "requestWaveformData") {
+      console.log(`📊 Timeline received requestWaveformData`);
+      this.generateWaveformData();
     }
   }
 
@@ -389,6 +532,110 @@ class SuperpoweredTimeline {
         console.log(`🎛️ Setting track ${trackIndex} reverb damp to ${value}`);
         track.setReverbDamp(value);
         break;
+      // Global Flanger Controls
+      case "globalFlanger":
+        console.log(`🎛️ Setting global flanger wet to ${value}`);
+        if (this.globalFlanger) {
+          this.globalFlanger.wet = value;
+        }
+        break;
+      case "globalFlangerEnabled":
+        console.log(`🎛️ Setting global flanger enabled to ${value}`);
+        if (this.globalFlanger) {
+          this.globalFlanger.enabled = value;
+        }
+        break;
+      case "globalFlangerDepth":
+        console.log(`🎛️ Setting global flanger depth to ${value}`);
+        if (this.globalFlanger) {
+          this.globalFlanger.depth = value;
+        }
+        break;
+      case "globalFlangerLfoBeats":
+        console.log(`🎛️ Setting global flanger LFO beats to ${value}`);
+        if (this.globalFlanger) {
+          this.globalFlanger.lfoBeats = value;
+        }
+        break;
+      case "globalFlangerBpm":
+        console.log(`🎛️ Setting global flanger BPM to ${value}`);
+        if (this.globalFlanger) {
+          this.globalFlanger.bpm = value;
+        }
+        break;
+      case "globalFlangerClipperThreshold":
+        console.log(`🎛️ Setting global flanger clipper threshold to ${value}`);
+        if (this.globalFlanger) {
+          this.globalFlanger.clipperThresholdDb = value;
+        }
+        break;
+      case "globalFlangerClipperMaximum":
+        console.log(`🎛️ Setting global flanger clipper maximum to ${value}`);
+        if (this.globalFlanger) {
+          this.globalFlanger.clipperMaximumDb = value;
+        }
+        break;
+      case "globalFlangerStereo":
+        console.log(`🎛️ Setting global flanger stereo to ${value}`);
+        if (this.globalFlanger) {
+          this.globalFlanger.stereo = value;
+        }
+        break;
+      // Global Compressor Controls
+      case "globalCompressorInputGain":
+        console.log(`🎛️ Setting global compressor input gain to ${value}`);
+        if (this.globalCompressor) {
+          this.globalCompressor.inputGainDb = value;
+        }
+        break;
+      case "globalCompressorOutputGain":
+        console.log(`🎛️ Setting global compressor output gain to ${value}`);
+        if (this.globalCompressor) {
+          this.globalCompressor.outputGainDb = value;
+        }
+        break;
+      case "globalCompressorWet":
+        console.log(`🎛️ Setting global compressor wet to ${value}`);
+        if (this.globalCompressor) {
+          this.globalCompressor.wet = value;
+        }
+        break;
+      case "globalCompressorAttack":
+        console.log(`🎛️ Setting global compressor attack to ${value}`);
+        if (this.globalCompressor) {
+          this.globalCompressor.attackSec = value;
+        }
+        break;
+      case "globalCompressorRelease":
+        console.log(`🎛️ Setting global compressor release to ${value}`);
+        if (this.globalCompressor) {
+          this.globalCompressor.releaseSec = value;
+        }
+        break;
+      case "globalCompressorRatio":
+        console.log(`🎛️ Setting global compressor ratio to ${value}`);
+        if (this.globalCompressor) {
+          this.globalCompressor.ratio = value;
+        }
+        break;
+      case "globalCompressorThreshold":
+        console.log(`🎛️ Setting global compressor threshold to ${value}`);
+        if (this.globalCompressor) {
+          this.globalCompressor.thresholdDb = value;
+        }
+        break;
+      case "globalCompressorHpCutoff":
+        console.log(`🎛️ Setting global compressor HP cutoff to ${value}`);
+        if (this.globalCompressor) {
+          this.globalCompressor.hpCutOffHz = value;
+        }
+        break;
+      case "globalCompressorEnabled":
+        console.log(`🎛️ Setting global compressor enabled to ${value}`);
+        if (this.globalCompressor) {
+          this.globalCompressor.enabled = value;
+        }
+        break;
       default:
         console.error(`❌ Unknown track control: ${control}`);
     }
@@ -415,10 +662,28 @@ class SuperpoweredTimeline {
       this.globalFlanger = null;
     }
     
+    // Clean up global compressor
+    if (this.globalCompressor) {
+      this.globalCompressor.destruct();
+      this.globalCompressor = null;
+    }
+    
     // Clean up flanger buffer
     if (this.flangerBuffer) {
       this.flangerBuffer.free();
       this.flangerBuffer = null;
+    }
+    
+    // Clean up compressor buffer
+    if (this.compressorBuffer) {
+      this.compressorBuffer.free();
+      this.compressorBuffer = null;
+    }
+    
+    // Clean up waveform analyzer
+    if (this.waveform) {
+      this.waveform.destruct();
+      this.waveform = null;
     }
     
     this.currentFrameCursor = 0;
@@ -451,14 +716,17 @@ class SuperpoweredTimeline {
 
   setVarispeed(speed, isNatural) {
     this.tracks.forEach(track => track.setVarispeed(speed, isNatural));
-    // Update effective looping duration when using natural varispeed (no time-stretching)
     this.currentPlaybackRate = speed;
     this.varispeedNatural = !!isNatural;
+    
     if (this.maxAudioDuration > 0 && this.timelineData) {
+      // Update UI duration for varispeed display
       const effective = this.varispeedNatural ? (this.maxAudioDuration / Math.max(0.001, speed)) : this.maxAudioDuration;
       this.timelineData.duration = effective;
-      console.log(`🔁 Updated timeline duration for varispeed: ${effective.toFixed(2)}s (base=${this.maxAudioDuration.toFixed(2)}s, rate=${speed}, natural=${this.varispeedNatural})`);
-      // Notify UI so scrubber range updates immediately
+      
+      console.log(`🔁 Varispeed: ${speed.toFixed(2)}x (natural=${this.varispeedNatural}) - UI duration: ${effective.toFixed(2)}s`);
+      
+      // Notify UI
       this.processorScope.sendMessageToMainScope({
         event: "timeline-duration-set",
         data: { duration: effective }
@@ -509,6 +777,49 @@ class SuperpoweredTimeline {
     }
   }
 
+  // ==================== 🎛️ Echo Control Methods ====================
+  setEchoEnabled(trackId, enabled) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setEchoEnabled(enabled);
+    }
+  }
+
+  setEchoDry(trackId, dry) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setEchoDry(dry);
+    }
+  }
+
+  setEchoWet(trackId, wet) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setEchoWet(wet);
+    }
+  }
+
+  setEchoBpm(trackId, bpm) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setEchoBpm(bpm);
+    }
+  }
+
+  setEchoBeats(trackId, beats) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setEchoBeats(beats);
+    }
+  }
+
+  setEchoDecay(trackId, decay) {
+    const track = this.tracks.find(t => t.id === trackId);
+    if (track) {
+      track.setEchoDecay(decay);
+    }
+  }
+
   setFlangerConfig(config) {
     console.log(`🎛️ Setting GLOBAL flanger config:`, config);
     
@@ -524,6 +835,25 @@ class SuperpoweredTimeline {
       this.globalFlanger.stereo = config.stereo;
       
       console.log(`✅ Global flanger updated - enabled: ${this.globalFlanger.enabled}, wet: ${this.globalFlanger.wet}`);
+    }
+  }
+
+  setCompressorConfig(config) {
+    console.log(`🎛️ Setting GLOBAL compressor config:`, config);
+    
+    if (this.globalCompressor) {
+      // Apply config to global compressor
+      this.globalCompressor.enabled = config.enabled;
+      this.globalCompressor.inputGainDb = config.inputGainDb;
+      this.globalCompressor.outputGainDb = config.outputGainDb;
+      this.globalCompressor.wet = config.wet;
+      this.globalCompressor.attackSec = config.attackSec;
+      this.globalCompressor.releaseSec = config.releaseSec;
+      this.globalCompressor.ratio = config.ratio;
+      this.globalCompressor.thresholdDb = config.thresholdDb;
+      this.globalCompressor.hpCutOffHz = config.hpCutOffHz;
+      
+      console.log(`✅ Global compressor updated - enabled: ${this.globalCompressor.enabled}, wet: ${this.globalCompressor.wet}`);
     }
   }
 
@@ -575,6 +905,54 @@ class SuperpoweredTimeline {
     });
     this.isScratching = false;
     console.log('🎧 Timeline scratch mode ended');
+  }
+
+  // ==================== 📊 Waveform Data Generation ====================
+  
+  /**
+   * Generate waveform data for scrubber visualization
+   * This should be called after all assets are loaded and processed
+   */
+  generateWaveformData() {
+    if (!this.waveform || this.waveformDataGenerated) {
+      console.log('📊 Waveform data already generated or waveform not available');
+      return;
+    }
+
+    try {
+      console.log('📊 Generating waveform data...');
+      
+      // First instruct the waveform instance to run its calculations internally
+      // processAudio should not run when this is called!
+      this.waveform.makeResult();
+
+      // Then get the peakWaveform data
+      // returns a Superpowered.Uint8Buffer. 150 points/sec waveform data displaying the peak volume
+      const wasmResult = this.waveform.getPeakWaveform();
+
+      // Result is backed by WebAssembly Linear Memory that can not be passed to another scope (thread)
+      // Let's clone it into "result"
+      const result = new Uint8Array();
+      result.set(wasmResult.array);
+
+      console.log(`📊 Generated waveform data: ${result.length} points`);
+
+      // Send waveform data back to main scope
+      this.processorScope.sendMessageToMainScope({
+        event: "waveform-data",
+        data: {
+          waveformData: result,
+          sampleRate: this.samplerate,
+          duration: this.maxAudioDuration
+        }
+      });
+
+      this.waveformDataGenerated = true;
+      console.log('✅ Waveform data sent to main scope');
+
+    } catch (error) {
+      console.error('❌ Failed to generate waveform data:', error);
+    }
   }
 }
 

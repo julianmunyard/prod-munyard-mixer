@@ -12,7 +12,9 @@ import { supabase } from '@/lib/supabaseClient'
 
 import DelayKnob from '../../../components/DelayKnob'
 import ReverbConfigModal from '../../../components/ReverbConfigModal'
+import EchoConfigModal from '../../../components/EchoConfigModal'
 import FlangerConfigModal from '../../../components/FlangerConfigModal'
+import CompressorConfigModal from '../../../components/CompressorConfigModal'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import RealTimelineMixerEngine from '../../../../audio/engine/realTimelineMixerEngine'
@@ -90,6 +92,8 @@ function MixerPage() {
   const [stems, setStems] = useState<Stem[]>([])
   const [volumes, setVolumes] = useState<Record<string, number>>({})
   const [reverbs, setReverbs] = useState<Record<string, any>>({})
+  const [echoes, setEchoes] = useState<Record<string, any>>({})
+  const [selectedEffects, setSelectedEffects] = useState<Record<string, 'reverb' | 'echo'>>({})
   const [mutes, setMutes] = useState<Record<string, boolean>>({})
   const [solos, setSolos] = useState<Record<string, boolean>>({})
   
@@ -104,6 +108,16 @@ function MixerPage() {
     enabled: false
   }
   
+  // Default echo config
+  const defaultEchoConfig = {
+    dry: 1.0, // Always keep dry at full volume
+    wet: 0.0, // Start at 0% wet on main knob
+    bpm: 128,
+    beats: 0.5,
+    decay: 0.5,
+    enabled: false
+  }
+  
   // Default flanger config
   const defaultFlangerConfig = {
     wet: 0.7,
@@ -115,9 +129,29 @@ function MixerPage() {
     stereo: false,
     enabled: false
   }
+  
+  // Default compressor config
+  const defaultCompressorConfig = {
+    inputGainDb: 0.0,
+    outputGainDb: 4.8,
+    wet: 1.0,
+    attackSec: 0.003, // 3.0 ms
+    releaseSec: 0.1, // 100 ms
+    ratio: 3.0,
+    thresholdDb: -34.1,
+    hpCutOffHz: 1,
+    enabled: true
+  }
   const [varispeed, setVarispeed] = useState(1)
   const [isNaturalVarispeed, setIsNaturalVarispeed] = useState(true)
   const [reverbConfigModal, setReverbConfigModal] = useState<{
+    isOpen: boolean
+    stemLabel: string
+    stemIndex: number
+    position?: { x: number; y: number }
+  }>({ isOpen: false, stemLabel: '', stemIndex: 0 })
+  
+  const [echoConfigModal, setEchoConfigModal] = useState<{
     isOpen: boolean
     stemLabel: string
     stemIndex: number
@@ -129,16 +163,21 @@ function MixerPage() {
   const [flangerConfigModal, setFlangerConfigModal] = useState<{
     isOpen: boolean
   }>({ isOpen: false })
+  
+  // Global compressor state
+  const [globalCompressor, setGlobalCompressor] = useState<any>(null)
+  const [compressorConfigModal, setCompressorConfigModal] = useState<{
+    isOpen: boolean
+  }>({ isOpen: false })
+  
+  // Master effect selection (flanger or compressor)
+  const [selectedMasterEffect, setSelectedMasterEffect] = useState<'flanger' | 'compressor'>('flanger')
   const [bpm, setBpm] = useState<number | null>(null)
   const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const [isPlaying, setIsPlaying] = useState(false)
   
-  const [duration, setDuration] = useState(0)
-  const [baseDuration, setBaseDuration] = useState(0) // Base duration not affected by varispeed
-  const [currentTime, setCurrentTime] = useState(0)
-  const [waveformBuffer, setWaveformBuffer] = useState<AudioBuffer | null>(null)
   const [timelineReady, setTimelineReady] = useState(false)
   const [allAssetsLoaded, setAllAssetsLoaded] = useState(false)
   const [loadingStems, setLoadingStems] = useState(false)
@@ -226,6 +265,28 @@ function MixerPage() {
     }
   }, [isPlaying])
 
+  // ==================== 🎯 Click Outside Dropdown Handler ====================
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      
+      // Check if click is outside any effect dropdown
+      if (!target.closest('[id^="effect-dropdown-"]') && 
+          !target.closest('[id^="master-effect-dropdown"]')) {
+        // Close all effect dropdowns
+        document.querySelectorAll('[id^="effect-dropdown-"]').forEach(dropdown => {
+          dropdown.classList.add('hidden')
+        })
+        // Close master effect dropdown
+        document.getElementById('master-effect-dropdown')?.classList.add('hidden')
+      }
+    }
+
+    // Use mousedown instead of click to avoid conflicts with button clicks
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
 
   // ==================== 🎵 Timeline Engine Initialization ====================
   useEffect(() => {
@@ -236,24 +297,6 @@ function MixerPage() {
         mixerEngineRef.current = new RealTimelineMixerEngine()
         await mixerEngineRef.current.init()
         
-        // Set up timeline cursor updates and duration callback
-        if (mixerEngineRef.current.audioEngine) {
-          mixerEngineRef.current.audioEngine.onTimelineFrameCursorUpdate = (cursor: number) => {
-            setCurrentTime(cursor / 48000)
-          }
-          mixerEngineRef.current.audioEngine.onTimelineDurationSet = (durationSec: number) => {
-            setDuration(durationSec)
-            // Set base duration only once (first time we get it)
-            if (baseDuration === 0) {
-              setBaseDuration(durationSec)
-            }
-            addDebugLog(`🔄 Timeline duration: ${durationSec.toFixed(2)}s`)
-          }
-          ;(mixerEngineRef.current.audioEngine as any).onTimelineBaseDurationSet = (baseSec: number) => {
-            setBaseDuration(baseSec)
-            addDebugLog(`📏 Base timeline duration: ${baseSec.toFixed(2)}s`)
-          }
-        }
 
         setTimelineReady(true)
         addDebugLog('✅ Timeline Engine ready!')
@@ -330,6 +373,8 @@ function MixerPage() {
       setStems(stemObjs);
       setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])));
       setReverbs(Object.fromEntries(stemObjs.map(s => [s.label, 0])));
+      setEchoes(Object.fromEntries(stemObjs.map(s => [s.label, 0])));
+      setSelectedEffects(Object.fromEntries(stemObjs.map(s => [s.label, 'reverb'])));
       setMutes(Object.fromEntries(stemObjs.map(s => [s.label, false])));
       setSolos(Object.fromEntries(stemObjs.map(s => [s.label, false])));
       
@@ -353,6 +398,16 @@ function MixerPage() {
         enabled: false
       }])));
       
+      // Initialize echo configs with default values
+      setEchoes(Object.fromEntries(stemObjs.map(s => [s.label, {
+        dry: 1.0, // Always keep dry at full volume
+        wet: 0.0, // Start at 0% wet on main knob
+        bpm: 128,
+        beats: 0.5,
+        decay: 0.5,
+        enabled: false
+      }])));
+      
       // Initialize global flanger config with default values
       setGlobalFlanger({
         wet: 0.7,
@@ -369,7 +424,6 @@ function MixerPage() {
       fetchSong();
   }, [artist, songSlug])
 
-  // (Waveform not desired for this scrubber)
 
   // ==================== 🎵 Load Stems Function ====================
   const loadStemsIntoTimeline = async () => {
@@ -472,6 +526,7 @@ function MixerPage() {
 
       // Wait for all assets to be actually downloaded and decoded
       await assetsDownloadedPromise;
+      
       
     } catch (error) {
       addDebugLog(`❌ Failed to load stems: ${error}`);
@@ -653,6 +708,47 @@ function MixerPage() {
     addDebugLog(`🎚️ Reverb mix set to ${(mix * 100).toFixed(0)}% for ${stemLabel}`);
   };
 
+  // ==================== 🎛️ Echo Control Functions ====================
+  const setEchoEnabled = (stemLabel: string, enabled: boolean) => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    
+    const stemIndex = stems.findIndex(s => s.label === stemLabel);
+    if (stemIndex === -1) return;
+    
+    const trackId = `track_${stemIndex}`;
+    
+    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+      type: "command",
+      data: { 
+        command: "setEchoEnabled", 
+        trackId: trackId,
+        enabled: enabled
+      }
+    });
+    
+    addDebugLog(`${enabled ? '🔊' : '🔇'} Echo ${enabled ? 'enabled' : 'disabled'} for ${stemLabel}`);
+  };
+
+  const setEchoWet = (stemLabel: string, wet: number) => {
+    if (!mixerEngineRef.current?.audioEngine) return;
+    
+    const stemIndex = stems.findIndex(s => s.label === stemLabel);
+    if (stemIndex === -1) return;
+    
+    const trackId = `track_${stemIndex}`;
+    
+    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+      type: "command",
+      data: { 
+        command: "setEchoWet", 
+        trackId: trackId,
+        wet: wet
+      }
+    });
+    
+    addDebugLog(`🎚️ Echo wet set to ${(wet * 100).toFixed(0)}% for ${stemLabel}`);
+  };
+
   // ==================== 🎵 Playback Functions ====================
   const playAll = async () => {
     if (!mixerEngineRef.current || !timelineReady) return;
@@ -691,6 +787,7 @@ function MixerPage() {
       addDebugLog(`❌ Failed to stop: ${error}`);
     }
   };
+
 
   // (Scrubber removed)
 
@@ -778,6 +875,97 @@ function MixerPage() {
     }
   }
 
+  // ==================== 🎛️ ECHO CONFIGURATION ====================
+  const handleEchoConfigOpen = (stemLabel: string, stemIndex: number, position?: { x: number; y: number }) => {
+    setEchoConfigModal({
+      isOpen: true,
+      stemLabel,
+      stemIndex,
+      position
+    })
+  }
+
+  const handleEchoConfigClose = () => {
+    setEchoConfigModal({
+      isOpen: false,
+      stemLabel: '',
+      stemIndex: 0
+    })
+  }
+
+  const handleEchoConfigSave = (config: {
+    dry: number
+    wet: number
+    bpm: number
+    beats: number
+    decay: number
+    enabled: boolean
+  }) => {
+    const stemLabel = echoConfigModal.stemLabel
+    
+    // Update the echo config state
+    setEchoes(prev => ({
+      ...prev,
+      [stemLabel]: config
+    }))
+    
+    // Apply echo settings to audio engine using the new system
+    if (mixerEngineRef.current?.audioEngine) {
+      const stemIndex = stems.findIndex(s => s.label === stemLabel)
+      if (stemIndex !== -1) {
+        const trackId = `track_${stemIndex}`
+        
+        // Send all echo parameters to the audio processor
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setEchoEnabled", 
+            trackId: trackId,
+            enabled: config.enabled
+          }
+        })
+        
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setEchoWet", 
+            trackId: trackId,
+            wet: config.wet
+          }
+        })
+        
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setEchoBpm", 
+            trackId: trackId,
+            bpm: config.bpm
+          }
+        })
+        
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setEchoBeats", 
+            trackId: trackId,
+            beats: config.beats
+          }
+        })
+        
+        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+          type: "command",
+          data: { 
+            command: "setEchoDecay", 
+            trackId: trackId,
+            decay: config.decay
+          }
+        })
+        
+        console.log(`Applied echo config to ${stemLabel}:`, config)
+      }
+    }
+  }
+
   // ==================== 🎛️ GLOBAL FLANGER CONFIGURATION ====================
   const handleFlangerConfigOpen = () => {
     setFlangerConfigModal({
@@ -789,6 +977,46 @@ function MixerPage() {
     setFlangerConfigModal({
       isOpen: false
     })
+  }
+
+  // ==================== 🎛️ GLOBAL COMPRESSOR CONFIGURATION ====================
+  const handleCompressorConfigOpen = () => {
+    setCompressorConfigModal({
+      isOpen: true
+    })
+  }
+
+  const handleCompressorConfigClose = () => {
+    setCompressorConfigModal({
+      isOpen: false
+    })
+  }
+
+  const handleCompressorConfigChange = (config: {
+    inputGainDb: number
+    outputGainDb: number
+    wet: number
+    attackSec: number
+    releaseSec: number
+    ratio: number
+    thresholdDb: number
+    hpCutOffHz: number
+    enabled: boolean
+  }) => {
+    // Update the global compressor config state in real-time
+    setGlobalCompressor(config)
+    
+    // Apply global compressor using correct message format
+    if (mixerEngineRef.current?.audioEngine) {
+      console.log(`🎛️ Updating global compressor config in real-time:`, config);
+      mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+        type: "command",
+        data: { 
+          command: "setCompressorConfig", 
+          config: config
+        }
+      })
+    }
   }
 
   const handleFlangerConfigChange = (config: {
@@ -842,6 +1070,38 @@ function MixerPage() {
         clipperThresholdDb: config.clipperThresholdDb,
         clipperMaximumDb: config.clipperMaximumDb,
         stereo: config.stereo,
+        enabled: config.enabled
+      });
+    }
+  }
+
+  const handleCompressorConfigSave = (config: {
+    inputGainDb: number
+    outputGainDb: number
+    wet: number
+    attackSec: number
+    releaseSec: number
+    ratio: number
+    thresholdDb: number
+    hpCutOffHz: number
+    enabled: boolean
+  }) => {
+    // Update the global compressor config state
+    setGlobalCompressor(config)
+    
+    // Apply global compressor using correct message format
+    if (mixerEngineRef.current?.audioEngine) {
+      console.log(`🎛️ Saving global compressor config:`, config);
+      mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+        type: "compressor",
+        inputGainDb: config.inputGainDb,
+        outputGainDb: config.outputGainDb,
+        wet: config.wet,
+        attackSec: config.attackSec,
+        releaseSec: config.releaseSec,
+        ratio: config.ratio,
+        thresholdDb: config.thresholdDb,
+        hpCutOffHz: config.hpCutOffHz,
         enabled: config.enabled
       });
     }
@@ -940,7 +1200,6 @@ function MixerPage() {
               {songData?.title}
             </h1>
 
-            {/* Scrubber removed */}
 
             {/* ▶️ Playback Controls */}
             <div className={`flex justify-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
@@ -952,7 +1211,11 @@ function MixerPage() {
                     ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
                     : 'hover:opacity-90'
                 }`}
-                style={timelineReady && !loadingStems ? { backgroundColor: primary, color: 'white' } : undefined}
+                style={timelineReady && !loadingStems ? { 
+                  backgroundColor: '#FCFAEE',
+                  color: primary,
+                  border: `1px solid ${primary}`
+                } : undefined}
               >
                 {loadingStems && (
                   <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
@@ -993,47 +1256,172 @@ function MixerPage() {
                 UNSOLO
               </button>
 
-              <button
-                onClick={(e) => {
-                  // Toggle flanger on/off when button is clicked
-                  const currentEnabled = globalFlanger?.enabled || false
-                  const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
-                  console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
-                  
-                  const newConfig = {
-                    ...(globalFlanger || defaultFlangerConfig),
-                    wet: newWet,
-                    enabled: !currentEnabled
-                  }
-                  setGlobalFlanger(newConfig)
-                  
-                  // Apply global flanger using correct command format
-                  if (mixerEngineRef.current?.audioEngine) {
-                    console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
-                    mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                      type: "command",
-                      data: { 
-                        command: "setFlangerConfig", 
-                        config: newConfig
-                      }
-                    });
-                    console.log(`✅ FLANGER CONFIG SENT!`);
-                  } else {
-                    console.log(`❌ ERROR: Audio engine not available!`);
-                  }
-                  
-                  // Also open the modal for fine-tuning
-                  handleFlangerConfigOpen()
-                }}
-                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
-                style={{ 
-                  backgroundColor: '#FCFAEE',
-                  color: '#B8001F',
-                  border: '1px solid #B8001F'
-                }}
-              >
-                FLANGE
-              </button>
+              {/* Master Effect Dropdown */}
+              <div className="relative">
+                <div 
+                  className="pressable font-mono tracking-wide cursor-pointer"
+                  style={{ 
+                    backgroundColor: '#FCFAEE',
+                    color: primary,
+                    border: `1px solid ${primary}`,
+                    padding: isMobile ? '4px 8px' : '8px 12px',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  onClick={() => {
+                    const dropdown = document.getElementById('master-effect-dropdown')
+                    if (dropdown) {
+                      dropdown.classList.toggle('hidden')
+                    }
+                  }}
+                >
+                  <span>EFFECT</span>
+                  <span style={{ fontSize: '8px' }}>▼</span>
+                </div>
+                
+                {/* Custom Dropdown Menu */}
+                <div 
+                  id="master-effect-dropdown"
+                  className="absolute left-0 bg-[#F5F5DC] rounded shadow-lg z-50 hidden min-w-full"
+                  style={{ 
+                    top: '100%', 
+                    marginTop: '4px',
+                    border: `1px solid ${primary}`
+                  }}
+                >
+                  <div 
+                    className="px-2 py-1 cursor-pointer hover:text-[#FCFAEE] font-mono transition-colors"
+                    style={{ 
+                      fontSize: '10px',
+                      color: primary
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = primary
+                      e.currentTarget.style.color = '#FCFAEE'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.color = primary
+                    }}
+                    onClick={() => {
+                      setSelectedMasterEffect('flanger')
+                      document.getElementById('master-effect-dropdown')?.classList.add('hidden')
+                    }}
+                  >
+                    FLANGER
+                  </div>
+                  <div 
+                    className="px-2 py-1 cursor-pointer hover:text-[#FCFAEE] font-mono transition-colors"
+                    style={{ 
+                      fontSize: '10px',
+                      color: primary
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = primary
+                      e.currentTarget.style.color = '#FCFAEE'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent'
+                      e.currentTarget.style.color = primary
+                    }}
+                    onClick={() => {
+                      setSelectedMasterEffect('compressor')
+                      document.getElementById('master-effect-dropdown')?.classList.add('hidden')
+                    }}
+                  >
+                    COMPRESSOR
+                  </div>
+                </div>
+              </div>
+
+              {/* Master Effect Buttons */}
+              {selectedMasterEffect === 'flanger' ? (
+                <button
+                  onClick={(e) => {
+                    // Toggle flanger on/off when button is clicked
+                    const currentEnabled = globalFlanger?.enabled || false
+                    const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
+                    console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
+                    
+                    const newConfig = {
+                      ...(globalFlanger || defaultFlangerConfig),
+                      wet: newWet,
+                      enabled: !currentEnabled
+                    }
+                    setGlobalFlanger(newConfig)
+                    
+                    // Apply global flanger using correct command format
+                    if (mixerEngineRef.current?.audioEngine) {
+                      console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
+                      mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                        type: "command",
+                        data: { 
+                          command: "setFlangerConfig", 
+                          config: newConfig
+                        }
+                      });
+                      console.log(`✅ FLANGER CONFIG SENT!`);
+                    } else {
+                      console.log(`❌ ERROR: Audio engine not available!`);
+                    }
+                    
+                    // Also open the modal for fine-tuning
+                    handleFlangerConfigOpen()
+                  }}
+                  className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
+                  style={{ 
+                    backgroundColor: '#FCFAEE',
+                    color: '#B8001F',
+                    border: '1px solid #B8001F'
+                  }}
+                >
+                  FLANGE
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    // Toggle compressor on/off when button is clicked
+                    const currentEnabled = globalCompressor?.enabled || false
+                    const newWet = currentEnabled ? 0 : 1.0 // Set to 100% wet when turning on
+                    console.log(`🎛️ COMPRESSOR BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
+                    
+                    const newConfig = {
+                      ...(globalCompressor || defaultCompressorConfig),
+                      wet: newWet,
+                      enabled: !currentEnabled
+                    }
+                    setGlobalCompressor(newConfig)
+                    
+                    // Apply global compressor using correct command format
+                    if (mixerEngineRef.current?.audioEngine) {
+                      console.log(`🎛️ SENDING COMPRESSOR CONFIG:`, newConfig);
+                      mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                        type: "command",
+                        data: { 
+                          command: "setCompressorConfig", 
+                          config: newConfig
+                        }
+                      });
+                      console.log(`✅ COMPRESSOR CONFIG SENT!`);
+                    } else {
+                      console.log(`❌ ERROR: Audio engine not available!`);
+                    }
+                    
+                    // Also open the modal for fine-tuning
+                    handleCompressorConfigOpen()
+                  }}
+                  className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
+                  style={{ 
+                    backgroundColor: '#FCFAEE',
+                    color: '#B8001F',
+                    border: '1px solid #B8001F'
+                  }}
+                >
+                  COMPRESS
+                </button>
+              )}
             </div>
 
 
@@ -1126,37 +1514,154 @@ function MixerPage() {
                       </div>
                     </div>
 
-                    {/* Reverb Knob */}
+                    {/* Effect Dropdown & Knob */}
                     <div style={{ marginBottom: '32px', textAlign: 'center' }}>
                       <div className="flex flex-col items-center text-xs select-none" style={{ color: 'white' }}>
+                        {/* Effect Type Dropdown */}
+                        <div className="mb-0.5 relative">
+                          {/* Custom Dropdown Menu - positioned above */}
+                          <div 
+                            id={`effect-dropdown-${stem.label}`}
+                            className="absolute left-0 bg-[#F5F5DC] rounded shadow-lg z-50 hidden min-w-full"
+                            style={{ 
+                              bottom: '100%', 
+                              marginBottom: '4px',
+                              border: `1px solid ${primary}`
+                            }}
+                          >
+                            <div 
+                              className="px-2 py-1 cursor-pointer font-mono transition-colors"
+                              style={{ 
+                                fontSize: '10px',
+                                color: primary
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = primary;
+                                e.currentTarget.style.color = '#FCFAEE';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.color = primary;
+                              }}
+                              onClick={() => {
+                                setSelectedEffects(prev => ({ ...prev, [stem.label]: 'reverb' }))
+                                document.getElementById(`effect-dropdown-${stem.label}`)?.classList.add('hidden')
+                              }}
+                            >
+                              REVERB
+                            </div>
+                            <div 
+                              className="px-2 py-1 cursor-pointer font-mono transition-colors"
+                              style={{ 
+                                fontSize: '10px',
+                                color: primary
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = primary;
+                                e.currentTarget.style.color = '#FCFAEE';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.color = primary;
+                              }}
+                              onClick={() => {
+                                setSelectedEffects(prev => ({ ...prev, [stem.label]: 'echo' }))
+                                document.getElementById(`effect-dropdown-${stem.label}`)?.classList.add('hidden')
+                              }}
+                            >
+                              ECHO
+                            </div>
+                          </div>
+                          
+                          <div 
+                            className="text-[#FCFAEE] px-2 py-1 rounded font-mono cursor-pointer flex items-center justify-between transition-colors"
+                            style={{ 
+                              fontSize: '10px',
+                              backgroundColor: primary,
+                              border: `1px solid ${primary}`
+                            }}
+                            onMouseEnter={(e) => {
+                              // Darken the color on hover
+                              const rgb = primary.match(/\d+/g);
+                              if (rgb) {
+                                const r = Math.max(0, parseInt(rgb[0]) - 30);
+                                const g = Math.max(0, parseInt(rgb[1]) - 30);
+                                const b = Math.max(0, parseInt(rgb[2]) - 30);
+                                e.currentTarget.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = primary;
+                            }}
+                            onClick={() => {
+                              const dropdown = document.getElementById(`effect-dropdown-${stem.label}`)
+                              if (dropdown) {
+                                dropdown.classList.toggle('hidden')
+                              }
+                            }}
+                          >
+                            <span style={{ fontSize: '12px' }}>EFFECT</span>
+                            <span className="ml-1" style={{ fontSize: '8px' }}>▼</span>
+                          </div>
+                        </div>
+                        
+                        {/* Config Button */}
                         <span 
                           className="mb-1 cursor-pointer hover:opacity-75"
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
                             const stemIndex = stems.findIndex(s => s.label === stem.label)
-                            handleReverbConfigOpen(stem.label, stemIndex, { x: e.clientX, y: e.clientY })
+                            const effectType = selectedEffects[stem.label] || 'reverb'
+                            if (effectType === 'reverb') {
+                              handleReverbConfigOpen(stem.label, stemIndex, { x: e.clientX, y: e.clientY })
+                            } else {
+                              handleEchoConfigOpen(stem.label, stemIndex, { x: e.clientX, y: e.clientY })
+                            }
                           }}
                           onTouchEnd={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
                             const stemIndex = stems.findIndex(s => s.label === stem.label)
-                            handleReverbConfigOpen(stem.label, stemIndex, { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY })
+                            const effectType = selectedEffects[stem.label] || 'reverb'
+                            if (effectType === 'reverb') {
+                              handleReverbConfigOpen(stem.label, stemIndex, { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY })
+                            } else {
+                              handleEchoConfigOpen(stem.label, stemIndex, { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY })
+                            }
                           }}
                         >
-                          REVERB
+                          {(selectedEffects[stem.label] || 'reverb') === 'reverb' ? 'REVERB' : 'ECHO'}
                         </span>
+                        
+                        {/* Effect Knob */}
                         <DelayKnob
-                          value={reverbs[stem.label]?.mix || 0}
+                          value={
+                            (selectedEffects[stem.label] || 'reverb') === 'reverb' 
+                              ? (reverbs[stem.label]?.mix || 0)
+                              : (echoes[stem.label]?.wet || 0)
+                          }
                           onChange={(val) => {
-                            console.log(`🎛️ UI: Reverb knob changed for ${stem.label} to ${val}`);
-                            const currentConfig = reverbs[stem.label] || defaultReverbConfig
-                            const newConfig = { ...currentConfig, mix: val }
-                            setReverbs((prev) => ({ ...prev, [stem.label]: newConfig }))
-                            // Enable reverb if value > 0, disable if 0
-                            setReverbEnabled(stem.label, val > 0)
-                            // Set reverb mix to the knob value
-                            setReverbMix(stem.label, val)
+                            const effectType = selectedEffects[stem.label] || 'reverb'
+                            console.log(`🎛️ UI: ${effectType} knob changed for ${stem.label} to ${val}`);
+                            
+                            if (effectType === 'reverb') {
+                              const currentConfig = reverbs[stem.label] || defaultReverbConfig
+                              const newConfig = { ...currentConfig, mix: val }
+                              setReverbs((prev) => ({ ...prev, [stem.label]: newConfig }))
+                              // Enable reverb if value > 0, disable if 0
+                              setReverbEnabled(stem.label, val > 0)
+                              // Set reverb mix to the knob value
+                              setReverbMix(stem.label, val)
+                            } else {
+                              const currentConfig = echoes[stem.label] || defaultEchoConfig
+                              const newConfig = { ...currentConfig, wet: val }
+                              setEchoes((prev) => ({ ...prev, [stem.label]: newConfig }))
+                              // Enable echo if value > 0, disable if 0
+                              setEchoEnabled(stem.label, val > 0)
+                              // Set echo wet to the knob value
+                              setEchoWet(stem.label, val)
+                            }
                           }}
                         />
                       </div>
@@ -1476,6 +1981,16 @@ function MixerPage() {
             position={reverbConfigModal.position}
           />
 
+          {/* 🎛️ Echo Configuration Modal */}
+          <EchoConfigModal
+            isOpen={echoConfigModal.isOpen}
+            onClose={handleEchoConfigClose}
+            onSave={handleEchoConfigSave}
+            initialConfig={echoes[echoConfigModal.stemLabel] || defaultEchoConfig}
+            stemLabel={echoConfigModal.stemLabel}
+            position={echoConfigModal.position}
+          />
+
           {/* 🎛️ Global Flanger Configuration Modal */}
           <FlangerConfigModal
             isOpen={flangerConfigModal.isOpen}
@@ -1484,7 +1999,18 @@ function MixerPage() {
             onConfigChange={handleFlangerConfigChange}
             initialConfig={globalFlanger || defaultFlangerConfig}
             stemLabel="Global Mix"
-            position={{ x: window.innerWidth / 2, y: window.innerHeight / 2 }}
+            position={{ x: typeof window !== 'undefined' ? window.innerWidth / 2 : 400, y: typeof window !== 'undefined' ? window.innerHeight / 2 : 300 }}
+          />
+
+          {/* 🎛️ Global Compressor Configuration Modal */}
+          <CompressorConfigModal
+            isOpen={compressorConfigModal.isOpen}
+            onClose={handleCompressorConfigClose}
+            onSave={handleCompressorConfigSave}
+            onConfigChange={handleCompressorConfigChange}
+            initialConfig={globalCompressor || defaultCompressorConfig}
+            stemLabel="Global Mix"
+            position={{ x: typeof window !== 'undefined' ? window.innerWidth / 2 : 400, y: typeof window !== 'undefined' ? window.innerHeight / 2 : 300 }}
           />
 
         </>

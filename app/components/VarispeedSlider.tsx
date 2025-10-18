@@ -58,8 +58,11 @@ const isMobilePortrait = typeof window !== 'undefined' &&
   window.innerHeight > window.innerWidth
 
 const shouldFlipLabels = isMobilePortrait && (stemCount ?? 0) >= 3
+const shouldFlipDesktop = !isMobilePortrait // Flip labels on desktop
 
 const tickLabels = shouldFlipLabels
+  ? ['-12', '-9', '-7', '-5', '-2', '0', '+2', '+4', '+5', '+7', '+9']
+  : shouldFlipDesktop
   ? ['-12', '-9', '-7', '-5', '-2', '0', '+2', '+4', '+5', '+7', '+9']
   : ['+9', '+7', '+5', '+4', '+2', '0', '-2', '-5', '-7', '-9', '-12']
 

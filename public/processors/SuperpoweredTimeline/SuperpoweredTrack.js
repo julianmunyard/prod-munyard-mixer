@@ -25,6 +25,15 @@ class SuperpoweredTrack {
     this.reverb.reverbPredelayMs = 0;
     this.reverb.lowCutHz = 0;
 
+    // Initialize echo effect
+    this.echo = new this.Superpowered.Echo(samplerate, 44100);
+    this.echo.enabled = false;
+    this.echo.dry = 1.0; // Always keep dry at full volume
+    this.echo.wet = 0.0; // Start at 0% wet on main knob
+    this.echo.bpm = 128;
+    this.echo.beats = 0.5;
+    this.echo.decay = 0.5;
+
     // Initialize flanger effect
     this.flanger = new this.Superpowered.Flanger(samplerate);
     this.flanger.enabled = false;
@@ -37,10 +46,15 @@ class SuperpoweredTrack {
     this.flanger.stereo = false;
     
     console.log(`🎛️ Initialized reverb for track ${this.id} with dry: ${this.reverb.dry}, wet: ${this.reverb.wet}, mix: ${this.reverb.mix}`);
+    console.log(`🎛️ Initialized echo for track ${this.id} with dry: ${this.echo.dry}, wet: ${this.echo.wet}, bpm: ${this.echo.bpm}`);
     
     // Pre-allocate reverb buffers (NEVER allocate in audio loop!)
     this.reverbInputBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
     this.reverbOutputBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
+    
+    // Pre-allocate echo buffers (NEVER allocate in audio loop!)
+    this.echoInputBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
+    this.echoOutputBuffer = new this.Superpowered.Float32Buffer(numOfFrames * 2);
   }
 
   addPlayer(regionData) {
@@ -92,10 +106,11 @@ class SuperpoweredTrack {
           // Update region end/frameEnd immediately so playback doesn't cut off early
           region.end = durationSeconds;
           region.frameEnd = durationSeconds * this.samplerate;
-          // Enable sample-precise seamless looping over the full file
-          // Superpowered expects loop points in milliseconds
+          // Perfect loop points - exact duration
           try {
-            region.player.loopBetween(0, Math.ceil(durationSeconds * 1000), true);
+            const loopEndMs = Math.floor(durationSeconds * 1000);
+            region.player.loopBetween(0, loopEndMs, true);
+            console.log(`🔄 Perfect loop points for ${region.id}: 0ms to ${loopEndMs}ms`);
           } catch (e) {
             console.warn(`⚠️ loopBetween not available; relying on loopOnEOF.`, e);
           }
@@ -126,6 +141,22 @@ class SuperpoweredTrack {
     if (this.reverbOutputBuffer) {
       this.reverbOutputBuffer.free();
       this.reverbOutputBuffer = null;
+    }
+    
+    // Clean up echo resources
+    if (this.echo) {
+      this.echo.destruct();
+      this.echo = null;
+    }
+    
+    // Clean up pre-allocated echo buffers
+    if (this.echoInputBuffer) {
+      this.echoInputBuffer.free();
+      this.echoInputBuffer = null;
+    }
+    if (this.echoOutputBuffer) {
+      this.echoOutputBuffer.free();
+      this.echoOutputBuffer = null;
     }
     
     // Clean up flanger
@@ -188,8 +219,8 @@ class SuperpoweredTrack {
         // Determine if this track should be audible (not muted and either soloed or no solo active)
         const shouldPlay = !this.muted && (this.soloed || !this.isAnyTrackSoloed(timeline));
         
-        // Process the region with volume, mute, reverb, and pre-allocated buffers (flanger is now global)
-        region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay, this.reverb, this.reverbInputBuffer, this.reverbOutputBuffer);
+        // Process the region with volume, mute, reverb, echo, and pre-allocated buffers (flanger is now global)
+        region.processRegion(inputBuffer, outputBuffer, this.volume, !shouldPlay, this.reverb, this.reverbInputBuffer, this.reverbOutputBuffer, this.echo, this.echoInputBuffer, this.echoOutputBuffer);
       }
     }
     
@@ -268,6 +299,51 @@ class SuperpoweredTrack {
       console.log(`🎛️ Track ${this.id} reverb pre-delay set to: ${predelayMs}ms, actual value: ${this.reverb.reverbPredelayMs}`);
     } else {
       console.error(`❌ Track ${this.id} reverb not found`);
+    }
+  }
+
+  // ==================== 🎛️ Echo Control Methods ====================
+  setEchoEnabled(enabled) {
+    if (this.echo) {
+      this.echo.enabled = enabled;
+      console.log(`🎛️ Track ${this.id} echo enabled: ${enabled}`);
+    }
+  }
+
+  setEchoDry(dry) {
+    if (this.echo) {
+      this.echo.dry = dry;
+      console.log(`🎛️ Track ${this.id} echo dry: ${dry}`);
+    }
+  }
+
+  setEchoWet(wet) {
+    if (this.echo) {
+      this.echo.wet = wet;
+      // Enable echo if wet > 0, disable if wet = 0
+      this.echo.enabled = wet > 0;
+      console.log(`🎛️ Track ${this.id} echo wet: ${wet}, enabled: ${this.echo.enabled}`);
+    }
+  }
+
+  setEchoBpm(bpm) {
+    if (this.echo) {
+      this.echo.bpm = bpm;
+      console.log(`🎛️ Track ${this.id} echo bpm: ${bpm}`);
+    }
+  }
+
+  setEchoBeats(beats) {
+    if (this.echo) {
+      this.echo.beats = beats;
+      console.log(`🎛️ Track ${this.id} echo beats: ${beats}`);
+    }
+  }
+
+  setEchoDecay(decay) {
+    if (this.echo) {
+      this.echo.decay = decay;
+      console.log(`🎛️ Track ${this.id} echo decay: ${decay}`);
     }
   }
 

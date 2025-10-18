@@ -64,6 +64,11 @@ class AudioEngine {
             message.data.buffer
           );
         }
+        if (message.event === "waveform-data") {
+          if (this.onWaveformData) {
+            this.onWaveformData(message.data);
+          }
+        }
       };
 
       // Now create the AudioWorkletNode, passing in the AudioWorkletProcessor url, its registered name (defined inside the processor) and the message callback.
@@ -159,6 +164,16 @@ class AudioEngine {
     this.sendMessageToAudioProcessor({
       type: "command",
       data: { command: "updateCursor", cursorSec: seconds }
+    });
+  }
+
+  /**
+   * Request waveform data for scrubber visualization
+   */
+  requestWaveformData() {
+    this.sendMessageToAudioProcessor({
+      type: "command",
+      data: { command: "requestWaveformData" }
     });
   }
 }

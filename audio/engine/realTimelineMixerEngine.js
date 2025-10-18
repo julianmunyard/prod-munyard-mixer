@@ -49,6 +49,7 @@ export class RealTimelineMixerEngine {
         console.log("Region buffer data:", data);
       };
       
+      
       // Initialize the audio engine
       await this.audioEngine.init();
       
@@ -156,19 +157,43 @@ export class RealTimelineMixerEngine {
     this.isPlaying = false;
   }
 
+
   // Seek to position (in seconds) using Thomas's system
   seek(timeInSeconds) {
     if (!this.audioEngine) {
       throw new Error("AudioEngine not initialized");
     }
     
+    // Constrain seek time to prevent going beyond duration
+    const constrainedTime = Math.max(0, timeInSeconds);
+    
     this.audioEngine.sendMessageToAudioProcessor({
       type: "command",
       data: { 
         command: "updateCursor", 
-        cursorSec: timeInSeconds 
+        cursorSec: constrainedTime 
       }
     });
+  }
+
+  // Seek to position by percentage (0.0 to 1.0) using Thomas's system
+  seekPercent(percent) {
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+    
+    // Get duration from the audio engine or use a default
+    const duration = this.getDuration() || 255; // Default to 255 seconds if duration not available
+    const timeInSeconds = percent * duration;
+    
+    this.seek(timeInSeconds);
+  }
+
+  // Get duration of the current timeline
+  getDuration() {
+    // This would need to be implemented based on how Thomas's system reports duration
+    // For now, return null and let the UI handle it
+    return null;
   }
 
   // Reset timeline using Thomas's system
@@ -210,6 +235,7 @@ export class RealTimelineMixerEngine {
   getPlayingState() {
     return this.isPlaying;
   }
+
 
   // Control methods for individual tracks
   setTrackVolume(trackIndex, volume) {
@@ -462,6 +488,142 @@ export class RealTimelineMixerEngine {
       data: { 
         control: "globalFlangerStereo",
         value: stereo
+      }
+    });
+  }
+
+  // ==================== 🎛️ GLOBAL COMPRESSOR CONTROLS ====================
+  setGlobalCompressorInputGain(inputGainDb) {
+    console.log(`🎛️ Setting global compressor input gain to ${inputGainDb}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalCompressorInputGain",
+        value: inputGainDb
+      }
+    });
+  }
+
+  setGlobalCompressorOutputGain(outputGainDb) {
+    console.log(`🎛️ Setting global compressor output gain to ${outputGainDb}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalCompressorOutputGain",
+        value: outputGainDb
+      }
+    });
+  }
+
+  setGlobalCompressorWet(wet) {
+    console.log(`🎛️ Setting global compressor wet to ${wet}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalCompressorWet",
+        value: wet
+      }
+    });
+  }
+
+  setGlobalCompressorAttack(attackSec) {
+    console.log(`🎛️ Setting global compressor attack to ${attackSec}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalCompressorAttack",
+        value: attackSec
+      }
+    });
+  }
+
+  setGlobalCompressorRelease(releaseSec) {
+    console.log(`🎛️ Setting global compressor release to ${releaseSec}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalCompressorRelease",
+        value: releaseSec
+      }
+    });
+  }
+
+  setGlobalCompressorRatio(ratio) {
+    console.log(`🎛️ Setting global compressor ratio to ${ratio}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalCompressorRatio",
+        value: ratio
+      }
+    });
+  }
+
+  setGlobalCompressorThreshold(thresholdDb) {
+    console.log(`🎛️ Setting global compressor threshold to ${thresholdDb}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalCompressorThreshold",
+        value: thresholdDb
+      }
+    });
+  }
+
+  setGlobalCompressorHpCutoff(hpCutOffHz) {
+    console.log(`🎛️ Setting global compressor HP cutoff to ${hpCutOffHz}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalCompressorHpCutoff",
+        value: hpCutOffHz
+      }
+    });
+  }
+
+  setGlobalCompressorEnabled(enabled) {
+    console.log(`🎛️ Setting global compressor enabled to ${enabled}`);
+    if (!this.audioEngine) {
+      throw new Error("AudioEngine not initialized");
+    }
+
+    this.audioEngine.sendMessageToAudioProcessor({
+      type: "trackControl",
+      data: { 
+        control: "globalCompressorEnabled",
+        value: enabled
       }
     });
   }
