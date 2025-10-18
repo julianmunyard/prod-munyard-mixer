@@ -1183,7 +1183,7 @@ function MixerPage() {
             }`}
             style={{
               minHeight: '100dvh',
-              paddingBottom: '80px',
+              paddingBottom: isMobile ? '120px' : '80px',
             }}
           >
             {/* 🏷️ Song Title */}
@@ -1439,6 +1439,7 @@ function MixerPage() {
                 height: isMobile ? '420px' : 'auto',
                 maxHeight: isMobile ? '420px' : 'none',
                 marginTop: '-20px',
+                marginBottom: isMobile ? '20px' : '0px',
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'hidden',
               }}
