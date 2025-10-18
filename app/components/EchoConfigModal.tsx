@@ -18,6 +18,7 @@ interface EchoConfigModalProps {
   initialConfig: EchoConfig
   stemLabel: string
   position?: { x: number; y: number }
+  primaryColor?: string
 }
 
 export default function EchoConfigModal({ 
@@ -26,7 +27,8 @@ export default function EchoConfigModal({
   onSave, 
   initialConfig, 
   stemLabel,
-  position 
+  position,
+  primaryColor = '#B8001F'
 }: EchoConfigModalProps) {
   const [config, setConfig] = useState<EchoConfig>(initialConfig)
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
@@ -157,6 +159,27 @@ export default function EchoConfigModal({
 
   return (
     <>
+      <style jsx>{`
+        .slider-horizontal::-webkit-slider-thumb {
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: ${primaryColor} !important;
+          cursor: pointer;
+          border: 2px solid #FCFAEE !important;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .slider-horizontal::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: ${primaryColor} !important;
+          cursor: pointer;
+          border: 2px solid #FCFAEE !important;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+      `}</style>
       <div 
         className="fixed inset-0 z-50 pointer-events-none"
         onClick={() => {
@@ -166,10 +189,11 @@ export default function EchoConfigModal({
       >
       <div 
         ref={modalRef}
-        className="absolute bg-[#FCFAEE] rounded-lg p-4 w-64 shadow-lg border border-[#B8001F] pointer-events-auto"
+        className="absolute bg-[#FCFAEE] rounded-lg p-4 w-64 shadow-lg border pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
         style={{
-          boxShadow: '0 8px 16px rgba(184, 0, 31, 0.3)',
+          borderColor: primaryColor,
+          boxShadow: `0 8px 16px ${primaryColor}30`,
           left: dragPosition ? `${dragPosition.x}px` : (position ? `${position.x - 128}px` : '50%'),
           top: dragPosition ? `${dragPosition.y}px` : (position ? `${position.y - 200}px` : '50%'),
           transform: dragPosition ? 'none' : (position ? 'none' : 'translate(-50%, -50%)'),
@@ -183,10 +207,10 @@ export default function EchoConfigModal({
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
           <div className="flex flex-col">
-            <h2 className="text-xs font-bold text-[#B8001F] font-mono">
+            <h2 className="text-xs font-bold font-mono" style={{ color: primaryColor }}>
               DELAY
             </h2>
-            <span className="text-xs text-[#B8001F] font-mono opacity-75">
+            <span className="text-xs font-mono opacity-75" style={{ color: primaryColor }}>
               {stemLabel}
             </span>
           </div>
@@ -201,8 +225,20 @@ export default function EchoConfigModal({
               setDragPosition(null) // Reset position when closing
               onClose()
             }}
-            className="text-[#B8001F] hover:text-[#8B0015] text-xs font-bold touch-manipulation"
-            style={{ minWidth: '24px', minHeight: '24px' }}
+            className="text-xs font-bold touch-manipulation"
+            style={{ color: primaryColor, minWidth: '24px', minHeight: '24px' }}
+            onMouseEnter={(e) => {
+              const rgb = primaryColor.match(/\d+/g);
+              if (rgb) {
+                const r = Math.max(0, parseInt(rgb[0]) - 30);
+                const g = Math.max(0, parseInt(rgb[1]) - 30);
+                const b = Math.max(0, parseInt(rgb[2]) - 30);
+                e.currentTarget.style.color = `rgb(${r}, ${g}, ${b})`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = primaryColor;
+            }}
           >
             ×
           </button>
@@ -212,8 +248,8 @@ export default function EchoConfigModal({
           {/* Wet Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">WET</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.wet.toFixed(1)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>WET</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.wet.toFixed(1)}</span>
             </div>
             <input
               type="range"
@@ -228,7 +264,7 @@ export default function EchoConfigModal({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${config.wet * 100}%, #D1D5DB ${config.wet * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${config.wet * 100}%, #D1D5DB ${config.wet * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -239,8 +275,8 @@ export default function EchoConfigModal({
           {/* BPM Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">BPM</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.bpm.toFixed(0)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>BPM</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.bpm.toFixed(0)}</span>
             </div>
             <input
               type="range"
@@ -255,7 +291,7 @@ export default function EchoConfigModal({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.bpm - 40) / 210) * 100}%, #D1D5DB ${((config.bpm - 40) / 210) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.bpm - 40) / 210) * 100}%, #D1D5DB ${((config.bpm - 40) / 210) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -266,8 +302,8 @@ export default function EchoConfigModal({
           {/* Beats Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">BEATS</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.beats.toFixed(2)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>BEATS</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.beats.toFixed(2)}</span>
             </div>
             <input
               type="range"
@@ -282,7 +318,7 @@ export default function EchoConfigModal({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.beats - 0.03125) / 1.96875) * 100}%, #D1D5DB ${((config.beats - 0.03125) / 1.96875) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.beats - 0.03125) / 1.96875) * 100}%, #D1D5DB ${((config.beats - 0.03125) / 1.96875) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -293,8 +329,8 @@ export default function EchoConfigModal({
           {/* Feedback Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">FEEDBACK</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.decay.toFixed(2)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>FEEDBACK</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.decay.toFixed(2)}</span>
             </div>
             <input
               type="range"
@@ -309,7 +345,7 @@ export default function EchoConfigModal({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${(config.decay / 0.99) * 100}%, #D1D5DB ${(config.decay / 0.99) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${(config.decay / 0.99) * 100}%, #D1D5DB ${(config.decay / 0.99) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -319,16 +355,18 @@ export default function EchoConfigModal({
 
           {/* Enabled Toggle */}
           <div className="flex items-center justify-between pt-2">
-            <span className="text-xs font-bold text-[#B8001F] font-mono">ENABLED</span>
+            <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>ENABLED</span>
             <button
               onClick={() => {
                 const newConfig = { ...config, enabled: !config.enabled }
                 setConfig(newConfig)
                 onSave(newConfig)
               }}
-              className={`w-6 h-3 rounded-full transition-colors ${
-                config.enabled ? 'bg-[#B8001F]' : 'bg-[#FCFAEE] border border-[#B8001F]'
-              }`}
+              className={`w-6 h-3 rounded-full transition-colors border`}
+              style={{
+                backgroundColor: config.enabled ? primaryColor : '#FCFAEE',
+                borderColor: primaryColor
+              }}
             >
               <div
                 className={`w-2 h-2 bg-[#FCFAEE] rounded-full transition-transform ${
@@ -342,13 +380,42 @@ export default function EchoConfigModal({
         <div className="flex justify-center gap-2 mt-3">
           <button
             onClick={handleReset}
-            className="px-3 py-1 bg-[#FCFAEE] text-[#B8001F] border border-[#B8001F] text-xs rounded hover:bg-[#B8001F] hover:text-[#FCFAEE] transition-colors font-mono font-bold"
+            className="px-3 py-1 text-xs rounded transition-colors font-mono font-bold"
+            style={{
+              backgroundColor: '#FCFAEE',
+              color: primaryColor,
+              border: `1px solid ${primaryColor}`
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = primaryColor;
+              e.currentTarget.style.color = '#FCFAEE';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#FCFAEE';
+              e.currentTarget.style.color = primaryColor;
+            }}
           >
             RESET
           </button>
           <button
             onClick={handleSave}
-            className="px-3 py-1 bg-[#B8001F] text-[#FCFAEE] text-xs rounded hover:bg-[#8B0015] transition-colors font-mono font-bold"
+            className="px-3 py-1 text-xs rounded transition-colors font-mono font-bold"
+            style={{
+              backgroundColor: primaryColor,
+              color: '#FCFAEE'
+            }}
+            onMouseEnter={(e) => {
+              const rgb = primaryColor.match(/\d+/g);
+              if (rgb) {
+                const r = Math.max(0, parseInt(rgb[0]) - 30);
+                const g = Math.max(0, parseInt(rgb[1]) - 30);
+                const b = Math.max(0, parseInt(rgb[2]) - 30);
+                e.currentTarget.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = primaryColor;
+            }}
           >
             CLOSE
           </button>

@@ -21,6 +21,7 @@ interface FlangerConfigModalProps {
   initialConfig?: FlangerConfig
   stemLabel?: string
   position?: { x: number; y: number }
+  primaryColor?: string
 }
 
 const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
@@ -39,7 +40,8 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
     enabled: false
   },
   stemLabel,
-  position
+  position,
+  primaryColor = '#B8001F'
 }) => {
   const [config, setConfig] = useState<FlangerConfig>(initialConfig)
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
@@ -173,8 +175,8 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: #B8001F;
-          border: 2px solid #FCFAEE;
+          background: ${primaryColor} !important;
+          border: 2px solid #FCFAEE !important;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
           transition: all 0.2s ease;
@@ -185,8 +187,8 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: #B8001F;
-          border: 2px solid #FCFAEE;
+          background: ${primaryColor} !important;
+          border: 2px solid #FCFAEE !important;
           cursor: pointer;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
           transition: all 0.2s ease;
@@ -194,14 +196,14 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
         
         /* Safari hover effects */
         .slider-horizontal::-webkit-slider-thumb:hover {
-          background: #8B0015;
+          background: ${primaryColor}CC !important;
           transform: scale(1.1);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
         
         /* Firefox hover effects */
         .slider-horizontal::-moz-range-thumb:hover {
-          background: #8B0015;
+          background: ${primaryColor}CC !important;
           transform: scale(1.1);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
@@ -211,12 +213,6 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           -webkit-appearance: none;
           appearance: none;
         }
-        
-        /* Force Safari to show red thumbs */
-        .slider-horizontal::-webkit-slider-thumb {
-          background: #B8001F !important;
-          border: 2px solid #FCFAEE !important;
-        }
       `}</style>
       <div 
         className="fixed inset-0 z-50 pointer-events-none"
@@ -224,10 +220,11 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
       >
       <div 
         ref={modalRef}
-        className="absolute bg-[#FCFAEE] rounded-lg p-4 w-64 shadow-lg border border-[#B8001F] pointer-events-auto"
+        className="absolute bg-[#FCFAEE] rounded-lg p-4 w-64 shadow-lg border pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
         style={{
-          boxShadow: '0 8px 16px rgba(184, 0, 31, 0.3)',
+          borderColor: primaryColor,
+          boxShadow: `0 8px 16px ${primaryColor}30`,
           left: dragPosition ? `${dragPosition.x}px` : (position ? `${position.x - 128}px` : '50%'),
           top: dragPosition ? `${dragPosition.y}px` : (position ? `${position.y - 200}px` : '50%'),
           transform: dragPosition ? 'none' : (position ? 'none' : 'translate(-50%, -50%)'),
@@ -241,10 +238,10 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
           <div className="flex flex-col">
-            <h2 className="text-xs font-bold text-[#B8001F] font-mono">
+            <h2 className="text-xs font-bold font-mono" style={{ color: primaryColor }}>
               FLANGER
             </h2>
-            <span className="text-xs text-[#B8001F] font-mono opacity-75">
+            <span className="text-xs font-mono opacity-75" style={{ color: primaryColor }}>
               {stemLabel || 'Global Mix'}
             </span>
           </div>
@@ -255,8 +252,20 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
               e.stopPropagation()
               handleClose()
             }}
-            className="text-[#B8001F] hover:text-[#8B0015] text-xs font-bold touch-manipulation"
-            style={{ minWidth: '24px', minHeight: '24px' }}
+            className="text-xs font-bold touch-manipulation"
+            style={{ color: primaryColor, minWidth: '24px', minHeight: '24px' }}
+            onMouseEnter={(e) => {
+              const rgb = primaryColor.match(/\d+/g);
+              if (rgb) {
+                const r = Math.max(0, parseInt(rgb[0]) - 30);
+                const g = Math.max(0, parseInt(rgb[1]) - 30);
+                const b = Math.max(0, parseInt(rgb[2]) - 30);
+                e.currentTarget.style.color = `rgb(${r}, ${g}, ${b})`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = primaryColor;
+            }}
           >
             ×
           </button>
@@ -266,8 +275,8 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           {/* Wet Signal Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">WET</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.wet.toFixed(2)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>WET</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.wet.toFixed(2)}</span>
             </div>
             <input
               type="range"
@@ -282,7 +291,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${config.wet * 100}%, #D1D5DB ${config.wet * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${config.wet * 100}%, #D1D5DB ${config.wet * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -293,8 +302,8 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           {/* Depth Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">DEPTH</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.depth.toFixed(2)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>DEPTH</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.depth.toFixed(2)}</span>
             </div>
             <input
               type="range"
@@ -309,7 +318,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${config.depth * 100}%, #D1D5DB ${config.depth * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${config.depth * 100}%, #D1D5DB ${config.depth * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -320,8 +329,8 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           {/* LFO Beats Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">LFO</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.lfoBeats.toFixed(1)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>LFO</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.lfoBeats.toFixed(1)}</span>
             </div>
             <input
               type="range"
@@ -336,7 +345,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${(config.lfoBeats / 128) * 100}%, #D1D5DB ${(config.lfoBeats / 128) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${(config.lfoBeats / 128) * 100}%, #D1D5DB ${(config.lfoBeats / 128) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -347,8 +356,8 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           {/* BPM Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">BPM</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.bpm}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>BPM</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.bpm}</span>
             </div>
             <input
               type="range"
@@ -363,7 +372,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.bpm - 40) / 210) * 100}%, #D1D5DB ${((config.bpm - 40) / 210) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.bpm - 40) / 210) * 100}%, #D1D5DB ${((config.bpm - 40) / 210) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -374,8 +383,8 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           {/* Clipper Threshold Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">THRESH</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.clipperThresholdDb.toFixed(1)}dB</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>THRESH</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.clipperThresholdDb.toFixed(1)}dB</span>
             </div>
             <input
               type="range"
@@ -390,7 +399,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.clipperThresholdDb + 20) / 20) * 100}%, #D1D5DB ${((config.clipperThresholdDb + 20) / 20) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.clipperThresholdDb + 20) / 20) * 100}%, #D1D5DB ${((config.clipperThresholdDb + 20) / 20) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -401,8 +410,8 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
           {/* Clipper Maximum Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">MAX</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.clipperMaximumDb.toFixed(1)}dB</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>MAX</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.clipperMaximumDb.toFixed(1)}dB</span>
             </div>
             <input
               type="range"
@@ -417,7 +426,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${(config.clipperMaximumDb / 20) * 100}%, #D1D5DB ${(config.clipperMaximumDb / 20) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${(config.clipperMaximumDb / 20) * 100}%, #D1D5DB ${(config.clipperMaximumDb / 20) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -428,7 +437,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
 
           {/* Stereo Toggle */}
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#B8001F] font-mono">STEREO</span>
+            <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>STEREO</span>
             <input
               type="checkbox"
               checked={config.stereo}
@@ -438,7 +447,7 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
                 if (onConfigChange) onConfigChange(newConfig)
               }}
               className="w-4 h-4"
-              style={{ accentColor: '#B8001F' }}
+              style={{ accentColor: primaryColor }}
             />
           </div>
         </div>
@@ -448,9 +457,9 @@ const FlangerConfigModal: React.FC<FlangerConfigModalProps> = ({
             onClick={handleSave}
             className="px-4 py-2 text-xs font-mono font-bold transition-all duration-200 hover:opacity-80"
             style={{
-              backgroundColor: '#B8001F',
+              backgroundColor: primaryColor,
               color: '#FCFAEE',
-              border: '1px solid #B8001F',
+              border: `1px solid ${primaryColor}`,
               borderRadius: '4px'
             }}
           >

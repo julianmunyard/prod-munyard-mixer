@@ -22,6 +22,7 @@ interface CompressorConfigModalProps {
   initialConfig?: CompressorConfig
   stemLabel?: string
   position?: { x: number; y: number }
+  primaryColor?: string
 }
 
 const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
@@ -41,7 +42,8 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
     enabled: true
   },
   stemLabel,
-  position
+  position,
+  primaryColor = '#B8001F'
 }) => {
   const [config, setConfig] = useState<CompressorConfig>(initialConfig)
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
@@ -189,18 +191,18 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: #B8001F;
+          background: ${primaryColor} !important;
           cursor: pointer;
-          border: 2px solid #FCFAEE;
+          border: 2px solid #FCFAEE !important;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         .slider-horizontal::-moz-range-thumb {
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: #B8001F;
+          background: ${primaryColor} !important;
           cursor: pointer;
-          border: 2px solid #FCFAEE;
+          border: 2px solid #FCFAEE !important;
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
       `}</style>
@@ -210,10 +212,11 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
       >
       <div 
         ref={modalRef}
-        className="absolute bg-[#FCFAEE] rounded-lg p-4 w-64 shadow-lg border border-[#B8001F] pointer-events-auto"
+        className="absolute bg-[#FCFAEE] rounded-lg p-4 w-64 shadow-lg border pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
         style={{
-          boxShadow: '0 8px 16px rgba(184, 0, 31, 0.3)',
+          borderColor: primaryColor,
+          boxShadow: `0 8px 16px ${primaryColor}30`,
           left: dragPosition ? `${dragPosition.x}px` : (position ? `${position.x - 128}px` : '50%'),
           top: dragPosition ? `${dragPosition.y}px` : (position ? `${position.y - 200}px` : '50%'),
           transform: dragPosition ? 'none' : (position ? 'none' : 'translate(-50%, -50%)'),
@@ -227,10 +230,10 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
           <div className="flex flex-col">
-            <h2 className="text-xs font-bold text-[#B8001F] font-mono">
+            <h2 className="text-xs font-bold font-mono" style={{ color: primaryColor }}>
               COMPRESSOR
             </h2>
-            <span className="text-xs text-[#B8001F] font-mono opacity-75">
+            <span className="text-xs font-mono opacity-75" style={{ color: primaryColor }}>
               {stemLabel || 'Global Mix'}
             </span>
           </div>
@@ -241,8 +244,20 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
               e.stopPropagation()
               handleClose()
             }}
-            className="text-[#B8001F] hover:text-[#8B0015] text-xs font-bold touch-manipulation"
-            style={{ minWidth: '24px', minHeight: '24px' }}
+            className="text-xs font-bold touch-manipulation"
+            style={{ color: primaryColor, minWidth: '24px', minHeight: '24px' }}
+            onMouseEnter={(e) => {
+              const rgb = primaryColor.match(/\d+/g);
+              if (rgb) {
+                const r = Math.max(0, parseInt(rgb[0]) - 30);
+                const g = Math.max(0, parseInt(rgb[1]) - 30);
+                const b = Math.max(0, parseInt(rgb[2]) - 30);
+                e.currentTarget.style.color = `rgb(${r}, ${g}, ${b})`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = primaryColor;
+            }}
           >
             ×
           </button>
@@ -252,8 +267,8 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           {/* Input Gain Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">INPUT GAIN</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.inputGainDb.toFixed(1)} dB</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>INPUT GAIN</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.inputGainDb.toFixed(1)} dB</span>
             </div>
             <input
               type="range"
@@ -268,7 +283,7 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.inputGainDb + 24) / 48) * 100}%, #D1D5DB ${((config.inputGainDb + 24) / 48) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.inputGainDb + 24) / 48) * 100}%, #D1D5DB ${((config.inputGainDb + 24) / 48) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -279,8 +294,8 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           {/* Output Gain Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">OUTPUT GAIN</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.outputGainDb.toFixed(1)} dB</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>OUTPUT GAIN</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.outputGainDb.toFixed(1)} dB</span>
             </div>
             <input
               type="range"
@@ -295,7 +310,7 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.outputGainDb + 24) / 48) * 100}%, #D1D5DB ${((config.outputGainDb + 24) / 48) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.outputGainDb + 24) / 48) * 100}%, #D1D5DB ${((config.outputGainDb + 24) / 48) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -306,8 +321,8 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           {/* Wet Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">WET</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.wet.toFixed(1)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>WET</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.wet.toFixed(1)}</span>
             </div>
             <input
               type="range"
@@ -322,7 +337,7 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${config.wet * 100}%, #D1D5DB ${config.wet * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${config.wet * 100}%, #D1D5DB ${config.wet * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -333,8 +348,8 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           {/* Attack Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">ATTACK</span>
-              <span className="text-xs text-[#B8001F] font-mono">{(config.attackSec * 1000).toFixed(1)} ms</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>ATTACK</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{(config.attackSec * 1000).toFixed(1)} ms</span>
             </div>
             <input
               type="range"
@@ -349,7 +364,7 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.attackSec - 0.0001) / 0.9999) * 100}%, #D1D5DB ${((config.attackSec - 0.0001) / 0.9999) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.attackSec - 0.0001) / 0.9999) * 100}%, #D1D5DB ${((config.attackSec - 0.0001) / 0.9999) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -360,8 +375,8 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           {/* Release Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">RELEASE</span>
-              <span className="text-xs text-[#B8001F] font-mono">{(config.releaseSec * 1000).toFixed(0)} ms</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>RELEASE</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{(config.releaseSec * 1000).toFixed(0)} ms</span>
             </div>
             <input
               type="range"
@@ -376,7 +391,7 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.releaseSec - 0.1) / 3.9) * 100}%, #D1D5DB ${((config.releaseSec - 0.1) / 3.9) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.releaseSec - 0.1) / 3.9) * 100}%, #D1D5DB ${((config.releaseSec - 0.1) / 3.9) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -387,8 +402,8 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           {/* Ratio Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">RATIO</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.ratio.toFixed(1)}:1</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>RATIO</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.ratio.toFixed(1)}:1</span>
             </div>
             <input
               type="range"
@@ -403,7 +418,7 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.ratio - 1.5) / 8.5) * 100}%, #D1D5DB ${((config.ratio - 1.5) / 8.5) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.ratio - 1.5) / 8.5) * 100}%, #D1D5DB ${((config.ratio - 1.5) / 8.5) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -414,8 +429,8 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           {/* Threshold Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">THRESHOLD</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.thresholdDb.toFixed(1)} dB</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>THRESHOLD</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.thresholdDb.toFixed(1)} dB</span>
             </div>
             <input
               type="range"
@@ -430,7 +445,7 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.thresholdDb + 40) / 40) * 100}%, #D1D5DB ${((config.thresholdDb + 40) / 40) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.thresholdDb + 40) / 40) * 100}%, #D1D5DB ${((config.thresholdDb + 40) / 40) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -441,8 +456,8 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           {/* HP Cutoff Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">HP CUTOFF</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.hpCutOffHz.toFixed(0)} Hz</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>HP CUTOFF</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.hpCutOffHz.toFixed(0)} Hz</span>
             </div>
             <input
               type="range"
@@ -457,7 +472,7 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${((config.hpCutOffHz - 1) / 9999) * 100}%, #D1D5DB ${((config.hpCutOffHz - 1) / 9999) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${((config.hpCutOffHz - 1) / 9999) * 100}%, #D1D5DB ${((config.hpCutOffHz - 1) / 9999) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -467,16 +482,17 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
 
           {/* Enabled Toggle */}
           <div className="flex items-center justify-center space-x-2 p-3">
-            <span className="text-xs font-bold text-[#B8001F] font-mono">ENABLED</span>
+            <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>ENABLED</span>
             <button
               onClick={() => {
                 const newConfig = { ...config, enabled: !config.enabled }
                 setConfig(newConfig)
                 onConfigChange?.(newConfig)
               }}
-              className={`w-12 h-6 rounded-full transition-colors ${
-                config.enabled ? 'bg-[#B8001F]' : 'bg-gray-300'
-              }`}
+              className={`w-12 h-6 rounded-full transition-colors`}
+              style={{
+                backgroundColor: config.enabled ? primaryColor : '#D1D5DB'
+              }}
             >
               <div
                 className={`w-5 h-5 rounded-full bg-white transition-transform ${
@@ -490,7 +506,23 @@ const CompressorConfigModal: React.FC<CompressorConfigModalProps> = ({
           <div className="flex justify-end">
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-[#B8001F] text-[#FCFAEE] rounded font-mono text-xs hover:bg-[#8B0015] transition-colors"
+              className="px-4 py-2 rounded font-mono text-xs transition-colors"
+            style={{
+              backgroundColor: primaryColor,
+              color: '#FCFAEE'
+            }}
+            onMouseEnter={(e) => {
+              const rgb = primaryColor.match(/\d+/g);
+              if (rgb) {
+                const r = Math.max(0, parseInt(rgb[0]) - 30);
+                const g = Math.max(0, parseInt(rgb[1]) - 30);
+                const b = Math.max(0, parseInt(rgb[2]) - 30);
+                e.currentTarget.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = primaryColor;
+            }}
             >
               SAVE
             </button>

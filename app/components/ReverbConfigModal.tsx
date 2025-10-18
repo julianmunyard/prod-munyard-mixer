@@ -19,6 +19,7 @@ interface ReverbConfigModalProps {
   initialConfig: ReverbConfig
   stemLabel: string
   position?: { x: number; y: number }
+  primaryColor?: string
 }
 
 export default function ReverbConfigModal({ 
@@ -27,7 +28,8 @@ export default function ReverbConfigModal({
   onSave, 
   initialConfig, 
   stemLabel,
-  position 
+  position,
+  primaryColor = '#B8001F'
 }: ReverbConfigModalProps) {
   const [config, setConfig] = useState<ReverbConfig>(initialConfig)
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null)
@@ -159,6 +161,27 @@ export default function ReverbConfigModal({
 
   return (
     <>
+      <style jsx>{`
+        .slider-horizontal::-webkit-slider-thumb {
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: ${primaryColor} !important;
+          cursor: pointer;
+          border: 2px solid #FCFAEE !important;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .slider-horizontal::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: ${primaryColor} !important;
+          cursor: pointer;
+          border: 2px solid #FCFAEE !important;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+      `}</style>
       <div 
         className="fixed inset-0 z-50 pointer-events-none"
         onClick={() => {
@@ -168,10 +191,11 @@ export default function ReverbConfigModal({
       >
       <div 
         ref={modalRef}
-        className="absolute bg-[#FCFAEE] rounded-lg p-4 w-64 shadow-lg border border-[#B8001F] pointer-events-auto"
+        className="absolute bg-[#FCFAEE] rounded-lg p-4 w-64 shadow-lg border pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
         style={{
-          boxShadow: '0 8px 16px rgba(184, 0, 31, 0.3)',
+          borderColor: primaryColor,
+          boxShadow: `0 8px 16px ${primaryColor}30`,
           left: dragPosition ? `${dragPosition.x}px` : (position ? `${position.x - 128}px` : '50%'),
           top: dragPosition ? `${dragPosition.y}px` : (position ? `${position.y - 200}px` : '50%'),
           transform: dragPosition ? 'none' : (position ? 'none' : 'translate(-50%, -50%)'),
@@ -185,10 +209,10 @@ export default function ReverbConfigModal({
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
           <div className="flex flex-col">
-            <h2 className="text-xs font-bold text-[#B8001F] font-mono">
+            <h2 className="text-xs font-bold font-mono" style={{ color: primaryColor }}>
               REVERB
             </h2>
-            <span className="text-xs text-[#B8001F] font-mono opacity-75">
+            <span className="text-xs font-mono opacity-75" style={{ color: primaryColor }}>
               {stemLabel}
             </span>
           </div>
@@ -203,8 +227,20 @@ export default function ReverbConfigModal({
               setDragPosition(null) // Reset position when closing
               onClose()
             }}
-            className="text-[#B8001F] hover:text-[#8B0015] text-xs font-bold touch-manipulation"
-            style={{ minWidth: '24px', minHeight: '24px' }}
+            className="text-xs font-bold touch-manipulation"
+            style={{ color: primaryColor, minWidth: '24px', minHeight: '24px' }}
+            onMouseEnter={(e) => {
+              const rgb = primaryColor.match(/\d+/g);
+              if (rgb) {
+                const r = Math.max(0, parseInt(rgb[0]) - 30);
+                const g = Math.max(0, parseInt(rgb[1]) - 30);
+                const b = Math.max(0, parseInt(rgb[2]) - 30);
+                e.currentTarget.style.color = `rgb(${r}, ${g}, ${b})`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = primaryColor;
+            }}
           >
             ×
           </button>
@@ -214,8 +250,8 @@ export default function ReverbConfigModal({
           {/* Pre-delay Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">PREDELAY</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.predelayMs.toFixed(0)}ms</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>PREDELAY</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.predelayMs.toFixed(0)}ms</span>
             </div>
             <input
               type="range"
@@ -230,7 +266,7 @@ export default function ReverbConfigModal({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${(config.predelayMs / 200) * 100}%, #D1D5DB ${(config.predelayMs / 200) * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${(config.predelayMs / 200) * 100}%, #D1D5DB ${(config.predelayMs / 200) * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -241,8 +277,8 @@ export default function ReverbConfigModal({
           {/* Width Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">WIDTH</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.width.toFixed(1)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>WIDTH</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.width.toFixed(1)}</span>
             </div>
             <input
               type="range"
@@ -257,7 +293,7 @@ export default function ReverbConfigModal({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${config.width * 100}%, #D1D5DB ${config.width * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${config.width * 100}%, #D1D5DB ${config.width * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -268,8 +304,8 @@ export default function ReverbConfigModal({
           {/* Dampening Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">DAMP</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.damp.toFixed(1)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>DAMP</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.damp.toFixed(1)}</span>
             </div>
             <input
               type="range"
@@ -284,7 +320,7 @@ export default function ReverbConfigModal({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${config.damp * 100}%, #D1D5DB ${config.damp * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${config.damp * 100}%, #D1D5DB ${config.damp * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -295,8 +331,8 @@ export default function ReverbConfigModal({
           {/* Room Size Control */}
           <div className="flex flex-col items-center">
             <div className="flex justify-between items-center mb-2 w-full">
-              <span className="text-xs font-bold text-[#B8001F] font-mono">ROOM</span>
-              <span className="text-xs text-[#B8001F] font-mono">{config.roomSize.toFixed(1)}</span>
+              <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>ROOM</span>
+              <span className="text-xs font-mono" style={{ color: primaryColor }}>{config.roomSize.toFixed(1)}</span>
             </div>
             <input
               type="range"
@@ -311,7 +347,7 @@ export default function ReverbConfigModal({
               }}
               className="w-full h-2 bg-gray-300 rounded appearance-none cursor-pointer slider-horizontal"
               style={{
-                background: `linear-gradient(to right, #B8001F 0%, #B8001F ${config.roomSize * 100}%, #D1D5DB ${config.roomSize * 100}%, #D1D5DB 100%)`,
+                background: `linear-gradient(to right, ${primaryColor} 0%, ${primaryColor} ${config.roomSize * 100}%, #D1D5DB ${config.roomSize * 100}%, #D1D5DB 100%)`,
                 WebkitAppearance: 'none',
                 appearance: 'none',
                 outline: 'none'
@@ -321,16 +357,18 @@ export default function ReverbConfigModal({
 
           {/* Enabled Toggle */}
           <div className="flex items-center justify-between pt-2">
-            <span className="text-xs font-bold text-[#B8001F] font-mono">ENABLED</span>
+            <span className="text-xs font-bold font-mono" style={{ color: primaryColor }}>ENABLED</span>
             <button
               onClick={() => {
                 const newConfig = { ...config, enabled: !config.enabled }
                 setConfig(newConfig)
                 onSave(newConfig)
               }}
-              className={`w-6 h-3 rounded-full transition-colors ${
-                config.enabled ? 'bg-[#B8001F]' : 'bg-[#FCFAEE] border border-[#B8001F]'
-              }`}
+              className={`w-6 h-3 rounded-full transition-colors border`}
+              style={{
+                backgroundColor: config.enabled ? primaryColor : '#FCFAEE',
+                borderColor: primaryColor
+              }}
             >
               <div
                 className={`w-2 h-2 bg-[#FCFAEE] rounded-full transition-transform ${
@@ -344,13 +382,42 @@ export default function ReverbConfigModal({
         <div className="flex justify-center gap-2 mt-3">
           <button
             onClick={handleReset}
-            className="px-3 py-1 bg-[#FCFAEE] text-[#B8001F] border border-[#B8001F] text-xs rounded hover:bg-[#B8001F] hover:text-[#FCFAEE] transition-colors font-mono font-bold"
+            className="px-3 py-1 text-xs rounded transition-colors font-mono font-bold"
+            style={{
+              backgroundColor: '#FCFAEE',
+              color: primaryColor,
+              border: `1px solid ${primaryColor}`
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = primaryColor;
+              e.currentTarget.style.color = '#FCFAEE';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#FCFAEE';
+              e.currentTarget.style.color = primaryColor;
+            }}
           >
             RESET
           </button>
           <button
             onClick={handleSave}
-            className="px-3 py-1 bg-[#B8001F] text-[#FCFAEE] text-xs rounded hover:bg-[#8B0015] transition-colors font-mono font-bold"
+            className="px-3 py-1 text-xs rounded transition-colors font-mono font-bold"
+            style={{
+              backgroundColor: primaryColor,
+              color: '#FCFAEE'
+            }}
+            onMouseEnter={(e) => {
+              const rgb = primaryColor.match(/\d+/g);
+              if (rgb) {
+                const r = Math.max(0, parseInt(rgb[0]) - 30);
+                const g = Math.max(0, parseInt(rgb[1]) - 30);
+                const b = Math.max(0, parseInt(rgb[2]) - 30);
+                e.currentTarget.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = primaryColor;
+            }}
           >
             CLOSE
           </button>

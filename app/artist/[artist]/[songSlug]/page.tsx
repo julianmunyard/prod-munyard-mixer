@@ -272,13 +272,16 @@ function MixerPage() {
       
       // Check if click is outside any effect dropdown
       if (!target.closest('[id^="effect-dropdown-"]') && 
-          !target.closest('[id^="master-effect-dropdown"]')) {
+          !target.closest('[id^="master-effect-dropdown"]') &&
+          !target.closest('[id^="mobile-master-effect-dropdown"]')) {
         // Close all effect dropdowns
         document.querySelectorAll('[id^="effect-dropdown-"]').forEach(dropdown => {
           dropdown.classList.add('hidden')
         })
         // Close master effect dropdown
         document.getElementById('master-effect-dropdown')?.classList.add('hidden')
+        // Close mobile master effect dropdown
+        document.getElementById('mobile-master-effect-dropdown')?.classList.add('hidden')
       }
     }
 
@@ -1135,16 +1138,44 @@ function MixerPage() {
             }
             @media screen and (max-width: 767px) and (orientation: landscape) {
               .mixer-module {
-                min-height: 260px !important;
+                min-height: 320px !important;
               }
             }
             @media screen and (max-width: 767px) {
+              /* Lock vertical scrolling but allow horizontal scrolling for modules */
+              body {
+                overflow-x: hidden !important;
+                overflow-y: hidden !important;
+                position: fixed !important;
+                width: 100% !important;
+                height: 100% !important;
+              }
+              html {
+                overflow-x: hidden !important;
+                overflow-y: hidden !important;
+                height: 100% !important;
+              }
               .stems-container::-webkit-scrollbar {
                 display: none;
               }
               .stems-container {
                 -ms-overflow-style: none;
                 scrollbar-width: none;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                touch-action: pan-x !important;
+              }
+              .mixer-module {
+                min-height: 440px !important;
+              }
+              .mixer-module .track-label {
+                min-height: 40px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 4px 6px !important;
+                word-wrap: break-word !important;
+                hyphens: auto !important;
               }
             }
           `}</style>
@@ -1183,12 +1214,12 @@ function MixerPage() {
             }`}
             style={{
               minHeight: '100dvh',
-              paddingBottom: isMobile ? '120px' : '80px',
+              paddingBottom: isMobile ? '160px' : '60px',
             }}
           >
             {/* 🏷️ Song Title */}
             <h1
-              className="village text-center mb-16"
+              className="village text-center mb-8"
               style={{
                 fontSize: isMobile ? '48px' : '96px',
                 letterSpacing: '0.05em',
@@ -1202,7 +1233,7 @@ function MixerPage() {
 
 
             {/* ▶️ Main Playback Controls */}
-            <div className={`flex justify-center mb-4 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
+            <div className={`flex justify-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
               <button
                 onClick={playAll}
                 disabled={!timelineReady || !allAssetsLoaded}
@@ -1234,30 +1265,34 @@ function MixerPage() {
               </button>
             </div>
 
-            {/* 🎛️ Secondary Controls */}
-            <div className={`flex justify-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
-              <button
-                onClick={loadStemsIntoTimeline}
-                disabled={!timelineReady || loadingStems}
-                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
-                  !timelineReady || loadingStems
-                    ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
-                    : 'hover:opacity-90'
-                }`}
-                style={timelineReady && !loadingStems ? { 
-                  backgroundColor: '#FCFAEE',
-                  color: primary,
-                  border: `1px solid ${primary}`
-                } : undefined}
-              >
-                {loadingStems && (
-                  <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+            {/* 🎛️ Secondary Controls - Desktop Only */}
+            {!isMobile && (
+              <div className={`flex justify-center mb-1 gap-8`}>
+                {/* Load Stems Button - Only show if not loaded */}
+                {!allAssetsLoaded && (
+                  <button
+                    onClick={loadStemsIntoTimeline}
+                    disabled={!timelineReady || loadingStems}
+                    className={`pressable px-6 py-2 font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
+                      !timelineReady || loadingStems
+                        ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
+                        : 'hover:opacity-90'
+                    }`}
+                    style={timelineReady && !loadingStems ? { 
+                      backgroundColor: '#FCFAEE',
+                      color: primary,
+                      border: `1px solid ${primary}`
+                    } : undefined}
+                  >
+                    {loadingStems && (
+                      <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                    )}
+                    {loadingStems 
+                      ? `Downloading... (${loadedStemsCount}/${stems.length})` 
+                      : 'Load Stems'
+                    }
+                  </button>
                 )}
-                {loadingStems 
-                  ? `Downloading... (${loadedStemsCount}/${stems.length})` 
-                  : 'Load Stems'
-                }
-              </button>
 
               {/* Master Effect Dropdown */}
               <div className="relative">
@@ -1267,7 +1302,7 @@ function MixerPage() {
                     backgroundColor: '#FCFAEE',
                     color: primary,
                     border: `1px solid ${primary}`,
-                    padding: isMobile ? '4px 8px' : '8px 12px',
+                      padding: '8px 12px',
                     fontSize: '12px',
                     display: 'flex',
                     alignItems: 'center',
@@ -1373,11 +1408,11 @@ function MixerPage() {
                     // Also open the modal for fine-tuning
                     handleFlangerConfigOpen()
                   }}
-                  className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
+                    className="pressable px-6 py-2 font-mono tracking-wide"
                   style={{ 
                     backgroundColor: '#FCFAEE',
-                    color: '#B8001F',
-                    border: '1px solid #B8001F'
+                    color: primary,
+                    border: `1px solid ${primary}`
                   }}
                 >
                   FLANGE
@@ -1415,33 +1450,63 @@ function MixerPage() {
                     // Also open the modal for fine-tuning
                     handleCompressorConfigOpen()
                   }}
-                  className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
+                    className="pressable px-6 py-2 font-mono tracking-wide"
                   style={{ 
                     backgroundColor: '#FCFAEE',
-                    color: '#B8001F',
-                    border: '1px solid #B8001F'
+                    color: primary,
+                    border: `1px solid ${primary}`
                   }}
                 >
                   COMPRESS
                 </button>
               )}
             </div>
+            )}
+
+            {/* 🎛️ Mobile Secondary Controls - Load Stems Only */}
+            {isMobile && !allAssetsLoaded && (
+              <div className="flex justify-center mb-1 gap-4 px-4">
+                <button
+                  onClick={loadStemsIntoTimeline}
+                  disabled={!timelineReady || loadingStems}
+                  className={`pressable px-4 py-1 text-sm font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
+                    !timelineReady || loadingStems
+                      ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
+                      : 'hover:opacity-90'
+                  }`}
+                  style={timelineReady && !loadingStems ? { 
+                    backgroundColor: '#FCFAEE',
+                    color: primary,
+                    border: `1px solid ${primary}`
+                  } : undefined}
+                >
+                  {loadingStems && (
+                    <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                  )}
+                  {loadingStems 
+                    ? `Downloading... (${loadedStemsCount}/${stems.length})` 
+                    : 'Load Stems'
+                  }
+                </button>
+              </div>
+            )}
 
 
             {/* Spacing for modules */}
-            <div className="mb-8 mt-8"></div>
+            <div className="mb-6 mt-6"></div>
 
             {/* 🎚️ Mixer Modules */}
             <div
               className="stems-container"
               style={{
                 width: '100%',
-                height: isMobile ? '420px' : 'auto',
-                maxHeight: isMobile ? '420px' : 'none',
+                height: isMobile ? '460px' : 'auto',
+                maxHeight: isMobile ? '460px' : 'none',
                 marginTop: '-20px',
                 marginBottom: isMobile ? '20px' : '0px',
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'hidden',
+                touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
               }}
             >
               <div
@@ -1473,7 +1538,7 @@ function MixerPage() {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      height: isMobile ? '420px' : undefined,
+                      height: isMobile ? '440px' : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
                       minWidth: isMobile ? '80px' : 'auto',
@@ -1520,7 +1585,7 @@ function MixerPage() {
 
                     {/* Effect Dropdown & Knob */}
                     <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-                      <div className="flex flex-col items-center text-xs select-none" style={{ color: 'white' }}>
+                      <div className="flex flex-col items-center text-xs select-none knob-container" style={{ color: 'white' }}>
                         {/* Effect Type Dropdown */}
                         <div className="mb-0.5 relative">
                           {/* Custom Dropdown Menu - positioned above */}
@@ -1640,34 +1705,34 @@ function MixerPage() {
                         
                         {/* Effect Knob */}
                         <DelayKnob
-                          value={
-                            (selectedEffects[stem.label] || 'reverb') === 'reverb' 
-                              ? (reverbs[stem.label]?.mix || 0)
-                              : (echoes[stem.label]?.wet || 0)
-                          }
-                          onChange={(val) => {
-                            const effectType = selectedEffects[stem.label] || 'reverb'
-                            console.log(`🎛️ UI: ${effectType} knob changed for ${stem.label} to ${val}`);
-                            
-                            if (effectType === 'reverb') {
-                              const currentConfig = reverbs[stem.label] || defaultReverbConfig
-                              const newConfig = { ...currentConfig, mix: val }
-                              setReverbs((prev) => ({ ...prev, [stem.label]: newConfig }))
-                              // Enable reverb if value > 0, disable if 0
-                              setReverbEnabled(stem.label, val > 0)
-                              // Set reverb mix to the knob value
-                              setReverbMix(stem.label, val)
-                            } else {
-                              const currentConfig = echoes[stem.label] || defaultEchoConfig
-                              const newConfig = { ...currentConfig, wet: val }
-                              setEchoes((prev) => ({ ...prev, [stem.label]: newConfig }))
-                              // Enable echo if value > 0, disable if 0
-                              setEchoEnabled(stem.label, val > 0)
-                              // Set echo wet to the knob value
-                              setEchoWet(stem.label, val)
+                            value={
+                              (selectedEffects[stem.label] || 'reverb') === 'reverb' 
+                                ? (reverbs[stem.label]?.mix || 0)
+                                : (echoes[stem.label]?.wet || 0)
                             }
-                          }}
-                        />
+                            onChange={(val) => {
+                              const effectType = selectedEffects[stem.label] || 'reverb'
+                              console.log(`🎛️ UI: ${effectType} knob changed for ${stem.label} to ${val}`);
+                              
+                              if (effectType === 'reverb') {
+                                const currentConfig = reverbs[stem.label] || defaultReverbConfig
+                                const newConfig = { ...currentConfig, mix: val }
+                                setReverbs((prev) => ({ ...prev, [stem.label]: newConfig }))
+                                // Enable reverb if value > 0, disable if 0
+                                setReverbEnabled(stem.label, val > 0)
+                                // Set reverb mix to the knob value
+                                setReverbMix(stem.label, val)
+                              } else {
+                                const currentConfig = echoes[stem.label] || defaultEchoConfig
+                                const newConfig = { ...currentConfig, wet: val }
+                                setEchoes((prev) => ({ ...prev, [stem.label]: newConfig }))
+                                // Enable echo if value > 0, disable if 0
+                                setEchoEnabled(stem.label, val > 0)
+                                // Set echo wet to the knob value
+                                setEchoWet(stem.label, val)
+                              }
+                            }}
+                          />
                       </div>
                     </div>
 
@@ -1716,33 +1781,360 @@ function MixerPage() {
 
                       {/* Label */}
                       <div
+                        className="track-label"
                         style={{
-                          fontSize: '12px',
+                          fontSize: '11px',
                           padding: '4px 6px',
                           borderRadius: '4px',
                           backgroundColor: '#FCFAEE',
                           color: primary,
                           marginTop: '6px',
-                          display: 'block',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           width: '100%',
-                          minHeight: '34px',
-                          maxHeight: '34px',
+                          height: '40px',
                           overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'normal',
-                          wordBreak: 'break-word',
-                          lineHeight: '1.2',
                           boxSizing: 'border-box',
                           border: `1px solid ${primary}`,
+                          textAlign: 'center',
+                          lineHeight: '1.2',
+                          wordWrap: 'break-word',
+                          hyphens: 'auto',
                         }}
+                        title={stem.label}
                       >
-                        {stem.label}
+                        {stem.label.length > 8 ? stem.label.substring(0, 8) + '...' : stem.label}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* 🎚️ Varispeed Section - Moved up */}
+            {/* Desktop Varispeed Slider */}
+            {!isMobile && (
+              <div className="w-full flex justify-center">
+                <div
+                  className="relative"
+                  style={{
+                    marginTop: '10px',
+                    width: '350px',
+                    height: '120px',
+                  }}
+                >
+                  <div
+                    className="absolute top-0 left-0 w-full flex flex-col items-center"
+                    style={{
+                      pointerEvents: 'none',
+                      marginTop: '0px',
+                    }}
+                  >
+                    {bpm !== null && (
+                      <div className="text-xs font-mono mb-1" style={{ color: primary }}>
+                        {Math.round(bpm * varispeed)} BPM
+                      </div>
+                    )}
+                    <div className="text-sm tracking-wider" style={{ color: primary }}>
+                      VARISPEED
+                    </div>
+                  </div>
+
+                  <div
+                    className="absolute left-1/2"
+                    style={{
+                      transform: 'translateX(-50%) rotate(-90deg)',
+                      top: '-118px',
+                    }}
+                  >
+                    <VarispeedSlider
+                      value={isIOS ? varispeed : 2 - varispeed}
+                      onChange={val => {
+                        const newVarispeed = isIOS ? val : 2 - val;
+                        setVarispeed(newVarispeed);
+                        setVarispeedControl(newVarispeed, isNaturalVarispeed);
+                      }}
+                      isIOS={isIOS}
+                      primaryColor={primary}
+                      stemCount={stems.length}
+                    />
+                  </div>
+                  
+                  {/* Mode Toggle Button - Centered below slider for desktop */}
+                  <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: '-11px' }}>
+                    <button
+                      onClick={() => {
+                        const newMode = !isNaturalVarispeed;
+                        setIsNaturalVarispeed(newMode);
+                        setVarispeedControl(varispeed, newMode);
+                      }}
+                      className="px-3 py-2 text-xs font-mono rounded border"
+                      style={{ 
+                        color: primary,
+                        borderColor: primary,
+                        backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
+                        pointerEvents: 'auto',
+                        minHeight: '32px',
+                        minWidth: '70px'
+                      }}
+                      title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
+                    >
+                      {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Effect Controls - Above VARISPEED */}
+            {isMobilePortrait && stems.length >= 3 && (
+              <div className="w-full flex justify-center sm:hidden mb-2" style={{ marginTop: '-10px' }}>
+                <div className="flex justify-center gap-4">
+                  {/* Master Effect Dropdown */}
+                  <div className="relative">
+                    <div 
+                      className="pressable font-mono tracking-wide cursor-pointer"
+                      style={{ 
+                        backgroundColor: '#FCFAEE',
+                        color: primary,
+                        border: `1px solid ${primary}`,
+                        padding: '4px 8px',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      onClick={() => {
+                        const dropdown = document.getElementById('mobile-master-effect-dropdown')
+                        if (dropdown) {
+                          dropdown.classList.toggle('hidden')
+                        }
+                      }}
+                    >
+                      <span>EFFECT</span>
+                      <span style={{ fontSize: '8px' }}>▼</span>
+                    </div>
+                    
+                    {/* Custom Dropdown Menu */}
+                    <div 
+                      id="mobile-master-effect-dropdown"
+                      className="absolute left-0 bg-[#F5F5DC] rounded shadow-lg z-50 hidden min-w-full"
+                      style={{ 
+                        top: '100%', 
+                        marginTop: '4px',
+                        border: `1px solid ${primary}`
+                      }}
+                    >
+                      <div 
+                        className="px-2 py-1 cursor-pointer hover:text-[#FCFAEE] font-mono transition-colors"
+                        style={{ 
+                          fontSize: '10px',
+                          color: primary
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = primary
+                          e.currentTarget.style.color = '#FCFAEE'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                          e.currentTarget.style.color = primary
+                        }}
+                        onClick={() => {
+                          setSelectedMasterEffect('flanger')
+                          document.getElementById('mobile-master-effect-dropdown')?.classList.add('hidden')
+                        }}
+                      >
+                        FLANGER
+                      </div>
+                      <div 
+                        className="px-2 py-1 cursor-pointer hover:text-[#FCFAEE] font-mono transition-colors"
+                        style={{ 
+                          fontSize: '10px',
+                          color: primary
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = primary
+                          e.currentTarget.style.color = '#FCFAEE'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                          e.currentTarget.style.color = primary
+                        }}
+                        onClick={() => {
+                          setSelectedMasterEffect('compressor')
+                          document.getElementById('mobile-master-effect-dropdown')?.classList.add('hidden')
+                        }}
+                      >
+                        COMPRESSOR
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Master Effect Buttons */}
+                  {selectedMasterEffect === 'flanger' ? (
+                    <button
+                      onClick={(e) => {
+                        // Toggle flanger on/off when button is clicked
+                        const currentEnabled = globalFlanger?.enabled || false
+                        const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
+                        console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
+                        
+                        const newConfig = {
+                          ...(globalFlanger || defaultFlangerConfig),
+                          wet: newWet,
+                          enabled: !currentEnabled
+                        }
+                        setGlobalFlanger(newConfig)
+                        
+                        // Apply global flanger using correct command format
+                        if (mixerEngineRef.current?.audioEngine) {
+                          console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
+                          mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                            type: "command",
+                            data: { 
+                              command: "setFlangerConfig", 
+                              config: newConfig
+                            }
+                          });
+                          console.log(`✅ FLANGER CONFIG SENT!`);
+                        } else {
+                          console.log(`❌ ERROR: Audio engine not available!`);
+                        }
+                        
+                        // Also open the modal for fine-tuning
+                        handleFlangerConfigOpen()
+                      }}
+                      className="pressable px-4 py-1 text-sm font-mono tracking-wide"
+                      style={{ 
+                        backgroundColor: '#FCFAEE',
+                        color: primary,
+                        border: `1px solid ${primary}`
+                      }}
+                    >
+                      FLANGE
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        // Toggle compressor on/off when button is clicked
+                        const currentEnabled = globalCompressor?.enabled || false
+                        const newWet = currentEnabled ? 0 : 1.0 // Set to 100% wet when turning on
+                        console.log(`🎛️ COMPRESSOR BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
+                        
+                        const newConfig = {
+                          ...(globalCompressor || defaultCompressorConfig),
+                          wet: newWet,
+                          enabled: !currentEnabled
+                        }
+                        setGlobalCompressor(newConfig)
+                        
+                        // Apply global compressor using correct command format
+                        if (mixerEngineRef.current?.audioEngine) {
+                          console.log(`🎛️ SENDING COMPRESSOR CONFIG:`, newConfig);
+                          mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                            type: "command",
+                            data: { 
+                              command: "setCompressorConfig", 
+                              config: newConfig
+                            }
+                          });
+                          console.log(`✅ COMPRESSOR CONFIG SENT!`);
+                        } else {
+                          console.log(`❌ ERROR: Audio engine not available!`);
+                        }
+                        
+                        // Also open the modal for fine-tuning
+                        handleCompressorConfigOpen()
+                      }}
+                      className="pressable px-4 py-1 text-sm font-mono tracking-wide"
+                      style={{ 
+                        backgroundColor: '#FCFAEE',
+                        color: primary,
+                        border: `1px solid ${primary}`
+                      }}
+                    >
+                      COMPRESS
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Portrait Varispeed */}
+            {isMobilePortrait && stems.length >= 3 && (
+              <div className="w-full flex justify-center sm:hidden">
+                <div
+                  className="relative"
+                  style={{
+                    marginTop: '-5px',
+                    marginBottom: '20px',
+                    width: '350px',
+                    height: '140px',
+                  }}
+                >
+                  <div
+                    className="absolute top-0 left-0 w-full flex flex-col items-center"
+                    style={{
+                      pointerEvents: 'none',
+                      marginTop: '0px',
+                    }}
+                  >
+                    {bpm !== null && (
+                      <div className="text-xs font-mono mb-1" style={{ color: primary }}>
+                        {Math.round(bpm * varispeed)} BPM
+                      </div>
+                    )}
+                    <div className="text-sm tracking-wider" style={{ color: primary }}>
+                      VARISPEED
+                    </div>
+                  </div>
+
+                  <div
+                    className="absolute left-1/2"
+                    style={{
+                      transform: 'translateX(-50%) rotate(-90deg)',
+                      top: '-118px',
+                    }}
+                  >
+                    <VarispeedSlider
+                      value={isIOS ? varispeed : 2 - varispeed}
+                      onChange={val => {
+                        const newVarispeed = isIOS ? val : 2 - val;
+                        setVarispeed(newVarispeed);
+                        setVarispeedControl(newVarispeed, isNaturalVarispeed);
+                      }}
+                      isIOS={isIOS}
+                      primaryColor={primary}
+                      stemCount={stems.length}
+                    />
+                  </div>
+                  
+                  {/* Mode Toggle Button - Centered below slider for mobile */}
+                  <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: '0px' }}>
+                    <button
+                      onClick={() => {
+                        const newMode = !isNaturalVarispeed;
+                        setIsNaturalVarispeed(newMode);
+                        setVarispeedControl(varispeed, newMode);
+                      }}
+                      className="px-3 py-2 text-xs font-mono rounded border"
+                      style={{ 
+                        color: primary,
+                        borderColor: primary,
+                        backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
+                        pointerEvents: 'auto',
+                        minHeight: '32px',
+                        minWidth: '70px'
+                      }}
+                      title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
+                    >
+                      {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 🐛 Debug Panel - Collapsible */}
             {(debugLogs.length > 0 || loadingStems) && (
@@ -1826,153 +2218,6 @@ function MixerPage() {
               </>
             )}
 
-            {/* 🎚️ Desktop Varispeed Slider - Bottom Center */}
-            {!isMobile && (
-              <div className="w-full flex justify-center">
-              <div
-                  className="relative"
-                style={{
-                    marginTop: '20px',
-                    width: '350px',
-                    height: '140px',
-                  }}
-                >
-                  <div
-                    className="absolute top-0 left-0 w-full flex flex-col items-center"
-                    style={{
-                      pointerEvents: 'none',
-                      marginTop: '0px',
-                }}
-              >
-                {bpm !== null && (
-                      <div className="text-xs font-mono mb-1" style={{ color: primary }}>
-                    {Math.round(bpm * varispeed)} BPM
-                  </div>
-                )}
-                    <div className="text-sm tracking-wider" style={{ color: primary }}>
-                  VARISPEED
-                    </div>
-                  </div>
-
-                  <div
-                    className="absolute left-1/2"
-                    style={{
-                      transform: 'translateX(-50%) rotate(-90deg)',
-                      top: '-118px',
-                    }}
-                  >
-                <VarispeedSlider
-                      value={isIOS ? varispeed : 2 - varispeed}
-                      onChange={val => {
-                        const newVarispeed = isIOS ? val : 2 - val;
-                        setVarispeed(newVarispeed);
-                        setVarispeedControl(newVarispeed, isNaturalVarispeed);
-                      }}
-                  isIOS={isIOS}
-                  primaryColor={primary}
-                      stemCount={stems.length}
-                    />
-                  </div>
-                  
-                  {/* Mode Toggle Button - Centered below slider for desktop */}
-                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-                  <button
-                      onClick={() => {
-                        const newMode = !isNaturalVarispeed;
-                        setIsNaturalVarispeed(newMode);
-                        setVarispeedControl(varispeed, newMode);
-                      }}
-                    className="px-3 py-2 text-xs font-mono rounded border"
-                    style={{ 
-                      color: primary,
-                      borderColor: primary,
-                      backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
-                        pointerEvents: 'auto',
-                        minHeight: '32px',
-                        minWidth: '70px'
-                    }}
-                    title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
-                  >
-                    {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
-                  </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Mobile Portrait Varispeed */}
-            {isMobilePortrait && stems.length >= 3 && (
-              <div className="w-full flex justify-center sm:hidden">
-                <div
-                  className="relative"
-                  style={{
-                    marginTop: '12px',
-                    width: '350px',
-                    height: '140px',
-                  }}
-                >
-                  <div
-                    className="absolute top-0 left-0 w-full flex flex-col items-center"
-                    style={{
-                      pointerEvents: 'none',
-                      marginTop: '0px',
-                    }}
-                  >
-                    {bpm !== null && (
-                      <div className="text-xs font-mono mb-1" style={{ color: primary }}>
-                        {Math.round(bpm * varispeed)} BPM
-                      </div>
-                    )}
-                    <div className="text-sm tracking-wider" style={{ color: primary }}>
-                      VARISPEED
-                    </div>
-                  </div>
-
-                  <div
-                    className="absolute left-1/2"
-                    style={{
-                      transform: 'translateX(-50%) rotate(-90deg)',
-                      top: '-118px',
-                    }}
-                  >
-                    <VarispeedSlider
-                      value={isIOS ? varispeed : 2 - varispeed}
-                      onChange={val => {
-                        const newVarispeed = isIOS ? val : 2 - val;
-                        setVarispeed(newVarispeed);
-                        setVarispeedControl(newVarispeed, isNaturalVarispeed);
-                      }}
-                      isIOS={isIOS}
-                      primaryColor={primary}
-                      stemCount={stems.length}
-                    />
-                  </div>
-                  
-                  {/* Mode Toggle Button - Centered below slider for mobile */}
-                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
-                    <button
-                      onClick={() => {
-                        const newMode = !isNaturalVarispeed;
-                        setIsNaturalVarispeed(newMode);
-                        setVarispeedControl(varispeed, newMode);
-                      }}
-                      className="px-3 py-2 text-xs font-mono rounded border"
-                      style={{ 
-                        color: primary,
-                        borderColor: primary,
-                        backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
-                        pointerEvents: 'auto', // Enable pointer events for mobile tapping
-                        minHeight: '32px', // Ensure minimum touch target size
-                        minWidth: '70px' // Ensure minimum touch target size
-                      }}
-                      title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
-                    >
-                      {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </main>
 
           {/* 🎛️ Reverb Configuration Modal */}
@@ -1983,6 +2228,7 @@ function MixerPage() {
             initialConfig={reverbs[reverbConfigModal.stemLabel] || defaultReverbConfig}
             stemLabel={reverbConfigModal.stemLabel}
             position={reverbConfigModal.position}
+            primaryColor={primary}
           />
 
           {/* 🎛️ Echo Configuration Modal */}
@@ -1993,6 +2239,7 @@ function MixerPage() {
             initialConfig={echoes[echoConfigModal.stemLabel] || defaultEchoConfig}
             stemLabel={echoConfigModal.stemLabel}
             position={echoConfigModal.position}
+            primaryColor={primary}
           />
 
           {/* 🎛️ Global Flanger Configuration Modal */}
@@ -2004,6 +2251,7 @@ function MixerPage() {
             initialConfig={globalFlanger || defaultFlangerConfig}
             stemLabel="Global Mix"
             position={{ x: typeof window !== 'undefined' ? window.innerWidth / 2 : 400, y: typeof window !== 'undefined' ? window.innerHeight / 2 : 300 }}
+            primaryColor={primary}
           />
 
           {/* 🎛️ Global Compressor Configuration Modal */}
@@ -2015,6 +2263,7 @@ function MixerPage() {
             initialConfig={globalCompressor || defaultCompressorConfig}
             stemLabel="Global Mix"
             position={{ x: typeof window !== 'undefined' ? window.innerWidth / 2 : 400, y: typeof window !== 'undefined' ? window.innerHeight / 2 : 300 }}
+            primaryColor={primary}
           />
 
         </>
