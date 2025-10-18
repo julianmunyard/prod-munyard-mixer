@@ -1201,31 +1201,8 @@ function MixerPage() {
             </h1>
 
 
-            {/* ▶️ Playback Controls */}
-            <div className={`flex justify-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
-              <button
-                onClick={loadStemsIntoTimeline}
-                disabled={!timelineReady || loadingStems}
-                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
-                  !timelineReady || loadingStems
-                    ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
-                    : 'hover:opacity-90'
-                }`}
-                style={timelineReady && !loadingStems ? { 
-                  backgroundColor: '#FCFAEE',
-                  color: primary,
-                  border: `1px solid ${primary}`
-                } : undefined}
-              >
-                {loadingStems && (
-                  <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                )}
-                {loadingStems 
-                  ? `Downloading... (${loadedStemsCount}/${stems.length})` 
-                  : 'Load Stems'
-                }
-              </button>
-
+            {/* ▶️ Main Playback Controls */}
+            <div className={`flex justify-center mb-4 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
               <button
                 onClick={playAll}
                 disabled={!timelineReady || !allAssetsLoaded}
@@ -1254,6 +1231,32 @@ function MixerPage() {
                 style={{ backgroundColor: primary }}
               >
                 UNSOLO
+              </button>
+            </div>
+
+            {/* 🎛️ Secondary Controls */}
+            <div className={`flex justify-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
+              <button
+                onClick={loadStemsIntoTimeline}
+                disabled={!timelineReady || loadingStems}
+                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
+                  !timelineReady || loadingStems
+                    ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
+                    : 'hover:opacity-90'
+                }`}
+                style={timelineReady && !loadingStems ? { 
+                  backgroundColor: '#FCFAEE',
+                  color: primary,
+                  border: `1px solid ${primary}`
+                } : undefined}
+              >
+                {loadingStems && (
+                  <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                )}
+                {loadingStems 
+                  ? `Downloading... (${loadedStemsCount}/${stems.length})` 
+                  : 'Load Stems'
+                }
               </button>
 
               {/* Master Effect Dropdown */}
