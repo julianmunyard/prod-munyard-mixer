@@ -25,39 +25,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     setError(null)
 
     try {
-      // Check if Dropbox script is already loaded
-      if (!window.Dropbox) {
-        // Load Dropbox Chooser script
-        const script = document.createElement('script')
-        script.src = 'https://www.dropbox.com/static/api/2/dropins.js'
-        script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
-        script.async = true
-
-        // Wait for script to load
-        await new Promise((resolve, reject) => {
-          script.onload = () => {
-            console.log('Dropbox script loaded successfully')
-            resolve(true)
-          }
-          script.onerror = (error) => {
-            console.error('Failed to load Dropbox script:', error)
-            reject(error)
-          }
-          document.head.appendChild(script)
-        })
-      }
-
-      // Wait a bit for Dropbox to initialize
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Check if Dropbox is available
-      if (!window.Dropbox || !window.Dropbox.choose) {
-        throw new Error('Dropbox Chooser not available after loading')
-      }
-
-      console.log('Initializing Dropbox Chooser...')
-
-      // Initialize Dropbox Chooser
+      // Use the official Dropbox Chooser approach
       const options = {
         success: (files: any[]) => {
           console.log('Files selected:', files)
@@ -93,11 +61,15 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
         folderselect: false,
       }
 
-      // Call Dropbox choose
-      window.Dropbox.choose(options)
+      // Try to use Dropbox if available, otherwise show error
+      if (window.Dropbox && window.Dropbox.choose) {
+        window.Dropbox.choose(options)
+      } else {
+        throw new Error('Dropbox Chooser not available. Please ensure the Dropbox script is loaded.')
+      }
     } catch (err) {
       console.error('Dropbox error:', err)
-      setError(`Failed to load Dropbox picker: ${err.message || err}`)
+      setError(`Dropbox not available: ${err.message || err}`)
       setIsLoading(false)
     }
   }
