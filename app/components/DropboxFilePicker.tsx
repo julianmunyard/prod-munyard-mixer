@@ -2,6 +2,15 @@
 
 import React, { useState } from 'react'
 
+// Declare Dropbox global
+declare global {
+  interface Window {
+    Dropbox: {
+      choose: (options: any) => void
+    }
+  }
+}
+
 interface DropboxFilePickerProps {
   onFilesSelected: (files: File[]) => void
   isMobile: boolean
@@ -16,22 +25,42 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     setError(null)
 
     try {
-      // Load Dropbox Chooser script
-      const script = document.createElement('script')
-      script.src = 'https://www.dropbox.com/static/api/2/dropins.js'
-      script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2') // Your actual Dropbox app key
-      script.async = true
+      // Check if Dropbox script is already loaded
+      if (!window.Dropbox) {
+        // Load Dropbox Chooser script
+        const script = document.createElement('script')
+        script.src = 'https://www.dropbox.com/static/api/2/dropins.js'
+        script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
+        script.async = true
 
-      // Wait for script to load
-      await new Promise((resolve, reject) => {
-        script.onload = resolve
-        script.onerror = reject
-        document.head.appendChild(script)
-      })
+        // Wait for script to load
+        await new Promise((resolve, reject) => {
+          script.onload = () => {
+            console.log('Dropbox script loaded successfully')
+            resolve(true)
+          }
+          script.onerror = (error) => {
+            console.error('Failed to load Dropbox script:', error)
+            reject(error)
+          }
+          document.head.appendChild(script)
+        })
+      }
+
+      // Wait a bit for Dropbox to initialize
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Check if Dropbox is available
+      if (!window.Dropbox || !window.Dropbox.choose) {
+        throw new Error('Dropbox Chooser not available after loading')
+      }
+
+      console.log('Initializing Dropbox Chooser...')
 
       // Initialize Dropbox Chooser
       const options = {
         success: (files: any[]) => {
+          console.log('Files selected:', files)
           // Convert Dropbox files to File objects
           const filePromises = files.map(async (file) => {
             try {
@@ -55,23 +84,20 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             })
         },
         cancel: () => {
+          console.log('User cancelled Dropbox chooser')
           setIsLoading(false)
         },
         linkType: 'direct',
         multiselect: true,
-        extensions: ['audio'], // This includes all audio formats: mp3, wav, aiff, flac, etc.
+        extensions: ['audio'],
         folderselect: false,
       }
 
-      // @ts-ignore - Dropbox global
-      if (window.Dropbox && window.Dropbox.choose) {
-        window.Dropbox.choose(options)
-      } else {
-        throw new Error('Dropbox Chooser not loaded properly')
-      }
+      // Call Dropbox choose
+      window.Dropbox.choose(options)
     } catch (err) {
       console.error('Dropbox error:', err)
-      setError(`Failed to load Dropbox picker: ${err}`)
+      setError(`Failed to load Dropbox picker: ${err.message || err}`)
       setIsLoading(false)
     }
   }
