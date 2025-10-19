@@ -45,7 +45,6 @@ return (
         src="https://www.dropbox.com/static/api/2/dropins.js" 
         id="dropboxjs" 
         data-app-key="tgtfykx9u7aqyn2"
-        crossOrigin="anonymous"
       />
     </head>
     <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
