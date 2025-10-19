@@ -63,6 +63,15 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
 
       // Try to use Dropbox if available, otherwise show error
       if (window.Dropbox && window.Dropbox.choose) {
+        // For mobile, show a helpful message before opening
+        if (isMobile) {
+          const proceed = confirm('📱 Mobile: Dropbox will open in a new tab. After selecting files, return to this page. Continue?')
+          if (!proceed) {
+            setIsLoading(false)
+            return
+          }
+        }
+        
         window.Dropbox.choose(options)
       } else {
         throw new Error('Dropbox Chooser not available. Please ensure the Dropbox script is loaded.')
