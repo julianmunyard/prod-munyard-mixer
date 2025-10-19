@@ -13,6 +13,7 @@ import { v4 as uuidv4 } from 'uuid'
 import axios, { AxiosProgressEvent } from 'axios'
 import { HexColorPicker } from 'react-colorful'
 import MiniMixerPreview from '../components/MiniMixerPreview'
+import DropboxFilePicker from '../components/DropboxFilePicker'
 import { convertToMp3 } from '@/lib/convertToMp3';
 
 
@@ -52,9 +53,26 @@ export default function Create() {
   const [hasWavs, setHasWavs] = useState(false)
   const [convertStatus, setConvertStatus] = useState<'idle' | 'uploading' | 'done'>('idle')
   const [dotCount, setDotCount] = useState(0)
+  const [fileSource, setFileSource] = useState<'device' | 'dropbox'>('device')
+  const [showFileSourceDropdown, setShowFileSourceDropdown] = useState(false)
   
   // Mobile detection
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768
+
+  // Click outside handler for dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (!target.closest('[data-dropdown]')) {
+        setShowFileSourceDropdown(false)
+        setShowThemeDropdown(false)
+        setShowEffectDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
 
 
@@ -93,6 +111,30 @@ useEffect(() => {
 
 
   
+const handleDropboxFiles = (files: File[]) => {
+  // Mobile memory optimization: limit stems to 15
+  const maxStemsForMobile = 15
+  let processedFiles = files
+  
+  if (isMobile && files.length > maxStemsForMobile) {
+    processedFiles = files.slice(0, maxStemsForMobile)
+    alert(`📱 Mobile detected: Limited to ${maxStemsForMobile} stems for memory optimization. Only the first ${maxStemsForMobile} files will be used.`)
+  }
+  
+  // Create a FileList from the array of Files
+  const newFileList = new DataTransfer()
+  processedFiles.forEach(file => newFileList.items.add(file))
+  
+  setStems(newFileList.files)
+  setUploadedFiles(processedFiles.map((file) => file.name))
+
+  // Check for .wav files
+  const wavDetected = processedFiles.some((file) =>
+    file.name.toLowerCase().endsWith('.wav') || file.type === 'audio/wav'
+  )
+  setHasWavs(wavDetected)
+}
+
 const handleConvertAllToMp3 = async () => {
   if (!stems) return
 
@@ -401,71 +443,161 @@ effects: (
   />
 </label>
 
-          <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
-            Upload Stems (WAV/MP3)
-            <label
-              htmlFor="file-upload"
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#ffffff',
-                color: '#B8001F',
-                border: '1px solid #B8001F',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                display: 'inline-block',
-              }}
-            >
-              Choose Files
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
+            <label style={{ fontWeight: 'bold', fontSize: '1rem' }}>
+              Choose Stems (WAV/MP3)
             </label>
-            <span style={{ fontSize: '0.85rem', color: '#aaa', marginTop: '0.25rem' }}>
+            
+            {/* File Source Dropdown */}
+            <div style={{ position: 'relative', width: '100%' }} data-dropdown>
+              <div
+                onClick={() => setShowFileSourceDropdown(!showFileSourceDropdown)}
+                style={{
+                  width: '100%',
+                  padding: '0.5rem',
+                  backgroundColor: 'white',
+                  color: 'black',
+                  border: '1px solid #ccc',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  position: 'relative',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <span>
+                  {fileSource === 'device' ? '📱 From This Device' : '📁 From Dropbox'}
+                </span>
+                <span style={{ fontSize: '0.8rem' }}>▼</span>
+              </div>
+
+              {showFileSourceDropdown && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    width: '100%',
+                    backgroundColor: 'white',
+                    border: '1px solid #ccc',
+                    zIndex: 10,
+                    fontSize: '0.9rem',
+                  }}
+                >
+                  <div
+                    onClick={() => {
+                      setFileSource('device')
+                      setShowFileSourceDropdown(false)
+                    }}
+                    style={{
+                      padding: '0.5rem',
+                      cursor: 'pointer',
+                      backgroundColor: fileSource === 'device' ? '#f3f3f3' : 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    📱 From This Device
+                  </div>
+                  <div
+                    onClick={() => {
+                      setFileSource('dropbox')
+                      setShowFileSourceDropdown(false)
+                    }}
+                    style={{
+                      padding: '0.5rem',
+                      cursor: 'pointer',
+                      backgroundColor: fileSource === 'dropbox' ? '#f3f3f3' : 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                    }}
+                  >
+                    📁 From Dropbox
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* File Upload Button */}
+            {fileSource === 'device' ? (
+              <div style={{ width: '100%' }}>
+                <label
+                  htmlFor="file-upload"
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#ffffff',
+                    color: '#B8001F',
+                    border: '1px solid #B8001F',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    display: 'block',
+                    textAlign: 'center',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  Choose Files
+                </label>
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept=".mp3,.wav,audio/*"
+                  multiple
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    const selected = e.target.files
+                    if (selected) {
+                      // Mobile memory optimization: limit stems to 15
+                      const maxStemsForMobile = 15
+                      let processedFiles = selected
+                      
+                      if (isMobile && selected.length > maxStemsForMobile) {
+                        // Create a new FileList with only the first 15 files
+                        const limitedFiles = Array.from(selected).slice(0, maxStemsForMobile)
+                        const newFileList = new DataTransfer()
+                        limitedFiles.forEach(file => newFileList.items.add(file))
+                        processedFiles = newFileList.files
+                        
+                        // Show warning
+                        alert(`📱 Mobile detected: Limited to ${maxStemsForMobile} stems for memory optimization. Only the first ${maxStemsForMobile} files will be used.`)
+                      }
+                      
+                      setStems(processedFiles)
+                      setUploadedFiles(Array.from(processedFiles).map((file) => file.name))
+
+                      // Check for .wav files
+                      const wavDetected = Array.from(processedFiles).some((file) =>
+                        file.name.toLowerCase().endsWith('.wav') || file.type === 'audio/wav'
+                      )
+                      setHasWavs(wavDetected)
+                    }
+                  }}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            ) : (
+              <div style={{ width: '100%' }}>
+                <DropboxFilePicker onFilesSelected={handleDropboxFiles} isMobile={isMobile} />
+              </div>
+            )}
+
+            <span style={{ fontSize: '0.85rem', color: '#aaa', textAlign: 'center', marginTop: '0.25rem' }}>
               ⚠️ Use MP3s for faster uploads, or WAVs under 50MB.
               {isMobile && (
                 <><br />📱 Mobile: Limited to 15 stems for memory optimization.</>
               )}
             </span>
-            <input
-              id="file-upload"
-              type="file"
-              accept=".mp3,.wav,audio/*"
-              multiple
-              ref={fileInputRef}
-              onChange={(e) => {
-                const selected = e.target.files
-if (selected) {
-  // Mobile memory optimization: limit stems to 15
-  const maxStemsForMobile = 15
-  let processedFiles = selected
-  
-  if (isMobile && selected.length > maxStemsForMobile) {
-    // Create a new FileList with only the first 15 files
-    const limitedFiles = Array.from(selected).slice(0, maxStemsForMobile)
-    const newFileList = new DataTransfer()
-    limitedFiles.forEach(file => newFileList.items.add(file))
-    processedFiles = newFileList.files
-    
-    // Show warning
-    alert(`📱 Mobile detected: Limited to ${maxStemsForMobile} stems for memory optimization. Only the first ${maxStemsForMobile} files will be used.`)
-  }
-  
-  setStems(processedFiles)
-  setUploadedFiles(Array.from(processedFiles).map((file) => file.name))
-
-  // Check for .wav files
-  const wavDetected = Array.from(processedFiles).some((file) =>
-    file.name.toLowerCase().endsWith('.wav') || file.type === 'audio/wav'
-  )
-  setHasWavs(wavDetected)
-}
-              }}
-              style={{ display: 'none' }}
-            />
+            
             {stems && (
               <p style={{ marginTop: '0.25rem', fontSize: '0.85rem', color: '#444' }}>
                 {stems.length} file{stems.length > 1 ? 's' : ''} selected
               </p>
             )}
-          </label>
+          </div>
 
 
 
