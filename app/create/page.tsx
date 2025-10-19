@@ -513,10 +513,9 @@ effects: (
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      opacity: 0.5,
                     }}
                   >
-                    📁 From Dropbox (Coming Soon)
+                    📁 From Dropbox
                   </div>
                 </div>
               )}
