@@ -64,51 +64,72 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       }
 
       // @ts-ignore - Dropbox global
-      window.Dropbox.choose(options)
+      if (window.Dropbox && window.Dropbox.choose) {
+        window.Dropbox.choose(options)
+      } else {
+        throw new Error('Dropbox Chooser not loaded properly')
+      }
     } catch (err) {
-      setError('Failed to load Dropbox picker')
+      console.error('Dropbox error:', err)
+      setError(`Failed to load Dropbox picker: ${err}`)
       setIsLoading(false)
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleDropboxClick}
-      disabled={isLoading}
-      style={{
-        padding: '0.5rem 1rem',
-        backgroundColor: '#ffffff',
-        color: '#B8001F',
-        border: '1px solid #B8001F',
-        borderRadius: '4px',
-        cursor: isLoading ? 'not-allowed' : 'pointer',
-        fontSize: '0.9rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        opacity: isLoading ? 0.7 : 1,
-        width: '100%',
-        justifyContent: 'center',
-      }}
-    >
-      {isLoading ? (
-        <>
-          <div style={{
-            width: '12px',
-            height: '12px',
-            border: '2px solid #B8001F',
-            borderTop: '2px solid transparent',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          Loading...
-        </>
-      ) : (
-        <>
-          📁 Dropbox
-        </>
+    <div style={{ width: '100%' }}>
+      <button
+        type="button"
+        onClick={handleDropboxClick}
+        disabled={isLoading}
+        style={{
+          padding: '0.5rem 1rem',
+          backgroundColor: '#ffffff',
+          color: '#B8001F',
+          border: '1px solid #B8001F',
+          borderRadius: '4px',
+          cursor: isLoading ? 'not-allowed' : 'pointer',
+          fontSize: '0.9rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          opacity: isLoading ? 0.7 : 1,
+          width: '100%',
+          justifyContent: 'center',
+        }}
+      >
+        {isLoading ? (
+          <>
+            <div style={{
+              width: '12px',
+              height: '12px',
+              border: '2px solid #B8001F',
+              borderTop: '2px solid transparent',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            Loading...
+          </>
+        ) : (
+          <>
+            📁 Dropbox
+          </>
+        )}
+      </button>
+      
+      {error && (
+        <div style={{
+          marginTop: '0.5rem',
+          padding: '0.5rem',
+          backgroundColor: '#ffebee',
+          color: '#c62828',
+          border: '1px solid #ffcdd2',
+          borderRadius: '4px',
+          fontSize: '0.8rem',
+        }}>
+          {error}
+        </div>
       )}
-    </button>
+    </div>
   )
 }
