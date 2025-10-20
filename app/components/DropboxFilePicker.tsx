@@ -47,32 +47,63 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
           return
         }
 
-        // Create and load script
-        const script = document.createElement('script')
-        script.id = 'dropboxjs'
-        script.src = 'https://www.dropbox.com/static/api/2/dropins.js'
-        script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
-        script.async = true
+        // Try multiple approaches to load Dropbox script
+        const loadScript = (src: string) => {
+          return new Promise((resolve, reject) => {
+            const script = document.createElement('script')
+            script.id = 'dropboxjs'
+            script.src = src
+            script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
+            script.async = true
+            script.crossOrigin = 'anonymous'
 
-        script.onload = () => {
-          console.log('Dropbox script loaded')
-          // Wait a bit for Dropbox to initialize
-          setTimeout(() => {
-            if (window.Dropbox && window.Dropbox.choose) {
-              setDropboxReady(true)
-              setError(null)
-              console.log('Dropbox ready')
-            } else {
-              setError('Dropbox script loaded but API not available')
+            script.onload = () => {
+              console.log(`Dropbox script loaded from ${src}`)
+              resolve(true)
             }
-          }, 1000)
+
+            script.onerror = () => {
+              console.error(`Failed to load Dropbox script from ${src}`)
+              reject(new Error(`Failed to load from ${src}`))
+            }
+
+            document.head.appendChild(script)
+          })
         }
 
-        script.onerror = () => {
-          setError('Failed to load Dropbox script')
+        // Try different sources
+        const sources = [
+          'https://www.dropbox.com/static/api/2/dropins.js',
+          'https://dropbox.com/static/api/2/dropins.js',
+          'https://www.dropbox.com/static/api/2/dropins.js?t=' + Date.now()
+        ]
+
+        let loaded = false
+        for (const src of sources) {
+          try {
+            await loadScript(src)
+            loaded = true
+            break
+          } catch (err) {
+            console.log(`Failed to load from ${src}, trying next...`)
+          }
         }
 
-        document.head.appendChild(script)
+        if (!loaded) {
+          setError('Failed to load Dropbox script from any source')
+          return
+        }
+
+        // Wait for Dropbox to initialize
+        setTimeout(() => {
+          if (window.Dropbox && window.Dropbox.choose) {
+            setDropboxReady(true)
+            setError(null)
+            console.log('Dropbox ready')
+          } else {
+            setError('Dropbox script loaded but API not available')
+          }
+        }, 2000)
       } catch (err) {
         setError(`Error loading Dropbox: ${err}`)
       }
