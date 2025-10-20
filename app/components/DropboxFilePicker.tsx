@@ -59,7 +59,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       }
     }
 
-    // Use the official Dropbox Chooser approach
+    // Use the exact approach from Dropbox article
     const options = {
       success: (files: any[]) => {
         console.log('Files selected:', files)
@@ -95,8 +95,13 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       folderselect: false,
     }
 
+    // Use Dropbox.choose directly as shown in the article
     try {
-      window.Dropbox.choose(options)
+      if (window.Dropbox && window.Dropbox.choose) {
+        window.Dropbox.choose(options)
+      } else {
+        throw new Error('Dropbox not available')
+      }
     } catch (err) {
       console.error('Dropbox error:', err)
       setError(`Dropbox error: ${err.message || err}`)

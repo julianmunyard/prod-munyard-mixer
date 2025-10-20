@@ -40,17 +40,16 @@ return (
       <meta property="og:url" content="https://munyardmixer.com" />
       <meta name="twitter:card" content="summary_large_image" />
       
+      {/* Dropbox Chooser Script - exactly as shown in Dropbox article */}
+      <script 
+        type="text/javascript" 
+        src="https://www.dropbox.com/static/api/2/dropins.js" 
+        id="dropboxjs" 
+        data-app-key="tgtfykx9u7aqyn2"
+      />
     </head>
     <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       {children}
-      
-      {/* Dropbox Chooser Script */}
-      <Script
-        src="https://www.dropbox.com/static/api/2/dropins.js"
-        id="dropboxjs"
-        data-app-key="tgtfykx9u7aqyn2"
-        strategy="beforeInteractive"
-      />
     </body>
   </html>
   );
