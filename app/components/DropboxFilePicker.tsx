@@ -22,23 +22,63 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
   const [dropboxReady, setDropboxReady] = useState(false)
 
   useEffect(() => {
-    // Check if Dropbox is loaded
-    const checkDropbox = () => {
-      if (window.Dropbox && window.Dropbox.choose) {
-        setDropboxReady(true)
-        setError(null)
-      } else {
-        setError('Dropbox not loaded')
+    // Load Dropbox script dynamically
+    const loadDropboxScript = async () => {
+      try {
+        // Check if already loaded
+        if (window.Dropbox && window.Dropbox.choose) {
+          setDropboxReady(true)
+          setError(null)
+          return
+        }
+
+        // Check if script already exists
+        const existingScript = document.getElementById('dropboxjs')
+        if (existingScript) {
+          // Script exists but Dropbox not ready, wait a bit
+          setTimeout(() => {
+            if (window.Dropbox && window.Dropbox.choose) {
+              setDropboxReady(true)
+              setError(null)
+            } else {
+              setError('Dropbox script loaded but not ready')
+            }
+          }, 2000)
+          return
+        }
+
+        // Create and load script
+        const script = document.createElement('script')
+        script.id = 'dropboxjs'
+        script.src = 'https://www.dropbox.com/static/api/2/dropins.js'
+        script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
+        script.async = true
+
+        script.onload = () => {
+          console.log('Dropbox script loaded')
+          // Wait a bit for Dropbox to initialize
+          setTimeout(() => {
+            if (window.Dropbox && window.Dropbox.choose) {
+              setDropboxReady(true)
+              setError(null)
+              console.log('Dropbox ready')
+            } else {
+              setError('Dropbox script loaded but API not available')
+            }
+          }, 1000)
+        }
+
+        script.onerror = () => {
+          setError('Failed to load Dropbox script')
+        }
+
+        document.head.appendChild(script)
+      } catch (err) {
+        setError(`Error loading Dropbox: ${err}`)
       }
     }
 
-    // Check immediately
-    checkDropbox()
-
-    // Check again after a delay
-    const timer = setTimeout(checkDropbox, 1000)
-    
-    return () => clearTimeout(timer)
+    loadDropboxScript()
   }, [])
 
   const handleDropboxClick = () => {
