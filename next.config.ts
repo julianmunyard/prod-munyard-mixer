@@ -13,9 +13,9 @@ const nextConfig: NextConfig = {
       {
         source: '/:path*',
         headers: [
-          // Temporarily disable COEP to allow Dropbox communication
+          // Temporarily disable all security headers to allow Dropbox
           // { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
-          { key: 'Cross-Origin-Opener-Policy', value: 'unsafe-none' },
+          // { key: 'Cross-Origin-Opener-Policy', value: 'unsafe-none' },
         ],
       },
 
