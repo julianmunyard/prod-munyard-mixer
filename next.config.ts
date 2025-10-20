@@ -9,15 +9,6 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      // ✅ Apply COOP/COEP globally (needed for SharedArrayBuffer + AudioWorklet + Superpowered)
-      {
-        source: '/:path*',
-        headers: [
-          // Temporarily disable all security headers to allow Dropbox
-          // { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
-          // { key: 'Cross-Origin-Opener-Policy', value: 'unsafe-none' },
-        ],
-      },
 
       // ✅ Ensure ffmpeg WASM is served with correct MIME
       {

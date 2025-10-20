@@ -15,6 +15,7 @@ import ReverbConfigModal from '../../../components/ReverbConfigModal'
 import EchoConfigModal from '../../../components/EchoConfigModal'
 import FlangerConfigModal from '../../../components/FlangerConfigModal'
 import CompressorConfigModal from '../../../components/CompressorConfigModal'
+import PoolsuiteLoadingScreen from '../../../components/PoolsuiteLoadingScreen'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import RealTimelineMixerEngine from '../../../../audio/engine/realTimelineMixerEngine'
@@ -185,6 +186,11 @@ function MixerPage() {
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [memoryUsage, setMemoryUsage] = useState<{heap: number, total: number}>({heap: 0, total: 0});
+  
+  // Loading screen state
+  const [showLoadingScreen, setShowLoadingScreen] = useState(true)
+  const [loadingProgress, setLoadingProgress] = useState(0)
+  const [loadingMessage, setLoadingMessage] = useState('Initializing audio engine...')
 
   // -------------------- 🎵 Timeline Engine Reference --------------------
   const mixerEngineRef = useRef<RealTimelineMixerEngine | null>(null);
@@ -295,17 +301,24 @@ function MixerPage() {
   useEffect(() => {
     const initializeTimeline = async () => {
       try {
+        setLoadingMessage('Initializing audio engine...')
+        setLoadingProgress(10)
         addDebugLog('🎵 Initializing Timeline Engine...')
         
         mixerEngineRef.current = new RealTimelineMixerEngine()
-        await mixerEngineRef.current.init()
+        setLoadingProgress(30)
+        setLoadingMessage('Loading audio processors...')
         
+        await mixerEngineRef.current.init()
+        setLoadingProgress(50)
+        setLoadingMessage('Audio engine ready!')
 
         setTimelineReady(true)
         addDebugLog('✅ Timeline Engine ready!')
         
       } catch (error) {
         addDebugLog(`❌ Failed to initialize: ${error}`)
+        setLoadingMessage('Failed to initialize audio engine')
       }
     }
 
@@ -330,6 +343,8 @@ function MixerPage() {
     const fetchSong = async () => {
       if (!artist || !songSlug) return;
       
+      setLoadingMessage('Loading song data...')
+      setLoadingProgress(60)
       addDebugLog(`🎵 Loading song: ${artist}/${songSlug}`);
       
       const { data, error } = await supabase!
@@ -341,11 +356,13 @@ function MixerPage() {
 
       if (error) {
         addDebugLog(`❌ Supabase error: ${error.message}`);
+        setLoadingMessage('Failed to load song data')
         return;
       }
       
       if (!data) {
         addDebugLog('❌ Song not found in database');
+        setLoadingMessage('Song not found')
         return;
       }
       
@@ -360,6 +377,7 @@ function MixerPage() {
 
       if (!parsedStems || !Array.isArray(parsedStems)) {
         addDebugLog('❌ No stems found in song data');
+        setLoadingMessage('No stems found')
         return;
       }
 
@@ -422,10 +440,43 @@ function MixerPage() {
         stereo: false,
         enabled: false
       });
+
     }
 
       fetchSong();
   }, [artist, songSlug])
+
+  // Separate effect to auto-load stems when both timeline and song data are ready
+  useEffect(() => {
+    console.log('🔍 Auto-load check:', { 
+      timelineReady, 
+      hasSongData: !!songData, 
+      stemsCount: stems.length, 
+      allAssetsLoaded, 
+      loadingStems,
+      hasAudioEngine: !!mixerEngineRef.current?.audioEngine
+    });
+    
+    if (timelineReady && songData && stems.length > 0 && !allAssetsLoaded && !loadingStems && mixerEngineRef.current?.audioEngine) {
+      addDebugLog('🚀 Auto-starting stem loading...');
+      setLoadingMessage('Preparing to load stems...')
+      setLoadingProgress(70)
+      // Add a longer delay to ensure audio engine is fully ready
+      setTimeout(() => {
+        // Double-check that everything is still ready before loading
+        if (mixerEngineRef.current?.audioEngine && stems.length > 0) {
+          loadStemsIntoTimeline()
+        } else {
+          addDebugLog('⚠️ Audio engine not ready, retrying in 1 second...');
+          setTimeout(() => {
+            if (mixerEngineRef.current?.audioEngine && stems.length > 0) {
+              loadStemsIntoTimeline()
+            }
+          }, 1000);
+        }
+      }, 1000) // Increased from 500ms to 1000ms
+    }
+  }, [timelineReady, songData, stems.length, allAssetsLoaded, loadingStems])
 
 
   // ==================== 🎵 Load Stems Function ====================
@@ -437,6 +488,8 @@ function MixerPage() {
 
     try {
       addDebugLog(`🎵 Loading ${stems.length} stems into timeline...`);
+      setLoadingMessage('Preparing audio stems...')
+      setLoadingProgress(75)
       setLoadingStems(true);
       setAllAssetsLoaded(false);
       setLoadedStemsCount(0);
@@ -448,48 +501,8 @@ function MixerPage() {
         label: stem.label
       }));
 
-      // 🚀 OPTIMIZATION: Sort stems by file size (smallest first) for faster loading
-      addDebugLog('📊 Fetching file sizes to optimize loading order...');
-      try {
-        const stemsWithSizes = await Promise.all(
-          stemData.map(async (stem) => {
-            try {
-              // Extract file path from Supabase URL
-              const url = new URL(stem.url);
-              const filePath = url.pathname.split('/').pop();
-              
-              // Get file metadata from Supabase storage
-              // @ts-ignore - Supabase type issues
-              const { data: fileData, error } = await supabase.storage
-                .from('stems')
-                .list('', {
-                  search: filePath
-                });
-              
-              if (error || !fileData || fileData.length === 0) {
-                console.warn(`⚠️ Could not get size for ${stem.label}, using default order`);
-                return { ...stem, size: 999999999 }; // Put unknown sizes at end
-              }
-              
-              const size = fileData[0].metadata?.size || 999999999;
-              addDebugLog(`📁 ${stem.label}: ${(size / 1024 / 1024).toFixed(1)}MB`);
-              return { ...stem, size };
-            } catch (error) {
-              console.warn(`⚠️ Error getting size for ${stem.label}:`, error);
-              return { ...stem, size: 999999999 }; // Put error cases at end
-            }
-          })
-        );
-        
-        // Sort by file size (smallest first)
-        stemData = stemsWithSizes
-          .sort((a, b) => a.size - b.size)
-          .map(({ size, ...stem }) => stem); // Remove size property
-        
-        addDebugLog(`🚀 Optimized loading order: smallest files first`);
-      } catch (error) {
-        addDebugLog(`⚠️ Could not optimize loading order: ${error}. Using original order.`);
-      }
+      // Skip file size optimization for now to prevent hanging
+      addDebugLog('📊 Using original stem order (optimization disabled)');
 
       // Check mobile memory limits
       const maxStemsForMobile = 15; // Limit to prevent 1GB+ memory usage
@@ -507,11 +520,16 @@ function MixerPage() {
           // Set up progress tracking for individual stems
           (mixerEngineRef.current.audioEngine as any).onStemDecoded = (decodedCount: number, totalCount: number) => {
             setLoadedStemsCount(decodedCount);
+            const progress = 75 + (decodedCount / totalCount) * 20; // 75-95% for stem loading
+            setLoadingProgress(progress);
+            setLoadingMessage(`Loading stem ${decodedCount}/${totalCount}...`);
             addDebugLog(`✅ Stem ${decodedCount}/${totalCount} decoded and loaded`);
           };
           
           (mixerEngineRef.current.audioEngine as any).onAllAssetsDownloaded = () => {
             addDebugLog('✅ All assets downloaded and decoded!');
+            setLoadingProgress(95);
+            setLoadingMessage('Finalizing mixer...');
             setAllAssetsLoaded(true);
             setLoadingStems(false);
             resolve();
@@ -1118,12 +1136,56 @@ function MixerPage() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
+  // ==================== 🎬 Loading Screen Completion Handler ====================
+  const handleLoadingComplete = () => {
+    setLoadingProgress(100);
+    setLoadingMessage('Ready to mix!');
+    setTimeout(() => {
+      setShowLoadingScreen(false);
+    }, 800);
+  };
+
+  // Auto-complete loading when all assets are loaded
+  useEffect(() => {
+    if (allAssetsLoaded && showLoadingScreen) {
+      handleLoadingComplete();
+    }
+  }, [allAssetsLoaded, showLoadingScreen]);
+
+  // Fallback: If loading gets stuck at 70%, show manual trigger after 2 seconds
+  useEffect(() => {
+    if (loadingProgress === 70 && !loadingStems && stems.length > 0) {
+      const timer = setTimeout(() => {
+        addDebugLog('⚠️ Loading seems stuck at 70%, attempting manual trigger...');
+        if (timelineReady && stems.length > 0 && !allAssetsLoaded && mixerEngineRef.current?.audioEngine) {
+          addDebugLog('🚀 Manual trigger: Starting stem loading...');
+          loadStemsIntoTimeline();
+        } else {
+          addDebugLog('⚠️ Manual trigger failed - conditions not met');
+        }
+      }, 2000); // Reduced from 3 seconds to 2 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loadingProgress, loadingStems, stems.length, timelineReady, allAssetsLoaded]);
+
   // ==================== 🎨 RENDER ====================
   return (
     <>
-      {!songData ? (
-        <div className="p-8 text-white">Loading...</div>
-      ) : (
+      {/* Show loading screen while loading */}
+      {showLoadingScreen && (
+        <PoolsuiteLoadingScreen
+          songTitle={songData?.title || 'Loading...'}
+          artistName={songData?.artist_name || 'Unknown Artist'}
+          progress={loadingProgress}
+          loadingMessage={loadingMessage}
+          onComplete={handleLoadingComplete}
+          primaryColor={primary}
+        />
+      )}
+
+      {/* Show main interface when loading is complete */}
+      {!showLoadingScreen && songData && (
         <>
           {/* 🎨 Global Inline Styles */}
           <style>{`
@@ -1268,31 +1330,6 @@ function MixerPage() {
             {/* 🎛️ Secondary Controls - Desktop Only */}
             {!isMobile && (
               <div className={`flex justify-center mb-1 gap-8`}>
-                {/* Load Stems Button - Only show if not loaded */}
-                {!allAssetsLoaded && (
-                  <button
-                    onClick={loadStemsIntoTimeline}
-                    disabled={!timelineReady || loadingStems}
-                    className={`pressable px-6 py-2 font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
-                      !timelineReady || loadingStems
-                        ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
-                        : 'hover:opacity-90'
-                    }`}
-                    style={timelineReady && !loadingStems ? { 
-                      backgroundColor: '#FCFAEE',
-                      color: primary,
-                      border: `1px solid ${primary}`
-                    } : undefined}
-                  >
-                    {loadingStems && (
-                      <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                    )}
-                    {loadingStems 
-                      ? `Downloading... (${loadedStemsCount}/${stems.length})` 
-                      : 'Load Stems'
-                    }
-                  </button>
-                )}
 
               {/* Master Effect Dropdown */}
               <div className="relative">
@@ -1463,33 +1500,6 @@ function MixerPage() {
             </div>
             )}
 
-            {/* 🎛️ Mobile Secondary Controls - Load Stems Only */}
-            {isMobile && !allAssetsLoaded && (
-              <div className="flex justify-center mb-1 gap-4 px-4">
-                <button
-                  onClick={loadStemsIntoTimeline}
-                  disabled={!timelineReady || loadingStems}
-                  className={`pressable px-4 py-1 text-sm font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
-                    !timelineReady || loadingStems
-                      ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
-                      : 'hover:opacity-90'
-                  }`}
-                  style={timelineReady && !loadingStems ? { 
-                    backgroundColor: '#FCFAEE',
-                    color: primary,
-                    border: `1px solid ${primary}`
-                  } : undefined}
-                >
-                  {loadingStems && (
-                    <span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-                  )}
-                  {loadingStems 
-                    ? `Downloading... (${loadedStemsCount}/${stems.length})` 
-                    : 'Load Stems'
-                  }
-                </button>
-              </div>
-            )}
 
 
             {/* Spacing for modules */}
