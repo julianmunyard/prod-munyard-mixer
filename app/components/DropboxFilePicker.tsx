@@ -134,25 +134,49 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     const options = {
       success: (files: any[]) => {
         console.log('Files selected:', files)
+        console.log('File links:', files.map(f => f.link))
+        
         // Convert Dropbox files to File objects
-        const filePromises = files.map(async (file) => {
+        const filePromises = files.map(async (file, index) => {
           try {
-            const response = await fetch(file.link)
+            console.log(`Downloading file ${index + 1}: ${file.name}`)
+            console.log(`Link: ${file.link}`)
+            
+            // Add CORS headers to the fetch request
+            const response = await fetch(file.link, {
+              method: 'GET',
+              mode: 'cors',
+              headers: {
+                'Accept': '*/*',
+              }
+            })
+            
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+            }
+            
             const blob = await response.blob()
-            return new File([blob], file.name, { type: blob.type })
+            console.log(`Downloaded ${file.name}: ${blob.size} bytes, type: ${blob.type}`)
+            
+            return new File([blob], file.name, { 
+              type: blob.type || 'audio/wav',
+              lastModified: Date.now()
+            })
           } catch (err) {
-            console.error('Error downloading file:', err)
-            throw err
+            console.error(`Error downloading file ${file.name}:`, err)
+            throw new Error(`Failed to download ${file.name}: ${err.message}`)
           }
         })
 
         Promise.all(filePromises)
           .then((fileObjects) => {
+            console.log('All files downloaded successfully:', fileObjects.map(f => f.name))
             onFilesSelected(fileObjects)
             setIsLoading(false)
           })
           .catch((err) => {
-            setError('Failed to download files from Dropbox')
+            console.error('Download error:', err)
+            setError(`Failed to download files: ${err.message}`)
             setIsLoading(false)
           })
       },
