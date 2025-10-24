@@ -1430,34 +1430,7 @@ function MixerPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={(e) => {
-                      // Toggle flanger on/off when button is clicked
-                      const currentEnabled = globalFlanger?.enabled || false
-                      const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
-                      console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
-                      
-                      const newConfig = {
-                        ...(globalFlanger || defaultFlangerConfig),
-                        wet: newWet,
-                        enabled: !currentEnabled
-                      }
-                      setGlobalFlanger(newConfig)
-                      
-                      // Apply global flanger using correct command format
-                      if (mixerEngineRef.current?.audioEngine) {
-                        console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
-                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                          type: "command",
-                          data: { 
-                            command: "setFlangerConfig", 
-                            config: newConfig
-                          }
-                        });
-                        console.log(`✅ FLANGER CONFIG SENT!`);
-                      } else {
-                        console.log(`❌ ERROR: Audio engine not available!`);
-                      }
-                      
-                      // Also open the modal for fine-tuning
+                      // Just open the modal for settings - don't toggle on/off
                       handleFlangerConfigOpen()
                     }}
                       className="pressable px-4 py-2 font-mono tracking-wide"
@@ -1498,12 +1471,13 @@ function MixerPage() {
                     style={{ marginLeft: '8px' }}
                   >
                     <div 
-                      className="relative rounded-full border-2 transition-all duration-200 ease-in-out"
+                      className="relative rounded-full border transition-all duration-200 ease-in-out"
                       style={{ 
                         width: '44px',
                         height: '24px',
                         backgroundColor: (globalFlanger?.enabled || false) ? primary : '#FCFAEE',
                         borderColor: primary,
+                        borderWidth: '1px',
                         boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
                       }}
                     >
@@ -1512,7 +1486,7 @@ function MixerPage() {
                         style={{ 
                           width: '18px',
                           height: '18px',
-                          transform: (globalFlanger?.enabled || false) ? 'translateX(18px)' : 'translateX(0px)'
+                          transform: (globalFlanger?.enabled || false) ? 'translateX(20px)' : 'translateX(2px)'
                         }}
                       />
                     </div>
@@ -1522,34 +1496,7 @@ function MixerPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={(e) => {
-                      // Toggle compressor on/off when button is clicked
-                      const currentEnabled = globalCompressor?.enabled || false
-                      const newWet = currentEnabled ? 0 : 1.0 // Set to 100% wet when turning on
-                      console.log(`🎛️ COMPRESSOR BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
-                      
-                      const newConfig = {
-                        ...(globalCompressor || defaultCompressorConfig),
-                        wet: newWet,
-                        enabled: !currentEnabled
-                      }
-                      setGlobalCompressor(newConfig)
-                      
-                      // Apply global compressor using correct command format
-                      if (mixerEngineRef.current?.audioEngine) {
-                        console.log(`🎛️ SENDING COMPRESSOR CONFIG:`, newConfig);
-                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                          type: "command",
-                          data: { 
-                            command: "setCompressorConfig", 
-                            config: newConfig
-                          }
-                        });
-                        console.log(`✅ COMPRESSOR CONFIG SENT!`);
-                      } else {
-                        console.log(`❌ ERROR: Audio engine not available!`);
-                      }
-                      
-                      // Also open the modal for fine-tuning
+                      // Just open the modal for settings - don't toggle on/off
                       handleCompressorConfigOpen()
                     }}
                       className="pressable px-4 py-2 font-mono tracking-wide"
@@ -1590,12 +1537,13 @@ function MixerPage() {
                     style={{ marginLeft: '8px' }}
                   >
                     <div 
-                      className="relative rounded-full border-2 transition-all duration-200 ease-in-out"
+                      className="relative rounded-full border transition-all duration-200 ease-in-out"
                       style={{ 
                         width: '44px',
                         height: '24px',
                         backgroundColor: (globalCompressor?.enabled || false) ? primary : '#FCFAEE',
                         borderColor: primary,
+                        borderWidth: '1px',
                         boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
                       }}
                     >
@@ -1604,7 +1552,7 @@ function MixerPage() {
                         style={{ 
                           width: '18px',
                           height: '18px',
-                          transform: (globalCompressor?.enabled || false) ? 'translateX(18px)' : 'translateX(0px)'
+                          transform: (globalCompressor?.enabled || false) ? 'translateX(20px)' : 'translateX(2px)'
                         }}
                       />
                     </div>
@@ -2102,34 +2050,7 @@ function MixerPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={(e) => {
-                          // Toggle flanger on/off when button is clicked
-                          const currentEnabled = globalFlanger?.enabled || false
-                          const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
-                          console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
-                          
-                          const newConfig = {
-                            ...(globalFlanger || defaultFlangerConfig),
-                            wet: newWet,
-                            enabled: !currentEnabled
-                          }
-                          setGlobalFlanger(newConfig)
-                          
-                          // Apply global flanger using correct command format
-                          if (mixerEngineRef.current?.audioEngine) {
-                            console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
-                            mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                              type: "command",
-                              data: { 
-                                command: "setFlangerConfig", 
-                                config: newConfig
-                              }
-                            });
-                            console.log(`✅ FLANGER CONFIG SENT!`);
-                          } else {
-                            console.log(`❌ ERROR: Audio engine not available!`);
-                          }
-                          
-                          // Also open the modal for fine-tuning
+                          // Just open the modal for settings - don't toggle on/off
                           handleFlangerConfigOpen()
                         }}
                         className="pressable px-3 py-1 text-sm font-mono tracking-wide"
@@ -2170,12 +2091,13 @@ function MixerPage() {
                         style={{ marginLeft: '6px' }}
                       >
                         <div 
-                          className="relative rounded-full border-2 transition-all duration-200 ease-in-out"
+                          className="relative rounded-full border transition-all duration-200 ease-in-out"
                           style={{ 
                             width: '36px',
                             height: '20px',
                             backgroundColor: (globalFlanger?.enabled || false) ? primary : '#FCFAEE',
                             borderColor: primary,
+                            borderWidth: '1px',
                             boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
                           }}
                         >
@@ -2184,7 +2106,7 @@ function MixerPage() {
                             style={{ 
                               width: '14px',
                               height: '14px',
-                              transform: (globalFlanger?.enabled || false) ? 'translateX(16px)' : 'translateX(0px)'
+                              transform: (globalFlanger?.enabled || false) ? 'translateX(16px)' : 'translateX(2px)'
                             }}
                           />
                         </div>
@@ -2194,34 +2116,7 @@ function MixerPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={(e) => {
-                          // Toggle compressor on/off when button is clicked
-                          const currentEnabled = globalCompressor?.enabled || false
-                          const newWet = currentEnabled ? 0 : 1.0 // Set to 100% wet when turning on
-                          console.log(`🎛️ COMPRESSOR BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
-                          
-                          const newConfig = {
-                            ...(globalCompressor || defaultCompressorConfig),
-                            wet: newWet,
-                            enabled: !currentEnabled
-                          }
-                          setGlobalCompressor(newConfig)
-                          
-                          // Apply global compressor using correct command format
-                          if (mixerEngineRef.current?.audioEngine) {
-                            console.log(`🎛️ SENDING COMPRESSOR CONFIG:`, newConfig);
-                            mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                              type: "command",
-                              data: { 
-                                command: "setCompressorConfig", 
-                                config: newConfig
-                              }
-                            });
-                            console.log(`✅ COMPRESSOR CONFIG SENT!`);
-                          } else {
-                            console.log(`❌ ERROR: Audio engine not available!`);
-                          }
-                          
-                          // Also open the modal for fine-tuning
+                          // Just open the modal for settings - don't toggle on/off
                           handleCompressorConfigOpen()
                         }}
                         className="pressable px-3 py-1 text-sm font-mono tracking-wide"
@@ -2262,12 +2157,13 @@ function MixerPage() {
                         style={{ marginLeft: '6px' }}
                       >
                         <div 
-                          className="relative rounded-full border-2 transition-all duration-200 ease-in-out"
+                          className="relative rounded-full border transition-all duration-200 ease-in-out"
                           style={{ 
                             width: '36px',
                             height: '20px',
                             backgroundColor: (globalCompressor?.enabled || false) ? primary : '#FCFAEE',
                             borderColor: primary,
+                            borderWidth: '1px',
                             boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
                           }}
                         >
@@ -2276,7 +2172,7 @@ function MixerPage() {
                             style={{ 
                               width: '14px',
                               height: '14px',
-                              transform: (globalCompressor?.enabled || false) ? 'translateX(16px)' : 'translateX(0px)'
+                              transform: (globalCompressor?.enabled || false) ? 'translateX(16px)' : 'translateX(2px)'
                             }}
                           />
                         </div>
