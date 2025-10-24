@@ -54,6 +54,8 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             script.id = 'dropboxjs'
             script.src = src
             script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
+            // Add origin to the script attribute
+            script.setAttribute('data-origin', typeof window !== 'undefined' ? window.location.origin : 'https://munyardmixer.com')
             script.async = true
             script.crossOrigin = 'anonymous'
 
@@ -188,6 +190,8 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       multiselect: true,
       extensions: ['audio'],
       folderselect: false,
+      // Add origin to fix communication error
+      origin: typeof window !== 'undefined' ? window.location.origin : 'https://munyardmixer.com'
     }
 
     // Use Dropbox.choose directly as shown in the article
