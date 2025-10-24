@@ -52,22 +52,24 @@ export default function TransparentMixerLayout({
   const isMobilePortrait = typeof window !== 'undefined' && window.innerWidth < 768 && window.innerHeight > window.innerWidth
   const isMobileLandscape = typeof window !== 'undefined' && window.innerWidth < 768 && window.innerWidth > window.innerHeight === false
   const isCompact = stems.length <= 2
+  const isVerySmallScreen = typeof window !== 'undefined' && window.innerWidth < 400
+  const isiPhoneSE = typeof window !== 'undefined' && window.innerWidth <= 375
 
   return (
     <div className="w-full flex flex-col items-center">
       <div className="flex overflow-x-auto w-full justify-start px-2 sm:overflow-visible">
-        <div className={`flex ${stems.length >= 6 ? 'gap-4' : 'gap-8'}`} style={{ minWidth: stems.length <= 4 ? '100%' : 'max-content', justifyContent: stems.length <= 4 ? 'center' : 'flex-start', margin: '0 auto' }}>
+        <div className={`flex ${isVerySmallScreen ? 'gap-2' : stems.length >= 6 ? 'gap-4' : 'gap-8'}`} style={{ minWidth: stems.length <= 4 ? '100%' : 'max-content', justifyContent: stems.length <= 4 ? 'center' : 'flex-start', margin: '0 auto' }}>
           {stems.map(({ label }) => (
 <div
   key={label}
   className="mixer-module"
   style={{
-    width: stems.length >= 6 ? '86px' : '96px',
+    width: isiPhoneSE ? '70px' : isVerySmallScreen ? '75px' : stems.length >= 6 ? '86px' : '96px',
     backgroundColor: 'transparent',
     backdropFilter: 'blur(2px)',
     border: `1px solid ${primaryColor}`,
     borderRadius: '10px',
-    padding: '16px',
+    padding: isVerySmallScreen ? '8px' : '16px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -126,14 +128,15 @@ export default function TransparentMixerLayout({
                     setSolos(prev => ({ ...prev, [label]: false }))
                   }}
                   style={{
-                    fontSize: '12px',
-                    padding: '4px 10px',
+                    fontSize: isVerySmallScreen ? '10px' : '12px',
+                    padding: isVerySmallScreen ? '2px 6px' : '4px 10px',
                     borderRadius: '4px',
                     marginBottom: '8px',
                     backgroundColor: mutes[label] ? '#FFD700' : '#FCFAEE',
                     color: mutes[label] ? 'black' : primaryColor,
                     border: `1px solid ${primaryColor}`,
                     cursor: 'pointer',
+                    minWidth: isVerySmallScreen ? '45px' : 'auto',
                   }}
                 >
                   MUTE
@@ -145,14 +148,15 @@ export default function TransparentMixerLayout({
                     setMutes(prev => ({ ...prev, [label]: false }))
                   }}
                   style={{
-                    fontSize: '12px',
-                    padding: '4px 10px',
+                    fontSize: isVerySmallScreen ? '10px' : '12px',
+                    padding: isVerySmallScreen ? '2px 6px' : '4px 10px',
                     borderRadius: '4px',
                     marginBottom: '8px',
                     backgroundColor: solos[label] ? '#00FF99' : '#FCFAEE',
                     color: solos[label] ? 'black' : primaryColor,
                     border: `1px solid ${primaryColor}`,
                     cursor: 'pointer',
+                    minWidth: isVerySmallScreen ? '45px' : 'auto',
                   }}
                   className={solos[label] ? 'flash' : ''}
                 >
@@ -160,8 +164,8 @@ export default function TransparentMixerLayout({
                 </button>
 
                 <div style={{
-                  fontSize: '12px',
-                  padding: '4px 6px',
+                  fontSize: isVerySmallScreen ? '9px' : '12px',
+                  padding: isVerySmallScreen ? '2px 4px' : '4px 6px',
                   borderRadius: '4px',
                   backgroundColor: '#FCFAEE',
                   color: primaryColor,
@@ -170,7 +174,7 @@ export default function TransparentMixerLayout({
                   width: '100%',
                   maxWidth: '100%',
                   textAlign: 'center',
-                  whiteSpace: 'normal',
+                  whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   wordBreak: 'normal',

@@ -306,6 +306,72 @@ body {
   padding: 0;
 }
 
+/* ✅ RESPONSIVE SCALING FOR SMALL DEVICES */
+@media screen and (max-width: 390px) {
+  /* iPhone 13 and smaller devices */
+  body {
+    font-size: 14px;
+  }
+  
+  /* Make buttons and controls smaller on very small screens */
+  button {
+    font-size: 12px !important;
+    padding: 4px 8px !important;
+    min-height: 28px !important;
+  }
+  
+  /* Reduce spacing on small screens */
+  .mixer-wrapper {
+    padding: 1rem;
+  }
+  
+  .mixer-grid {
+    gap: 1rem;
+  }
+}
+
+@media screen and (max-width: 375px) {
+  /* iPhone SE and very small devices */
+  body {
+    font-size: 13px;
+  }
+  
+  button {
+    font-size: 11px !important;
+    padding: 3px 6px !important;
+    min-height: 26px !important;
+  }
+  
+  .mixer-wrapper {
+    padding: 0.25rem;
+  }
+  
+  .mixer-grid {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  /* Make mixer channels more compact but readable */
+  .mixer-channel {
+    min-width: 60px;
+    max-width: 70px;
+  }
+  
+  /* Reduce spacing in channel controls */
+  .channel-controls {
+    gap: 0.25rem;
+  }
+  
+  /* Make track labels smaller but readable */
+  .track-label {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+}
+
 body {
   background: #FCFAEE;
   overscroll-behavior: none;

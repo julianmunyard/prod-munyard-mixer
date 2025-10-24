@@ -191,6 +191,7 @@ function MixerPage() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState('Initializing audio engine...')
+  const [isVerySmallScreen, setIsVerySmallScreen] = useState(false)
 
   // -------------------- 🎵 Timeline Engine Reference --------------------
   const mixerEngineRef = useRef<RealTimelineMixerEngine | null>(null);
@@ -237,6 +238,19 @@ function MixerPage() {
     checkOrientation()
     window.addEventListener('resize', checkOrientation)
     return () => window.removeEventListener('resize', checkOrientation)
+  }, [])
+
+  useEffect(() => {
+    // Handle screen size detection to prevent hydration issues
+    const checkScreenSize = () => {
+      if (typeof window !== 'undefined') {
+        setIsVerySmallScreen(window.innerWidth < 400)
+      }
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
   const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
@@ -1413,89 +1427,189 @@ function MixerPage() {
 
               {/* Master Effect Buttons */}
               {selectedMasterEffect === 'flanger' ? (
-                <button
-                  onClick={(e) => {
-                    // Toggle flanger on/off when button is clicked
-                    const currentEnabled = globalFlanger?.enabled || false
-                    const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
-                    console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
-                    
-                    const newConfig = {
-                      ...(globalFlanger || defaultFlangerConfig),
-                      wet: newWet,
-                      enabled: !currentEnabled
-                    }
-                    setGlobalFlanger(newConfig)
-                    
-                    // Apply global flanger using correct command format
-                    if (mixerEngineRef.current?.audioEngine) {
-                      console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
-                      mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                        type: "command",
-                        data: { 
-                          command: "setFlangerConfig", 
-                          config: newConfig
-                        }
-                      });
-                      console.log(`✅ FLANGER CONFIG SENT!`);
-                    } else {
-                      console.log(`❌ ERROR: Audio engine not available!`);
-                    }
-                    
-                    // Also open the modal for fine-tuning
-                    handleFlangerConfigOpen()
-                  }}
-                    className="pressable px-6 py-2 font-mono tracking-wide"
-                  style={{ 
-                    backgroundColor: '#FCFAEE',
-                    color: primary,
-                    border: `1px solid ${primary}`
-                  }}
-                >
-                  FLANGE
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      // Toggle flanger on/off when button is clicked
+                      const currentEnabled = globalFlanger?.enabled || false
+                      const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
+                      console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
+                      
+                      const newConfig = {
+                        ...(globalFlanger || defaultFlangerConfig),
+                        wet: newWet,
+                        enabled: !currentEnabled
+                      }
+                      setGlobalFlanger(newConfig)
+                      
+                      // Apply global flanger using correct command format
+                      if (mixerEngineRef.current?.audioEngine) {
+                        console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
+                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                          type: "command",
+                          data: { 
+                            command: "setFlangerConfig", 
+                            config: newConfig
+                          }
+                        });
+                        console.log(`✅ FLANGER CONFIG SENT!`);
+                      } else {
+                        console.log(`❌ ERROR: Audio engine not available!`);
+                      }
+                      
+                      // Also open the modal for fine-tuning
+                      handleFlangerConfigOpen()
+                    }}
+                      className="pressable px-4 py-2 font-mono tracking-wide"
+                    style={{ 
+                      backgroundColor: '#FCFAEE',
+                      color: primary,
+                      border: `1px solid ${primary}`
+                    }}
+                  >
+                    FLANGE
+                  </button>
+                  
+                  {/* Toggle Switch */}
+                  <div 
+                    className="flex items-center cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const currentEnabled = globalFlanger?.enabled || false
+                      const newWet = currentEnabled ? 0 : 0.5
+                      
+                      const newConfig = {
+                        ...(globalFlanger || defaultFlangerConfig),
+                        wet: newWet,
+                        enabled: !currentEnabled
+                      }
+                      setGlobalFlanger(newConfig)
+                      
+                      if (mixerEngineRef.current?.audioEngine) {
+                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                          type: "command",
+                          data: { 
+                            command: "setFlangerConfig", 
+                            config: newConfig
+                          }
+                        });
+                      }
+                    }}
+                    style={{ marginLeft: '8px' }}
+                  >
+                    <div 
+                      className="relative rounded-full border-2 transition-all duration-200 ease-in-out"
+                      style={{ 
+                        width: '44px',
+                        height: '24px',
+                        backgroundColor: (globalFlanger?.enabled || false) ? primary : '#FCFAEE',
+                        borderColor: primary,
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <div 
+                        className="absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm"
+                        style={{ 
+                          width: '18px',
+                          height: '18px',
+                          transform: (globalFlanger?.enabled || false) ? 'translateX(18px)' : 'translateX(0px)'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
               ) : (
-                <button
-                  onClick={(e) => {
-                    // Toggle compressor on/off when button is clicked
-                    const currentEnabled = globalCompressor?.enabled || false
-                    const newWet = currentEnabled ? 0 : 1.0 // Set to 100% wet when turning on
-                    console.log(`🎛️ COMPRESSOR BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
-                    
-                    const newConfig = {
-                      ...(globalCompressor || defaultCompressorConfig),
-                      wet: newWet,
-                      enabled: !currentEnabled
-                    }
-                    setGlobalCompressor(newConfig)
-                    
-                    // Apply global compressor using correct command format
-                    if (mixerEngineRef.current?.audioEngine) {
-                      console.log(`🎛️ SENDING COMPRESSOR CONFIG:`, newConfig);
-                      mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                        type: "command",
-                        data: { 
-                          command: "setCompressorConfig", 
-                          config: newConfig
-                        }
-                      });
-                      console.log(`✅ COMPRESSOR CONFIG SENT!`);
-                    } else {
-                      console.log(`❌ ERROR: Audio engine not available!`);
-                    }
-                    
-                    // Also open the modal for fine-tuning
-                    handleCompressorConfigOpen()
-                  }}
-                    className="pressable px-6 py-2 font-mono tracking-wide"
-                  style={{ 
-                    backgroundColor: '#FCFAEE',
-                    color: primary,
-                    border: `1px solid ${primary}`
-                  }}
-                >
-                  COMPRESS
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      // Toggle compressor on/off when button is clicked
+                      const currentEnabled = globalCompressor?.enabled || false
+                      const newWet = currentEnabled ? 0 : 1.0 // Set to 100% wet when turning on
+                      console.log(`🎛️ COMPRESSOR BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
+                      
+                      const newConfig = {
+                        ...(globalCompressor || defaultCompressorConfig),
+                        wet: newWet,
+                        enabled: !currentEnabled
+                      }
+                      setGlobalCompressor(newConfig)
+                      
+                      // Apply global compressor using correct command format
+                      if (mixerEngineRef.current?.audioEngine) {
+                        console.log(`🎛️ SENDING COMPRESSOR CONFIG:`, newConfig);
+                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                          type: "command",
+                          data: { 
+                            command: "setCompressorConfig", 
+                            config: newConfig
+                          }
+                        });
+                        console.log(`✅ COMPRESSOR CONFIG SENT!`);
+                      } else {
+                        console.log(`❌ ERROR: Audio engine not available!`);
+                      }
+                      
+                      // Also open the modal for fine-tuning
+                      handleCompressorConfigOpen()
+                    }}
+                      className="pressable px-4 py-2 font-mono tracking-wide"
+                    style={{ 
+                      backgroundColor: '#FCFAEE',
+                      color: primary,
+                      border: `1px solid ${primary}`
+                    }}
+                  >
+                    COMPRESS
+                  </button>
+                  
+                  {/* Toggle Switch */}
+                  <div 
+                    className="flex items-center cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const currentEnabled = globalCompressor?.enabled || false
+                      const newWet = currentEnabled ? 0 : 1.0
+                      
+                      const newConfig = {
+                        ...(globalCompressor || defaultCompressorConfig),
+                        wet: newWet,
+                        enabled: !currentEnabled
+                      }
+                      setGlobalCompressor(newConfig)
+                      
+                      if (mixerEngineRef.current?.audioEngine) {
+                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                          type: "command",
+                          data: { 
+                            command: "setCompressorConfig", 
+                            config: newConfig
+                          }
+                        });
+                      }
+                    }}
+                    style={{ marginLeft: '8px' }}
+                  >
+                    <div 
+                      className="relative rounded-full border-2 transition-all duration-200 ease-in-out"
+                      style={{ 
+                        width: '44px',
+                        height: '24px',
+                        backgroundColor: (globalCompressor?.enabled || false) ? primary : '#FCFAEE',
+                        borderColor: primary,
+                        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <div 
+                        className="absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm"
+                        style={{ 
+                          width: '18px',
+                          height: '18px',
+                          transform: (globalCompressor?.enabled || false) ? 'translateX(18px)' : 'translateX(0px)'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
             )}
@@ -1879,14 +1993,16 @@ function MixerPage() {
                         setIsNaturalVarispeed(newMode);
                         setVarispeedControl(varispeed, newMode);
                       }}
-                      className="px-3 py-2 text-xs font-mono rounded border"
+                      className="px-2 py-1 text-xs font-mono rounded border"
                       style={{ 
                         color: primary,
                         borderColor: primary,
                         backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
                         pointerEvents: 'auto',
-                        minHeight: '32px',
-                        minWidth: '70px'
+                        minHeight: '28px',
+                        minWidth: '60px',
+                        fontSize: isVerySmallScreen ? '10px' : '12px',
+                        padding: isVerySmallScreen ? '4px 6px' : '8px 12px'
                       }}
                       title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
                     >
@@ -1983,89 +2099,189 @@ function MixerPage() {
 
                   {/* Master Effect Buttons */}
                   {selectedMasterEffect === 'flanger' ? (
-                    <button
-                      onClick={(e) => {
-                        // Toggle flanger on/off when button is clicked
-                        const currentEnabled = globalFlanger?.enabled || false
-                        const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
-                        console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
-                        
-                        const newConfig = {
-                          ...(globalFlanger || defaultFlangerConfig),
-                          wet: newWet,
-                          enabled: !currentEnabled
-                        }
-                        setGlobalFlanger(newConfig)
-                        
-                        // Apply global flanger using correct command format
-                        if (mixerEngineRef.current?.audioEngine) {
-                          console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
-                          mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                            type: "command",
-                            data: { 
-                              command: "setFlangerConfig", 
-                              config: newConfig
-                            }
-                          });
-                          console.log(`✅ FLANGER CONFIG SENT!`);
-                        } else {
-                          console.log(`❌ ERROR: Audio engine not available!`);
-                        }
-                        
-                        // Also open the modal for fine-tuning
-                        handleFlangerConfigOpen()
-                      }}
-                      className="pressable px-4 py-1 text-sm font-mono tracking-wide"
-                      style={{ 
-                        backgroundColor: '#FCFAEE',
-                        color: primary,
-                        border: `1px solid ${primary}`
-                      }}
-                    >
-                      FLANGE
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          // Toggle flanger on/off when button is clicked
+                          const currentEnabled = globalFlanger?.enabled || false
+                          const newWet = currentEnabled ? 0 : 0.5 // Set to 50% wet when turning on
+                          console.log(`🎛️ FLANGER BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
+                          
+                          const newConfig = {
+                            ...(globalFlanger || defaultFlangerConfig),
+                            wet: newWet,
+                            enabled: !currentEnabled
+                          }
+                          setGlobalFlanger(newConfig)
+                          
+                          // Apply global flanger using correct command format
+                          if (mixerEngineRef.current?.audioEngine) {
+                            console.log(`🎛️ SENDING FLANGER CONFIG:`, newConfig);
+                            mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                              type: "command",
+                              data: { 
+                                command: "setFlangerConfig", 
+                                config: newConfig
+                              }
+                            });
+                            console.log(`✅ FLANGER CONFIG SENT!`);
+                          } else {
+                            console.log(`❌ ERROR: Audio engine not available!`);
+                          }
+                          
+                          // Also open the modal for fine-tuning
+                          handleFlangerConfigOpen()
+                        }}
+                        className="pressable px-3 py-1 text-sm font-mono tracking-wide"
+                        style={{ 
+                          backgroundColor: '#FCFAEE',
+                          color: primary,
+                          border: `1px solid ${primary}`
+                        }}
+                      >
+                        FLANGE
+                      </button>
+                      
+                      {/* Toggle Switch */}
+                      <div 
+                        className="flex items-center cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const currentEnabled = globalFlanger?.enabled || false
+                          const newWet = currentEnabled ? 0 : 0.5
+                          
+                          const newConfig = {
+                            ...(globalFlanger || defaultFlangerConfig),
+                            wet: newWet,
+                            enabled: !currentEnabled
+                          }
+                          setGlobalFlanger(newConfig)
+                          
+                          if (mixerEngineRef.current?.audioEngine) {
+                            mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                              type: "command",
+                              data: { 
+                                command: "setFlangerConfig", 
+                                config: newConfig
+                              }
+                            });
+                          }
+                        }}
+                        style={{ marginLeft: '6px' }}
+                      >
+                        <div 
+                          className="relative rounded-full border-2 transition-all duration-200 ease-in-out"
+                          style={{ 
+                            width: '36px',
+                            height: '20px',
+                            backgroundColor: (globalFlanger?.enabled || false) ? primary : '#FCFAEE',
+                            borderColor: primary,
+                            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                          }}
+                        >
+                          <div 
+                            className="absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm"
+                            style={{ 
+                              width: '14px',
+                              height: '14px',
+                              transform: (globalFlanger?.enabled || false) ? 'translateX(16px)' : 'translateX(0px)'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   ) : (
-                    <button
-                      onClick={(e) => {
-                        // Toggle compressor on/off when button is clicked
-                        const currentEnabled = globalCompressor?.enabled || false
-                        const newWet = currentEnabled ? 0 : 1.0 // Set to 100% wet when turning on
-                        console.log(`🎛️ COMPRESSOR BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
-                        
-                        const newConfig = {
-                          ...(globalCompressor || defaultCompressorConfig),
-                          wet: newWet,
-                          enabled: !currentEnabled
-                        }
-                        setGlobalCompressor(newConfig)
-                        
-                        // Apply global compressor using correct command format
-                        if (mixerEngineRef.current?.audioEngine) {
-                          console.log(`🎛️ SENDING COMPRESSOR CONFIG:`, newConfig);
-                          mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                            type: "command",
-                            data: { 
-                              command: "setCompressorConfig", 
-                              config: newConfig
-                            }
-                          });
-                          console.log(`✅ COMPRESSOR CONFIG SENT!`);
-                        } else {
-                          console.log(`❌ ERROR: Audio engine not available!`);
-                        }
-                        
-                        // Also open the modal for fine-tuning
-                        handleCompressorConfigOpen()
-                      }}
-                      className="pressable px-4 py-1 text-sm font-mono tracking-wide"
-                      style={{ 
-                        backgroundColor: '#FCFAEE',
-                        color: primary,
-                        border: `1px solid ${primary}`
-                      }}
-                    >
-                      COMPRESS
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          // Toggle compressor on/off when button is clicked
+                          const currentEnabled = globalCompressor?.enabled || false
+                          const newWet = currentEnabled ? 0 : 1.0 // Set to 100% wet when turning on
+                          console.log(`🎛️ COMPRESSOR BUTTON CLICKED! Current enabled: ${currentEnabled}, new wet: ${newWet}`);
+                          
+                          const newConfig = {
+                            ...(globalCompressor || defaultCompressorConfig),
+                            wet: newWet,
+                            enabled: !currentEnabled
+                          }
+                          setGlobalCompressor(newConfig)
+                          
+                          // Apply global compressor using correct command format
+                          if (mixerEngineRef.current?.audioEngine) {
+                            console.log(`🎛️ SENDING COMPRESSOR CONFIG:`, newConfig);
+                            mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                              type: "command",
+                              data: { 
+                                command: "setCompressorConfig", 
+                                config: newConfig
+                              }
+                            });
+                            console.log(`✅ COMPRESSOR CONFIG SENT!`);
+                          } else {
+                            console.log(`❌ ERROR: Audio engine not available!`);
+                          }
+                          
+                          // Also open the modal for fine-tuning
+                          handleCompressorConfigOpen()
+                        }}
+                        className="pressable px-3 py-1 text-sm font-mono tracking-wide"
+                        style={{ 
+                          backgroundColor: '#FCFAEE',
+                          color: primary,
+                          border: `1px solid ${primary}`
+                        }}
+                      >
+                        COMPRESS
+                      </button>
+                      
+                      {/* Toggle Switch */}
+                      <div 
+                        className="flex items-center cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const currentEnabled = globalCompressor?.enabled || false
+                          const newWet = currentEnabled ? 0 : 1.0
+                          
+                          const newConfig = {
+                            ...(globalCompressor || defaultCompressorConfig),
+                            wet: newWet,
+                            enabled: !currentEnabled
+                          }
+                          setGlobalCompressor(newConfig)
+                          
+                          if (mixerEngineRef.current?.audioEngine) {
+                            mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
+                              type: "command",
+                              data: { 
+                                command: "setCompressorConfig", 
+                                config: newConfig
+                              }
+                            });
+                          }
+                        }}
+                        style={{ marginLeft: '6px' }}
+                      >
+                        <div 
+                          className="relative rounded-full border-2 transition-all duration-200 ease-in-out"
+                          style={{ 
+                            width: '36px',
+                            height: '20px',
+                            backgroundColor: (globalCompressor?.enabled || false) ? primary : '#FCFAEE',
+                            borderColor: primary,
+                            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                          }}
+                        >
+                          <div 
+                            className="absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm"
+                            style={{ 
+                              width: '14px',
+                              height: '14px',
+                              transform: (globalCompressor?.enabled || false) ? 'translateX(16px)' : 'translateX(0px)'
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -2128,14 +2344,16 @@ function MixerPage() {
                         setIsNaturalVarispeed(newMode);
                         setVarispeedControl(varispeed, newMode);
                       }}
-                      className="px-3 py-2 text-xs font-mono rounded border"
+                      className="px-2 py-1 text-xs font-mono rounded border"
                       style={{ 
                         color: primary,
                         borderColor: primary,
                         backgroundColor: isNaturalVarispeed ? primary + '20' : 'transparent',
                         pointerEvents: 'auto',
-                        minHeight: '32px',
-                        minWidth: '70px'
+                        minHeight: '26px',
+                        minWidth: '55px',
+                        fontSize: isVerySmallScreen ? '10px' : '12px',
+                        padding: isVerySmallScreen ? '3px 5px' : '6px 10px'
                       }}
                       title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
                     >

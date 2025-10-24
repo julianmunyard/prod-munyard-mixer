@@ -20,11 +20,27 @@ export default function PoolsuiteLoadingScreen({
   primaryColor = '#B8001F'
 }: PoolsuiteLoadingScreenProps) {
   const [showContent, setShowContent] = useState(false)
+  const [isVerySmallScreen, setIsVerySmallScreen] = useState(false)
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
 
   useEffect(() => {
     // Small delay to ensure smooth appearance
     const timer = setTimeout(() => setShowContent(true), 100)
     return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    // Handle screen size detection to prevent hydration issues
+    const checkScreenSize = () => {
+      if (typeof window !== 'undefined') {
+        setIsVerySmallScreen(window.innerWidth < 400)
+        setIsSmallScreen(window.innerWidth < 600)
+      }
+    }
+    
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
   }, [])
 
   useEffect(() => {
@@ -60,8 +76,10 @@ export default function PoolsuiteLoadingScreen({
       <div 
         className="relative overflow-hidden"
         style={{
-          width: 'min(90vw, 800px)',
-          height: 'min(70vh, 500px)',
+          width: 'min(95vw, 800px)',
+          height: 'min(80vh, 500px)',
+          maxWidth: isVerySmallScreen ? '95vw' : 'min(90vw, 800px)',
+          maxHeight: isSmallScreen ? '85vh' : 'min(70vh, 500px)',
           backgroundColor: '#FCFAEE',
           border: '2px solid #000',
           borderRadius: '12px',
@@ -120,8 +138,9 @@ export default function PoolsuiteLoadingScreen({
               {/* Title */}
               <div className="flex items-center justify-between mb-4">
                 <h1 
-                  className="text-4xl font-bold tracking-wider"
+                  className="font-bold tracking-wider"
                   style={{ 
+                    fontSize: isVerySmallScreen ? '1.5rem' : isSmallScreen ? '2rem' : '2.5rem',
                     color: '#000000',
                     fontFamily: 'New York, serif',
                     textShadow: '2px 2px 0px rgba(0,0,0,0.1)'
