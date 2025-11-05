@@ -1,20 +1,27 @@
 {
   "name": "Munyard Mixer",
   "short_name": "Mixer",
+  "description": "Interactive stem player for music mixing",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FCFAEE",
   "theme_color": "#B8001F",
+  "categories": ["music", "entertainment"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ]
+  ],
+  "screenshots": [],
+  "related_applications": []
 }

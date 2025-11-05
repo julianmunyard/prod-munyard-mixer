@@ -16,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: 'Munyard Mixer',
-  description: 'stem player.',
+  description: 'Interactive stem player for music mixing - Play music in the background',
+  keywords: 'music, audio, stem player, mixer, audio player, music player',
 }
 
 export default function RootLayout({
@@ -42,6 +43,15 @@ return (
       <meta property="og:image" content="/og-image.png" />
       <meta property="og:url" content="https://munyardmixer.com" />
       <meta name="twitter:card" content="summary_large_image" />
+      
+      {/* Media Player Recognition */}
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="mobile-web-app-capable" content="yes" />
+      <meta name="format-detection" content="telephone=no" />
+      
+      {/* Prevent iOS from treating this as a web page */}
+      <meta name="apple-itunes-app" content="app-id=" />
       
     </head>
     <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>

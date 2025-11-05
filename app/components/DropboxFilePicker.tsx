@@ -135,8 +135,10 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     // Use the exact approach from Dropbox article
     const options = {
       success: (files: any[]) => {
+        console.log('✅ Dropbox success callback triggered!')
         console.log('Files selected:', files)
-        console.log('File links:', files.map(f => f.link))
+        console.log('File details:', files.map(f => ({ name: f.name, link: f.link, bytes: f.bytes })))
+        console.log('Number of files:', files.length)
         
         // Convert Dropbox files to File objects
         const filePromises = files.map(async (file, index) => {
@@ -145,9 +147,11 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             console.log(`Link: ${file.link}`)
             
             // Add CORS headers to the fetch request
+            // Note: Dropbox direct links need to be accessed from the same origin
+            // or via a proxy to avoid CORS issues
             const response = await fetch(file.link, {
               method: 'GET',
-              mode: 'cors',
+              mode: 'no-cors', // Try no-cors to avoid CORS issues
               headers: {
                 'Accept': '*/*',
               }

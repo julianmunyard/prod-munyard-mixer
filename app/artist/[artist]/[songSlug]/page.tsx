@@ -6,7 +6,7 @@
 /* eslint-disable prefer-const */
 
 // ==================== 📦 Imports ====================
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
 // @ts-ignore - Supabase type issues
 import { supabase } from '@/lib/supabaseClient'
 
@@ -256,19 +256,22 @@ function MixerPage() {
   const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
 
-  // ==================== 🛑 Page Visibility Cleanup ====================
+  // ==================== 🎵 Background Audio Support ====================
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && mixerEngineRef.current && isPlaying) {
-        // Page is hidden and audio is playing - pause it
-        mixerEngineRef.current.pause()
-        setIsPlaying(false)
-        addDebugLog('🛑 Paused playback - page hidden')
+    // Keep audio context alive when page is hidden (for background playback)
+    const handleVisibilityChange = async () => {
+      if (document.hidden && mixerEngineRef.current?.audioEngine?.webaudioManager) {
+        const webaudioManager = mixerEngineRef.current.audioEngine.webaudioManager as any;
+        const ctx = webaudioManager?.audioContext;
+        if (ctx && ctx.state === 'suspended') {
+          await ctx.resume();
+          addDebugLog('🔊 Audio context resumed in background')
+        }
       }
     }
 
     const handleBeforeUnload = () => {
-      // Page is being unloaded - stop everything
+      // Only stop on actual page unload (not just hiding)
       if (mixerEngineRef.current) {
         mixerEngineRef.current.pause()
         mixerEngineRef.current.stop()
@@ -283,7 +286,7 @@ function MixerPage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [isPlaying])
+  }, [])
 
   // ==================== 🎯 Click Outside Dropdown Handler ====================
   useEffect(() => {
@@ -310,6 +313,79 @@ function MixerPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+
+  // ==================== 🔇 Silent Mode Bypass (iOS Hack) ====================
+  // iOS treats Web Audio API as "system sounds" that respect silent mode
+  // Solution: Unlock audio automatically when mixer is ready + on any user interaction
+  const silentModeBypassRef = useRef<HTMLAudioElement | null>(null)
+  const audioUnlockedRef = useRef(false)
+  
+  // Function to unlock audio (can be called multiple times safely)
+  const unlockAudio = useCallback(async () => {
+    if (audioUnlockedRef.current && silentModeBypassRef.current?.paused === false) {
+      return; // Already unlocked
+    }
+    
+    if (silentModeBypassRef.current) {
+      try {
+        await silentModeBypassRef.current.play();
+        audioUnlockedRef.current = true;
+        addDebugLog('🔓 Audio unlocked');
+      } catch (error) {
+        // Silently fail - will retry on next attempt
+        // iOS requires user interaction, so this is expected to fail on initial page load
+      }
+    }
+  }, [addDebugLog]);
+  
+  useEffect(() => {
+    // Create a hidden audio element that will play silence
+    const audio = document.createElement('audio')
+    audio.loop = true
+    audio.volume = 0.001 // Very quiet, but not zero (zero gets muted by iOS)
+    audio.preload = 'auto'
+    audio.style.display = 'none' // Hidden but functional
+    
+    // Create a minimal WAV data URI (1 second of silence at 44.1kHz mono)
+    const silentWavBase64 = 'UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
+    audio.src = `data:audio/wav;base64,${silentWavBase64}`
+    
+    // Add to DOM (required for some browsers)
+    document.body.appendChild(audio)
+    
+    silentModeBypassRef.current = audio
+    
+    // Try to unlock on ANY user interaction (touch/click anywhere on page)
+    // This happens as soon as user touches screen - before they click play
+    const unlockOnInteraction = () => {
+      unlockAudio();
+      // Keep listeners active in case first attempt fails
+    };
+    
+    document.addEventListener('touchstart', unlockOnInteraction, { passive: true });
+    document.addEventListener('click', unlockOnInteraction, { passive: true });
+    
+    return () => {
+      if (audio) {
+        audio.pause()
+        audio.src = ''
+        if (audio.parentNode) {
+          audio.parentNode.removeChild(audio)
+        }
+      }
+      document.removeEventListener('touchstart', unlockOnInteraction);
+      document.removeEventListener('click', unlockOnInteraction);
+    }
+  }, [unlockAudio])
+  
+  // Auto-unlock when mixer is ready (after loading screen completes)
+  useEffect(() => {
+    if (timelineReady && !audioUnlockedRef.current) {
+      // Try to unlock when mixer is ready
+      // This will work if user has already interacted with page
+      unlockAudio();
+    }
+  }, [timelineReady, unlockAudio])
 
   // ==================== 🎵 Timeline Engine Initialization ====================
   useEffect(() => {
@@ -348,6 +424,9 @@ function MixerPage() {
         } catch (error) {
           console.error('Error stopping playback on cleanup:', error)
         }
+      }
+      if (silentModeBypassRef.current) {
+        silentModeBypassRef.current.pause()
       }
     }
   }, [])
@@ -785,29 +864,120 @@ function MixerPage() {
   };
 
   // ==================== 🎵 Playback Functions ====================
-  const playAll = async () => {
+  const playAll = useCallback(async () => {
     if (!mixerEngineRef.current || !timelineReady) return;
     
     try {
-      await mixerEngineRef.current.play();
+      // 🔑 Ensure audio is unlocked (should already be, but double-check on play button click)
+      // This is the user interaction that iOS requires, so it should work even if pre-unlock failed
+      if (silentModeBypassRef.current) {
+        unlockAudio(); // Fire and forget - don't block
+      }
+
+      // Resume audio context if needed (this is async, but we'll start playback immediately)
+      const webaudioManager = mixerEngineRef.current.audioEngine?.webaudioManager as any;
+      const ctx = webaudioManager?.audioContext;
+      
+      // Start playback immediately (play() is synchronous, just sends message to processor)
+      mixerEngineRef.current.play();
       setIsPlaying(true);
+      
+      // Resume context in background (don't block playback start)
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      
       addDebugLog('▶️ Playback started');
     } catch (error) {
       addDebugLog(`❌ Failed to play: ${error}`);
+      console.error('Playback error:', error);
     }
-  };
+  }, [timelineReady, addDebugLog, unlockAudio]);
 
-  const pauseAll = () => {
+  const pauseAll = useCallback(() => {
     if (!mixerEngineRef.current) return;
     
     try {
+      // Keep silent mode bypass playing (don't pause it)
+      // This maintains the "media player" status on iOS
+      
       mixerEngineRef.current.pause();
       setIsPlaying(false);
       addDebugLog('⏸️ Playback paused');
     } catch (error) {
       addDebugLog(`❌ Failed to pause: ${error}`);
     }
-  };
+  }, [addDebugLog]);
+
+  // ==================== 🎵 Media Session API (Mobile Controls) ====================
+  useEffect(() => {
+    if (!songData || typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+
+    const updateMediaSession = () => {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: songData.title,
+          artist: songData.artist_name,
+          album: 'Munyard Mixer',
+          artwork: songData.background_video ? [
+            { src: songData.background_video, sizes: '1920x1080', type: 'image/jpeg' }
+          ] : []
+        });
+
+        // Play/Pause handlers for lock screen controls
+        navigator.mediaSession.setActionHandler('play', async () => {
+          if (mixerEngineRef.current && !isPlaying) {
+            await playAll();
+          }
+        });
+
+        navigator.mediaSession.setActionHandler('pause', () => {
+          if (mixerEngineRef.current && isPlaying) {
+            pauseAll();
+          }
+        });
+
+        // Update playback state
+        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+      } catch (error) {
+        console.warn('Media Session API not supported:', error);
+      }
+    };
+
+    updateMediaSession();
+    
+    // Update when playback state changes
+    const interval = setInterval(() => {
+      if (navigator.mediaSession && songData) {
+        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [songData, isPlaying, playAll, pauseAll]);
+
+  // ==================== 🔋 Audio Context Wake-Up (Prevent Suspension) ====================
+  useEffect(() => {
+    if (!mixerEngineRef.current?.audioEngine?.webaudioManager) return;
+
+    const webaudioManager = mixerEngineRef.current.audioEngine.webaudioManager as any;
+    const ctx = webaudioManager?.audioContext;
+    if (!ctx) return;
+
+    // Wake up audio context periodically to prevent suspension
+    const wakeUpInterval = setInterval(async () => {
+      if (ctx.state === 'suspended' && isPlaying) {
+        try {
+          await ctx.resume();
+          addDebugLog('🔋 Audio context woken up');
+        } catch (error) {
+          console.warn('Failed to resume audio context:', error);
+        }
+      }
+    }, 5000); // Check every 5 seconds
+
+    return () => clearInterval(wakeUpInterval);
+  }, [isPlaying]);
 
   const stopAll = () => {
     if (!mixerEngineRef.current) return;
