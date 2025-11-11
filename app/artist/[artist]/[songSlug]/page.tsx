@@ -1499,12 +1499,12 @@ function MixerPage() {
               paddingBottom: isMobile ? '160px' : '60px',
             }}
           >
-            {/* 🔇 Mobile Silent Mode Unmute Floating Button */}
+            {/* 🔇 Mobile Silent Mode Unmute Floating Button (SVG in primary color) */}
             {isMobile && (
               <button
                 onClick={toggleAudioUnlock}
                 aria-label={audioUnlocked ? 'Mute (disable background/silent mode audio)' : 'Unmute (enable audio in silent mode)'}
-                className="pressable"
+                className="pressable flex items-center justify-center"
                 style={{
                   position: 'fixed',
                   top: '12px',
@@ -1512,15 +1512,58 @@ function MixerPage() {
                   width: '42px',
                   height: '42px',
                   borderRadius: '50%',
-                  backgroundColor: audioUnlocked ? '#4CAF50' : '#999',
-                  color: 'white',
-                  border: 'none',
-                  fontSize: '22px',
+                  backgroundColor: '#FCFAEE',
+                  color: 'inherit',
+                  border: `1px solid ${primary}`,
                   zIndex: 1000,
                 }}
                 title={audioUnlocked ? 'Audio unlocked (tap to mute)' : 'Audio muted - tap to unlock (required for silent mode)'}
               >
-                {audioUnlocked ? '🔊' : '🔇'}
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4 10v4h3l5 4V6l-5 4H4z"
+                    stroke={primary}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    fill="none"
+                  />
+                  {audioUnlocked && (
+                    <>
+                      <path
+                        d="M16 9c1.333 1.333 1.333 4.667 0 6"
+                        stroke={primary}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M18.5 7.5c2.333 2.333 2.333 6.667 0 9"
+                        stroke={primary}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity="0.8"
+                      />
+                    </>
+                  )}
+                  {!audioUnlocked && (
+                    <path
+                      d="M5 19L19 5"
+                      stroke={primary}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+                </svg>
               </button>
             )}
             {/* 🏷️ Song Title */}
@@ -1540,25 +1583,7 @@ function MixerPage() {
 
             {/* ▶️ Main Playback Controls */}
             <div className={`flex justify-center items-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
-              {/* 🔇 Mute/Unmute Button - Mobile Only */}
-              {isMobile && (
-                <button
-                  onClick={toggleAudioUnlock}
-                  className="pressable flex items-center justify-center"
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    backgroundColor: audioUnlocked ? '#4CAF50' : '#999',
-                    color: 'white',
-                    border: 'none',
-                    fontSize: '20px'
-                  }}
-                  title={audioUnlocked ? 'Audio unlocked (tap to mute)' : 'Audio muted - tap to unlock (required for silent mode)'}
-                >
-                  {audioUnlocked ? '🔊' : '🔇'}
-                </button>
-              )}
+              {/* (Mobile unmute button moved to floating top-right) */}
 
               <button
                 onClick={playAll}
