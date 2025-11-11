@@ -1556,7 +1556,7 @@ function MixerPage() {
                   )}
                   {!audioUnlocked && (
                     <path
-                      d="M5 19L19 5"
+                      d="M6 6L18 18"
                       stroke={primary}
                       strokeWidth="2"
                       strokeLinecap="round"
