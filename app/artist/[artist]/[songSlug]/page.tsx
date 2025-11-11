@@ -260,12 +260,40 @@ function MixerPage() {
   useEffect(() => {
     // Keep audio context alive when page is hidden (for background playback)
     const handleVisibilityChange = async () => {
-      if (document.hidden && mixerEngineRef.current?.audioEngine?.webaudioManager) {
-        const webaudioManager = mixerEngineRef.current.audioEngine.webaudioManager as any;
-        const ctx = webaudioManager?.audioContext;
-        if (ctx && ctx.state === 'suspended') {
-          await ctx.resume();
-          addDebugLog('🔊 Audio context resumed in background')
+      const engine = mixerEngineRef.current?.audioEngine?.webaudioManager as any;
+      const ctx = engine?.audioContext;
+      
+      // Only resume the audio context in background if user was already playing.
+      if (document.hidden) {
+        if (isPlaying) {
+          // Ensure context is running and playback remains asserted while hidden
+          try {
+            if (ctx && ctx.state === 'suspended') {
+              await ctx.resume();
+              addDebugLog('🔊 Audio context resumed in background (was playing)');
+            }
+            // Re-assert play state for processors that may pause on tab hide
+            mixerEngineRef.current?.play?.();
+          } catch {
+            // no-op
+          }
+        } else {
+          // If user had paused, ensure we do not accidentally start playback.
+          try {
+            mixerEngineRef.current?.pause?.();
+          } catch {
+            // no-op
+          }
+        }
+      } else {
+        // When returning to the tab, if we were playing, make sure context is running.
+        if (isPlaying && ctx && ctx.state === 'suspended') {
+          try {
+            await ctx.resume();
+            addDebugLog('🔊 Audio context resumed on visibility return');
+          } catch {
+            // no-op
+          }
         }
       }
     }
@@ -316,27 +344,31 @@ function MixerPage() {
 
   // ==================== 🔇 Silent Mode Bypass (iOS Hack) ====================
   // iOS treats Web Audio API as "system sounds" that respect silent mode
-  // Solution: Unlock audio automatically when mixer is ready + on any user interaction
+  // Solution: User taps mute/unmute button to unlock audio
   const silentModeBypassRef = useRef<HTMLAudioElement | null>(null)
-  const audioUnlockedRef = useRef(false)
+  const [audioUnlocked, setAudioUnlocked] = useState(false)
   
-  // Function to unlock audio (can be called multiple times safely)
-  const unlockAudio = useCallback(async () => {
-    if (audioUnlockedRef.current && silentModeBypassRef.current?.paused === false) {
-      return; // Already unlocked
-    }
+  // Function to toggle audio unlock (called by mute/unmute button)
+  const toggleAudioUnlock = useCallback(async () => {
+    if (!silentModeBypassRef.current) return;
     
-    if (silentModeBypassRef.current) {
+    if (audioUnlocked) {
+      // Mute: stop the silent audio
+      silentModeBypassRef.current.pause();
+      setAudioUnlocked(false);
+      addDebugLog('🔇 Audio muted (silent mode active)');
+    } else {
+      // Unmute: play silent audio to unlock iOS
       try {
         await silentModeBypassRef.current.play();
-        audioUnlockedRef.current = true;
-        addDebugLog('🔓 Audio unlocked');
+        setAudioUnlocked(true);
+        addDebugLog('🔊 Audio unmuted (can play in silent mode)');
       } catch (error) {
-        // Silently fail - will retry on next attempt
-        // iOS requires user interaction, so this is expected to fail on initial page load
+        addDebugLog('❌ Failed to unmute audio');
+        console.warn('Audio unlock failed:', error);
       }
     }
-  }, [addDebugLog]);
+  }, [audioUnlocked, addDebugLog]);
   
   useEffect(() => {
     // Create a hidden audio element that will play silence
@@ -355,16 +387,6 @@ function MixerPage() {
     
     silentModeBypassRef.current = audio
     
-    // Try to unlock on ANY user interaction (touch/click anywhere on page)
-    // This happens as soon as user touches screen - before they click play
-    const unlockOnInteraction = () => {
-      unlockAudio();
-      // Keep listeners active in case first attempt fails
-    };
-    
-    document.addEventListener('touchstart', unlockOnInteraction, { passive: true });
-    document.addEventListener('click', unlockOnInteraction, { passive: true });
-    
     return () => {
       if (audio) {
         audio.pause()
@@ -373,19 +395,8 @@ function MixerPage() {
           audio.parentNode.removeChild(audio)
         }
       }
-      document.removeEventListener('touchstart', unlockOnInteraction);
-      document.removeEventListener('click', unlockOnInteraction);
     }
-  }, [unlockAudio])
-  
-  // Auto-unlock when mixer is ready (after loading screen completes)
-  useEffect(() => {
-    if (timelineReady && !audioUnlockedRef.current) {
-      // Try to unlock when mixer is ready
-      // This will work if user has already interacted with page
-      unlockAudio();
-    }
-  }, [timelineReady, unlockAudio])
+  }, [])
 
   // ==================== 🎵 Timeline Engine Initialization ====================
   useEffect(() => {
@@ -868,23 +879,48 @@ function MixerPage() {
     if (!mixerEngineRef.current || !timelineReady) return;
     
     try {
-      // 🔑 Ensure audio is unlocked (should already be, but double-check on play button click)
-      // This is the user interaction that iOS requires, so it should work even if pre-unlock failed
-      if (silentModeBypassRef.current) {
-        unlockAudio(); // Fire and forget - don't block
-      }
-
       // Resume audio context if needed (this is async, but we'll start playback immediately)
       const webaudioManager = mixerEngineRef.current.audioEngine?.webaudioManager as any;
       const ctx = webaudioManager?.audioContext;
       
-      // Start playback immediately (play() is synchronous, just sends message to processor)
-      mixerEngineRef.current.play();
+      // Ensure AudioContext is running before asserting playback on first user gesture
+      if (ctx && ctx.state !== 'running') {
+        try {
+          await ctx.resume();
+          addDebugLog('🔓 AudioContext resumed on user play');
+        } catch (err) {
+          console.warn('Failed to resume AudioContext:', err);
+        }
+      }
+
+      // Start playback
+      mixerEngineRef.current.play?.();
       setIsPlaying(true);
       
-      // Resume context in background (don't block playback start)
-      if (ctx && ctx.state === 'suspended') {
-        ctx.resume().catch(() => {});
+      // If the first tap doesn't kick it off, re-assert playback shortly after.
+      // Some browsers need an extra tick after AudioContext resume.
+      try {
+        const initialTime =
+          typeof mixerEngineRef.current.getCurrentTime === 'function'
+            ? (mixerEngineRef.current.getCurrentTime() as number) || 0
+            : 0;
+        setTimeout(() => {
+          try {
+            const nowTime =
+              typeof mixerEngineRef.current?.getCurrentTime === 'function'
+                ? (mixerEngineRef.current.getCurrentTime() as number) || 0
+                : 0;
+            const progressed = nowTime > initialTime + 0.005; // ~5ms progress
+            if (isPlaying && !progressed) {
+              mixerEngineRef.current?.play?.();
+              addDebugLog('▶️ Reasserted playback after initial tap');
+            }
+          } catch {
+            // no-op
+          }
+        }, 120);
+      } catch {
+        // no-op
       }
       
       addDebugLog('▶️ Playback started');
@@ -892,7 +928,7 @@ function MixerPage() {
       addDebugLog(`❌ Failed to play: ${error}`);
       console.error('Playback error:', error);
     }
-  }, [timelineReady, addDebugLog, unlockAudio]);
+  }, [timelineReady, addDebugLog]);
 
   const pauseAll = useCallback(() => {
     if (!mixerEngineRef.current) return;
@@ -1463,6 +1499,30 @@ function MixerPage() {
               paddingBottom: isMobile ? '160px' : '60px',
             }}
           >
+            {/* 🔇 Mobile Silent Mode Unmute Floating Button */}
+            {isMobile && (
+              <button
+                onClick={toggleAudioUnlock}
+                aria-label={audioUnlocked ? 'Mute (disable background/silent mode audio)' : 'Unmute (enable audio in silent mode)'}
+                className="pressable"
+                style={{
+                  position: 'fixed',
+                  top: '12px',
+                  right: '12px',
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '50%',
+                  backgroundColor: audioUnlocked ? '#4CAF50' : '#999',
+                  color: 'white',
+                  border: 'none',
+                  fontSize: '22px',
+                  zIndex: 1000,
+                }}
+                title={audioUnlocked ? 'Audio unlocked (tap to mute)' : 'Audio muted - tap to unlock (required for silent mode)'}
+              >
+                {audioUnlocked ? '🔊' : '🔇'}
+              </button>
+            )}
             {/* 🏷️ Song Title */}
             <h1
               className="village text-center mb-8"
@@ -1479,7 +1539,27 @@ function MixerPage() {
 
 
             {/* ▶️ Main Playback Controls */}
-            <div className={`flex justify-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
+            <div className={`flex justify-center items-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
+              {/* 🔇 Mute/Unmute Button - Mobile Only */}
+              {isMobile && (
+                <button
+                  onClick={toggleAudioUnlock}
+                  className="pressable flex items-center justify-center"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: audioUnlocked ? '#4CAF50' : '#999',
+                    color: 'white',
+                    border: 'none',
+                    fontSize: '20px'
+                  }}
+                  title={audioUnlocked ? 'Audio unlocked (tap to mute)' : 'Audio muted - tap to unlock (required for silent mode)'}
+                >
+                  {audioUnlocked ? '🔊' : '🔇'}
+                </button>
+              )}
+
               <button
                 onClick={playAll}
                 disabled={!timelineReady || !allAssetsLoaded}
