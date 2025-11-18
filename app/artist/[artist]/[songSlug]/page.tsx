@@ -176,7 +176,7 @@ function MixerPage() {
   const [bpm, setBpm] = useState<number | null>(null)
   const [isMobilePortrait, setIsMobilePortrait] = useState(false)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false)
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const [screenSize, setScreenSize] = useState({ width: 0, height: 0 })
   const [isPlaying, setIsPlaying] = useState(false)
   
   const [timelineReady, setTimelineReady] = useState(false)
@@ -191,7 +191,14 @@ function MixerPage() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(true)
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState('Initializing audio engine...')
-  const [isVerySmallScreen, setIsVerySmallScreen] = useState(false)
+  
+  // Responsive breakpoints
+  const isVerySmallScreen = screenSize.width > 0 && screenSize.width < 375  // iPhone SE, iPhone 12 mini
+  const isSmallScreen = screenSize.width >= 375 && screenSize.width < 414  // iPhone 13, iPhone 14
+  const isMediumScreen = screenSize.width >= 414 && screenSize.width < 768  // Larger phones
+  const isMobile = screenSize.width > 0 && screenSize.width < 768
+  const isTablet = screenSize.width >= 768 && screenSize.width < 1024
+  const isDesktop = screenSize.width >= 1024
 
   // -------------------- 🎵 Timeline Engine Reference --------------------
   const mixerEngineRef = useRef<RealTimelineMixerEngine | null>(null);
@@ -244,13 +251,17 @@ function MixerPage() {
     // Handle screen size detection to prevent hydration issues
     const checkScreenSize = () => {
       if (typeof window !== 'undefined') {
-        setIsVerySmallScreen(window.innerWidth < 400)
+        setScreenSize({ width: window.innerWidth, height: window.innerHeight })
       }
     }
     
     checkScreenSize()
     window.addEventListener('resize', checkScreenSize)
-    return () => window.removeEventListener('resize', checkScreenSize)
+    window.addEventListener('orientationchange', checkScreenSize)
+    return () => {
+      window.removeEventListener('resize', checkScreenSize)
+      window.removeEventListener('orientationchange', checkScreenSize)
+    }
   }, [])
 
   const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
@@ -352,23 +363,31 @@ function MixerPage() {
   const toggleAudioUnlock = useCallback(async () => {
     if (!silentModeBypassRef.current) return;
     
-    if (audioUnlocked) {
-      // Mute: stop the silent audio
-      silentModeBypassRef.current.pause();
-      setAudioUnlocked(false);
-      addDebugLog('🔇 Audio muted (silent mode active)');
-    } else {
-      // Unmute: play silent audio to unlock iOS
-      try {
-        await silentModeBypassRef.current.play();
-        setAudioUnlocked(true);
-        addDebugLog('🔊 Audio unmuted (can play in silent mode)');
-      } catch (error) {
-        addDebugLog('❌ Failed to unmute audio');
-        console.warn('Audio unlock failed:', error);
+    // Use functional update to get current state and avoid race conditions
+    setAudioUnlocked((currentState) => {
+      const newState = !currentState;
+      
+      if (newState) {
+        // Unmute: play silent audio to unlock iOS
+        silentModeBypassRef.current?.play()
+          .then(() => {
+            addDebugLog('🔊 Audio unmuted (can play in silent mode)');
+          })
+          .catch((error) => {
+            addDebugLog('❌ Failed to unmute audio');
+            console.warn('Audio unlock failed:', error);
+            // Revert state on error
+            setAudioUnlocked((prev) => prev === newState ? !newState : prev);
+          });
+      } else {
+        // Mute: stop the silent audio
+        silentModeBypassRef.current?.pause();
+        addDebugLog('🔇 Audio muted (silent mode active)');
       }
-    }
-  }, [audioUnlocked, addDebugLog]);
+      
+      return newState;
+    });
+  }, [addDebugLog]);
   
   useEffect(() => {
     // Create a hidden audio element that will play silence
@@ -1420,10 +1439,25 @@ function MixerPage() {
             }
             @media screen and (max-width: 767px) and (orientation: landscape) {
               .mixer-module {
-                min-height: 320px !important;
+                min-height: clamp(280px, 40vh, 320px) !important;
+              }
+            }
+            @media screen and (max-width: 374px) {
+              /* Very small screens (iPhone SE, iPhone 12 mini) */
+              .mixer-module {
+                min-height: 360px !important;
+                max-height: 400px !important;
+              }
+            }
+            @media screen and (min-width: 375px) and (max-width: 413px) {
+              /* Small screens (iPhone 13, iPhone 14) */
+              .mixer-module {
+                min-height: 380px !important;
+                max-height: 440px !important;
               }
             }
             @media screen and (max-width: 767px) {
+              /* All mobile screens */
               /* Lock vertical scrolling but allow horizontal scrolling for modules */
               body {
                 overflow-x: hidden !important;
@@ -1448,16 +1482,17 @@ function MixerPage() {
                 touch-action: pan-x !important;
               }
               .mixer-module {
-                min-height: 440px !important;
+                min-height: clamp(360px, 50vh, 480px) !important;
               }
               .mixer-module .track-label {
-                min-height: 40px !important;
+                min-height: clamp(32px, 5vh, 40px) !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                padding: 4px 6px !important;
+                padding: clamp(3px, 1vw, 6px) clamp(4px, 1.5vw, 6px) !important;
                 word-wrap: break-word !important;
                 hyphens: auto !important;
+                font-size: clamp(10px, 2.5vw, 12px) !important;
               }
             }
           `}</style>
@@ -1496,13 +1531,23 @@ function MixerPage() {
             }`}
             style={{
               minHeight: '100dvh',
-              paddingBottom: isMobile ? '160px' : '60px',
+              paddingBottom: isVerySmallScreen 
+                ? 'clamp(140px, 20vh, 160px)' 
+                : isSmallScreen 
+                  ? 'clamp(150px, 20vh, 160px)' 
+                  : isMobile 
+                    ? 'clamp(160px, 20vh, 180px)' 
+                    : '60px',
             }}
           >
             {/* 🔇 Mobile Silent Mode Unmute Floating Button (SVG in primary color) */}
             {isMobile && (
               <button
-                onClick={toggleAudioUnlock}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  toggleAudioUnlock();
+                }}
                 aria-label={audioUnlocked ? 'Mute (disable background/silent mode audio)' : 'Unmute (enable audio in silent mode)'}
                 className="pressable flex items-center justify-center"
                 style={{
@@ -1535,6 +1580,15 @@ function MixerPage() {
                     strokeLinejoin="round"
                     fill="none"
                   />
+                  {!audioUnlocked && (
+                    <path
+                      d="M6 6L18 18"
+                      stroke={primary}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
                   {audioUnlocked && (
                     <>
                       <path
@@ -1554,15 +1608,6 @@ function MixerPage() {
                       />
                     </>
                   )}
-                  {!audioUnlocked && (
-                    <path
-                      d="M6 6L18 18"
-                      stroke={primary}
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  )}
                 </svg>
               </button>
             )}
@@ -1570,11 +1615,17 @@ function MixerPage() {
             <h1
               className="village text-center mb-8"
               style={{
-                fontSize: isMobile ? '48px' : '96px',
+                fontSize: isVerySmallScreen 
+                  ? 'clamp(32px, 8vw, 40px)' 
+                  : isSmallScreen 
+                    ? 'clamp(40px, 10vw, 48px)' 
+                    : isMobile 
+                      ? 'clamp(44px, 12vw, 56px)' 
+                      : 'clamp(64px, 8vw, 96px)',
                 letterSpacing: '0.05em',
                 lineHeight: '1.1',
                 color: primary,
-                padding: isMobile ? '0 16px' : '0',
+                padding: isMobile ? '0 clamp(12px, 4vw, 16px)' : '0',
               }}
             >
               {songData?.title}
@@ -1582,18 +1633,38 @@ function MixerPage() {
 
 
             {/* ▶️ Main Playback Controls */}
-            <div className={`flex justify-center items-center mb-2 ${isMobile ? 'gap-4' : 'gap-8'} ${isMobile ? 'px-4' : ''}`}>
+            <div className={`flex justify-center items-center mb-2 ${isMobile ? 'gap-2' : 'gap-8'} ${isMobile ? 'px-2' : ''}`} style={{
+              gap: isVerySmallScreen ? '8px' : isSmallScreen ? '12px' : isMobile ? '16px' : '32px',
+              paddingLeft: isMobile ? 'clamp(8px, 2vw, 16px)' : '0',
+              paddingRight: isMobile ? 'clamp(8px, 2vw, 16px)' : '0',
+            }}>
               {/* (Mobile unmute button moved to floating top-right) */}
 
               <button
                 onClick={playAll}
                 disabled={!timelineReady || !allAssetsLoaded}
-                className={`pressable ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
+                className={`pressable font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
                   !timelineReady || !allAssetsLoaded
                     ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
                     : 'hover:opacity-90'
                 }`}
-                style={timelineReady && allAssetsLoaded ? { backgroundColor: primary, color: 'white' } : undefined}
+                style={{
+                  ...(timelineReady && allAssetsLoaded ? { backgroundColor: primary, color: 'white' } : {}),
+                  padding: isVerySmallScreen 
+                    ? '6px 10px' 
+                    : isSmallScreen 
+                      ? '8px 12px' 
+                      : isMobile 
+                        ? '8px 16px' 
+                        : '12px 24px',
+                  fontSize: isVerySmallScreen 
+                    ? '11px' 
+                    : isSmallScreen 
+                      ? '12px' 
+                      : isMobile 
+                        ? '13px' 
+                        : '14px',
+                }}
               >
                 Play
               </button>
@@ -1601,16 +1672,48 @@ function MixerPage() {
               <button
                 onClick={pauseAll}
                 disabled={!timelineReady}
-                className={`pressable text-white ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
-                style={{ backgroundColor: primary }}
+                className="pressable text-white font-mono tracking-wide"
+                style={{
+                  backgroundColor: primary,
+                  padding: isVerySmallScreen 
+                    ? '6px 10px' 
+                    : isSmallScreen 
+                      ? '8px 12px' 
+                      : isMobile 
+                        ? '8px 16px' 
+                        : '12px 24px',
+                  fontSize: isVerySmallScreen 
+                    ? '11px' 
+                    : isSmallScreen 
+                      ? '12px' 
+                      : isMobile 
+                        ? '13px' 
+                        : '14px',
+                }}
               >
                 Pause
               </button>
 
               <button
                 onClick={unsoloAll}
-                className={`pressable text-white ${isMobile ? 'px-4 py-1 text-sm' : 'px-6 py-2'} font-mono tracking-wide`}
-                style={{ backgroundColor: primary }}
+                className="pressable text-white font-mono tracking-wide"
+                style={{
+                  backgroundColor: primary,
+                  padding: isVerySmallScreen 
+                    ? '6px 10px' 
+                    : isSmallScreen 
+                      ? '8px 12px' 
+                      : isMobile 
+                        ? '8px 16px' 
+                        : '12px 24px',
+                  fontSize: isVerySmallScreen 
+                    ? '11px' 
+                    : isSmallScreen 
+                      ? '12px' 
+                      : isMobile 
+                        ? '13px' 
+                        : '14px',
+                }}
               >
                 UNSOLO
               </button>
@@ -1847,28 +1950,58 @@ function MixerPage() {
               className="stems-container"
               style={{
                 width: '100%',
-                height: isMobile ? '460px' : 'auto',
-                maxHeight: isMobile ? '460px' : 'none',
+                height: isMobile 
+                  ? (isVerySmallScreen 
+                      ? 'clamp(360px, 50vh, 420px)' 
+                      : isSmallScreen 
+                        ? 'clamp(380px, 50vh, 460px)' 
+                        : 'clamp(400px, 50vh, 500px)')
+                  : 'auto',
+                maxHeight: isMobile 
+                  ? (isVerySmallScreen 
+                      ? '420px' 
+                      : isSmallScreen 
+                        ? '460px' 
+                        : '500px')
+                  : 'none',
+                minHeight: isMobile 
+                  ? (isVerySmallScreen 
+                      ? '360px' 
+                      : isSmallScreen 
+                        ? '380px' 
+                        : '400px')
+                  : 'auto',
                 marginTop: '-20px',
-                marginBottom: isMobile ? '20px' : '0px',
+                marginBottom: isMobile ? 'clamp(12px, 3vw, 20px)' : '0px',
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'hidden',
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
               }}
             >
               <div
-                className={`flex ${isMobile ? 'gap-2' : stems.length >= 6 ? 'gap-4' : 'gap-8'}`}
+                className="flex"
                 style={{
                   width: '100%', // Full width container
                   justifyContent: 'center', // Always center the modules
                   flexWrap: 'nowrap',
                   margin: '0 auto',
-                  padding: isMobile ? '0 8px' : '0 8px',
+                  padding: isMobile 
+                    ? (isVerySmallScreen ? '0 4px' : isSmallScreen ? '0 6px' : '0 8px')
+                    : '0 8px',
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch',
                   overflowY: 'hidden',
                   height: '100%',
                   alignItems: 'center',
+                  gap: isVerySmallScreen 
+                    ? '4px' 
+                    : isSmallScreen 
+                      ? '6px' 
+                      : isMobile 
+                        ? '8px' 
+                        : stems.length >= 6 
+                          ? '16px' 
+                          : '32px',
                 }}
               >
                 {stems.map((stem) => (
@@ -1876,33 +2009,94 @@ function MixerPage() {
                     key={stem.label}
                     className="mixer-module"
                     style={{
-                      width: isMobile ? '80px' : stems.length >= 6 ? '86px' : '96px',
+                      width: isVerySmallScreen 
+                        ? '70px' 
+                        : isSmallScreen 
+                          ? '75px' 
+                          : isMobile 
+                            ? '80px' 
+                            : stems.length >= 6 
+                              ? '86px' 
+                              : '96px',
                       backgroundColor: primary,
                       border: '1px solid #444',
                       boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
                       borderRadius: '10px',
-                      padding: isMobile ? '12px' : '16px',
+                      padding: isVerySmallScreen 
+                        ? '8px' 
+                        : isSmallScreen 
+                          ? '10px' 
+                          : isMobile 
+                            ? '12px' 
+                            : '16px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      height: isMobile ? '440px' : undefined,
+                      height: isMobile 
+                        ? (isVerySmallScreen 
+                            ? 'calc(100% - 20px)' 
+                            : isSmallScreen 
+                              ? 'calc(100% - 16px)' 
+                              : 'calc(100% - 12px)')
+                        : undefined,
+                      maxHeight: isMobile 
+                        ? (isVerySmallScreen 
+                            ? '400px' 
+                            : isSmallScreen 
+                              ? '440px' 
+                              : '480px')
+                        : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
-                      minWidth: isMobile ? '80px' : 'auto',
+                      minWidth: isVerySmallScreen 
+                        ? '70px' 
+                        : isSmallScreen 
+                          ? '75px' 
+                          : isMobile 
+                            ? '80px' 
+                            : 'auto',
                     }}
                   >
-                    <div style={{ width: '16px', height: isMobile ? '30px' : '40px', marginBottom: isMobile ? '16px' : '18px' }} />
+                    <div style={{ 
+                      width: '16px', 
+                      height: isVerySmallScreen 
+                        ? '24px' 
+                        : isSmallScreen 
+                          ? '28px' 
+                          : isMobile 
+                            ? '30px' 
+                            : '40px', 
+                      marginBottom: isVerySmallScreen 
+                        ? '12px' 
+                        : isSmallScreen 
+                          ? '14px' 
+                          : isMobile 
+                            ? '16px' 
+                            : '18px' 
+                    }} />
 
                     <div
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        fontSize: '10px',
+                        fontSize: isVerySmallScreen 
+                          ? '9px' 
+                          : isSmallScreen 
+                            ? '9.5px' 
+                            : isMobile 
+                              ? '10px' 
+                              : '10px',
                         color: 'white',
                         flexGrow: 1,
                         justifyContent: 'center',
-                        marginBottom: isMobile ? '20px' : '30px',
+                        marginBottom: isVerySmallScreen 
+                          ? '16px' 
+                          : isSmallScreen 
+                            ? '18px' 
+                            : isMobile 
+                              ? '20px' 
+                              : '30px',
                       }}
                     >
                       <span style={{ marginBottom: '4px' }}>LEVEL</span>
@@ -1923,7 +2117,13 @@ function MixerPage() {
                             writingMode: 'bt-lr' as any,
                             WebkitAppearance: 'slider-vertical',
                             width: '4px',
-                            height: isMobile ? '140px' : undefined,
+                            height: isVerySmallScreen 
+                              ? '100px' 
+                              : isSmallScreen 
+                                ? '120px' 
+                                : isMobile 
+                                  ? '140px' 
+                                  : undefined,
                             background: 'transparent',
                           }}
                         />
@@ -2237,7 +2437,7 @@ function MixerPage() {
             )}
 
             {/* Mobile Effect Controls - Above VARISPEED */}
-            {isMobilePortrait && stems.length >= 3 && (
+            {isMobilePortrait && stems.length >= 1 && (
               <div className="w-full flex justify-center sm:hidden mb-2" style={{ marginTop: '-10px' }}>
                 <div className="flex justify-center gap-4">
                   {/* Master Effect Dropdown */}
@@ -2459,7 +2659,7 @@ function MixerPage() {
             )}
 
             {/* Mobile Portrait Varispeed */}
-            {isMobilePortrait && stems.length >= 3 && (
+            {isMobilePortrait && stems.length >= 1 && (
               <div className="w-full flex justify-center sm:hidden">
                 <div
                   className="relative"
