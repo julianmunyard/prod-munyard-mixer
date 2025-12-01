@@ -2300,7 +2300,13 @@ function MixerPage() {
                     </div>
 
                     {/* Mute & Solo */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center',
+                      // Pull the bottom cluster (MUTE / SOLO / label) slightly upward on mobile
+                      marginBottom: isMobile ? '4px' : '0px',
+                    }}>
                       <button
                         onClick={() => {
                           const newMuteState = !mutes[stem.label];
@@ -2309,10 +2315,10 @@ function MixerPage() {
                           setTrackMute(stem.label, newMuteState);
                         }}
                         style={{
-                          fontSize: '12px',
-                          padding: '4px 10px',
+                          fontSize: '11px',
+                          padding: '3px 8px',
                           borderRadius: '4px',
-                          marginBottom: '8px',
+                          marginBottom: '6px',
                           backgroundColor: mutes[stem.label] ? '#FFD700' : '#FCFAEE',
                           color: mutes[stem.label] ? 'black' : primary,
                           border: `1px solid ${primary}`,
@@ -2329,10 +2335,10 @@ function MixerPage() {
                           setTrackSolo(stem.label, newSoloState);
                         }}
                         style={{
-                          fontSize: '12px',
-                          padding: '4px 10px',
+                          fontSize: '11px',
+                          padding: '3px 8px',
                           borderRadius: '4px',
-                          marginBottom: '8px',
+                          marginBottom: '6px',
                           backgroundColor: solos[stem.label] ? '#00FF99' : '#FCFAEE',
                           color: solos[stem.label] ? 'black' : primary,
                           border: `1px solid ${primary}`,
@@ -2346,12 +2352,12 @@ function MixerPage() {
                       <div
                         className="track-label"
                         style={{
-                          fontSize: '11px',
-                          padding: '4px 6px',
+                          fontSize: '10px',
+                          padding: '3px 6px',
                           borderRadius: '4px',
                           backgroundColor: '#FCFAEE',
                           color: primary,
-                          marginTop: '6px',
+                          marginTop: '4px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
