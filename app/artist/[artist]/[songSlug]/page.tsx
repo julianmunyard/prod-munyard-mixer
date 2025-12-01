@@ -898,6 +898,21 @@ function MixerPage() {
     if (!mixerEngineRef.current || !timelineReady) return;
     
     try {
+      // On iOS, ensure the silent unlock audio is playing before we try to play the mixer.
+      // This makes both orders work:
+      // 1) Unmute then Play
+      // 2) Play then Unmute (Play will also unlock on first tap)
+      if (isIOS && silentModeBypassRef.current && !audioUnlocked) {
+        try {
+          await silentModeBypassRef.current.play();
+          setAudioUnlocked(true);
+          addDebugLog('🔊 Audio unlocked via Play button');
+        } catch (err) {
+          addDebugLog('❌ Failed to unlock audio via Play button');
+          console.warn('Audio unlock via Play failed:', err);
+        }
+      }
+
       // Resume audio context if needed (this is async, but we'll start playback immediately)
       const webaudioManager = mixerEngineRef.current.audioEngine?.webaudioManager as any;
       const ctx = webaudioManager?.audioContext;
@@ -947,7 +962,7 @@ function MixerPage() {
       addDebugLog(`❌ Failed to play: ${error}`);
       console.error('Playback error:', error);
     }
-  }, [timelineReady, addDebugLog]);
+  }, [timelineReady, addDebugLog, isIOS, audioUnlocked, addDebugLog]);
 
   const pauseAll = useCallback(() => {
     if (!mixerEngineRef.current) return;
@@ -1950,19 +1965,20 @@ function MixerPage() {
               className="stems-container"
               style={{
                 width: '100%',
+                // Give modules a little more vertical room on mobile so the bottoms don't get clipped.
                 height: isMobile 
                   ? (isVerySmallScreen 
-                      ? 'clamp(360px, 50vh, 420px)' 
+                      ? 'clamp(360px, 60vh, 460px)' 
                       : isSmallScreen 
-                        ? 'clamp(380px, 50vh, 460px)' 
-                        : 'clamp(400px, 50vh, 500px)')
+                        ? 'clamp(380px, 60vh, 500px)' 
+                        : 'clamp(400px, 60vh, 540px)')
                   : 'auto',
                 maxHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? '420px' 
+                      ? '460px' 
                       : isSmallScreen 
-                        ? '460px' 
-                        : '500px')
+                        ? '500px' 
+                        : '540px')
                   : 'none',
                 minHeight: isMobile 
                   ? (isVerySmallScreen 
@@ -1972,7 +1988,7 @@ function MixerPage() {
                         : '400px')
                   : 'auto',
                 marginTop: '-20px',
-                marginBottom: isMobile ? 'clamp(12px, 3vw, 20px)' : '0px',
+                marginBottom: isMobile ? 'clamp(16px, 4vh, 28px)' : '0px',
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'hidden',
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile

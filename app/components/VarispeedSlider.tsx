@@ -52,6 +52,10 @@ export default function VarispeedSlider({
   const isSafari =
     typeof window !== 'undefined' &&
     /^((?!chrome|android).)*safari/i.test(window.navigator.userAgent)
+  
+  const isSafariDesktop = isSafari && 
+    typeof window !== 'undefined' &&
+    !/iP(hone|od|ad)/.test(window.navigator.userAgent)
 
 const isMobilePortrait = typeof window !== 'undefined' &&
   window.innerWidth < 768 &&
@@ -172,7 +176,9 @@ const tickLabels = shouldFlipLabels
           WebkitAppearance: 'slider-vertical',
           writingMode: 'vertical-lr',
           height: 'calc(100% - 16px)',
-          transform: isSafari ? 'none' : 'rotate(180deg)',
+          // Safari desktop needs rotation like Chrome, but iOS Safari doesn't
+          // isIOS prop handles iOS detection, isSafariDesktop handles Safari desktop
+          transform: isSafariDesktop ? 'rotate(180deg)' : (isIOS ? 'none' : 'rotate(180deg)'),
           backgroundColor: 'transparent',
         }}
       />
