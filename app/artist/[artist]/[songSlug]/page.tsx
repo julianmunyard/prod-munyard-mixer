@@ -1965,30 +1965,30 @@ function MixerPage() {
               className="stems-container"
               style={{
                 width: '100%',
-                // Give modules a little more vertical room on mobile so the bottoms don't get clipped.
+                // Scale modules a bit smaller on mobile so the full module + VARISPEED controls fit comfortably.
                 height: isMobile 
                   ? (isVerySmallScreen 
-                      ? 'clamp(360px, 60vh, 460px)' 
+                      ? 'clamp(340px, 52vh, 430px)' 
                       : isSmallScreen 
-                        ? 'clamp(380px, 60vh, 500px)' 
-                        : 'clamp(400px, 60vh, 540px)')
+                        ? 'clamp(360px, 52vh, 460px)' 
+                        : 'clamp(380px, 52vh, 500px)')
                   : 'auto',
                 maxHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? '460px' 
+                      ? '430px' 
                       : isSmallScreen 
-                        ? '500px' 
-                        : '540px')
+                        ? '460px' 
+                        : '500px')
                   : 'none',
                 minHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? '360px' 
+                      ? '340px' 
                       : isSmallScreen 
-                        ? '380px' 
-                        : '400px')
+                        ? '360px' 
+                        : '380px')
                   : 'auto',
                 marginTop: '-20px',
-                marginBottom: isMobile ? 'clamp(16px, 4vh, 28px)' : '0px',
+                marginBottom: isMobile ? 'clamp(12px, 3vh, 24px)' : '0px',
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'hidden',
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
