@@ -20,6 +20,18 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dropboxReady, setDropboxReady] = useState(false)
+  
+  // Get the correct origin for Dropbox - must match Dropbox app console settings
+  const getDropboxOrigin = () => {
+    if (typeof window === 'undefined') return 'https://munyardmixer.com'
+    
+    const origin = window.location.origin
+    console.log('Current origin:', origin)
+    
+    // For localhost development, you need to add localhost:3000 to Dropbox app settings
+    // For production, use https://munyardmixer.com
+    return origin
+  }
 
   useEffect(() => {
     // Load Dropbox script dynamically
@@ -54,8 +66,12 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             script.id = 'dropboxjs'
             script.src = src
             script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
-            // Add origin to the script attribute
-            script.setAttribute('data-origin', typeof window !== 'undefined' ? window.location.origin : 'https://munyardmixer.com')
+            // Add origin to the script attribute - must match Dropbox app settings exactly
+            // The origin must be registered in your Dropbox app console at:
+            // https://www.dropbox.com/developers/apps
+            const origin = getDropboxOrigin()
+            script.setAttribute('data-origin', origin)
+            console.log('Dropbox script origin set to:', origin)
             script.async = true
             script.crossOrigin = 'anonymous'
 
@@ -216,9 +232,17 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       multiselect: true,
       extensions: ['audio'],
       folderselect: false,
-      // Add origin to fix communication error
-      origin: typeof window !== 'undefined' ? window.location.origin : 'https://munyardmixer.com'
+      // Add origin to fix communication error - must match Dropbox app settings exactly
+      // IMPORTANT: This origin must be registered in your Dropbox app console
+      // Go to: https://www.dropbox.com/developers/apps
+      // Select your app -> Settings -> OAuth 2 -> Allow list
+      // Add both: https://munyardmixer.com and http://localhost:3000 (for development)
+      origin: getDropboxOrigin()
     }
+    
+    // Log the origin for debugging
+    console.log('Dropbox chooser origin:', options.origin)
+    console.log('⚠️ If you see "Could not communicate" error, check that this origin is registered in Dropbox app console')
 
     // Use Dropbox.choose directly as shown in the article
     try {
