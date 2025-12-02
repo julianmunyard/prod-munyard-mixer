@@ -2330,25 +2330,24 @@ function MixerPage() {
                 width: '100%',
                 // Use min-height instead of fixed height to prevent cutoff on iOS initial load
                 // Use dvh (dynamic viewport height) for better iOS Safari support
-                // Responsive heights: smaller for iPhone 13, larger for iPhone 16 Pro Max
-                // Reduced to ensure bottom border and labels are NEVER cut off
+                // Responsive heights: EXTEND modules to show full bottom border and labels
                 minHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? 'clamp(250px, 33dvh, 290px)'  // iPhone SE, iPhone 12 mini
+                      ? 'clamp(280px, 36dvh, 320px)'  // iPhone SE, iPhone 12 mini - EXTENDED
                       : isSmallScreen 
-                        ? 'clamp(270px, 34dvh, 310px)'  // iPhone 13, iPhone 14 (390x844px)
-                        : 'clamp(310px, 38dvh, 380px)')  // iPhone 16 Pro Max, larger phones (430x932px)
+                        ? 'clamp(300px, 38dvh, 340px)'  // iPhone 13, iPhone 14 - EXTENDED
+                        : 'clamp(340px, 42dvh, 420px)')  // iPhone 16 Pro Max - EXTENDED to show full modules
                   : 'auto',
                 maxHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? '290px' 
+                      ? '320px' 
                       : isSmallScreen 
-                        ? '310px' 
-                        : '380px')  // Reduced to prevent bottom cutoff
+                        ? '340px' 
+                        : '420px')  // EXTENDED to show full modules
                   : 'none',
-                marginTop: isMobile ? '8px' : '-20px',
-                marginBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : '20px') : '0px',
-                paddingBottom: isMobile ? (isVerySmallScreen ? '6px' : isSmallScreen ? '8px' : '10px') : '0px', // Extra padding to show bottom border
+                marginTop: isMobile ? '4px' : '-20px', // Reduced top margin to give more space
+                marginBottom: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '12px') : '0px',
+                paddingBottom: '0px', // Removed - let modules extend fully
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'visible', // Allow content to be visible, prevent cutoff
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
@@ -2414,24 +2413,24 @@ function MixerPage() {
                       alignItems: 'center',
                       height: isMobile 
                         ? (isVerySmallScreen 
-                            ? 'calc(100% - 8px)'  // Leave space for bottom border
+                            ? '100%'  // Full height to show complete modules
                             : isSmallScreen 
-                              ? 'calc(100% - 8px)' 
-                              : 'calc(100% - 10px)')  // Leave space for bottom border on larger phones
+                              ? '100%' 
+                              : '100%')  // Full height to show complete modules
                         : undefined,
                       maxHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '270px'  // Reduced to prevent cutoff
+                            ? '310px'  // EXTENDED to show full modules
                             : isSmallScreen 
-                              ? '290px'  // Reduced to prevent cutoff
-                              : '360px')  // Reduced to prevent cutoff on iPhone 16
+                              ? '330px'  // EXTENDED to show full modules
+                              : '410px')  // EXTENDED to show full modules on iPhone 16
                         : undefined,
                       minHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '250px' 
+                            ? '280px'  // EXTENDED
                             : isSmallScreen 
-                              ? '270px' 
-                              : '310px')  // Reduced to prevent cutoff
+                              ? '300px'  // EXTENDED
+                              : '340px')  // EXTENDED
                         : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
@@ -2448,18 +2447,18 @@ function MixerPage() {
                     <div style={{ 
                       width: '16px', 
                       height: isVerySmallScreen 
-                        ? '16px' 
+                        ? '12px'  // Reduced top spacer
                         : isSmallScreen 
-                          ? '18px' 
+                          ? '14px'  // Reduced top spacer
                           : isMobile 
-                            ? '20px' 
+                            ? '16px'  // Reduced top spacer
                             : '40px', 
                       marginBottom: isVerySmallScreen 
-                        ? '8px' 
+                        ? '6px'  // Reduced spacing
                         : isSmallScreen 
-                          ? '10px' 
+                          ? '8px'  // Reduced spacing
                           : isMobile 
-                            ? '12px' 
+                            ? '10px'  // Reduced spacing
                             : '18px' 
                     }} />
 
@@ -2841,7 +2840,7 @@ function MixerPage() {
 
             {/* Mobile Effect Controls - Above VARISPEED */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div className="w-full flex justify-center sm:hidden" style={{ marginTop: '16px', marginBottom: '20px' }}>
+              <div className="w-full flex justify-center sm:hidden" style={{ marginTop: isVerySmallScreen ? '24px' : isSmallScreen ? '28px' : '32px', marginBottom: '20px' }}>
                 <div className="flex justify-center gap-4">
                   {/* Master Effect Dropdown */}
                   <div className="relative">
@@ -3069,7 +3068,7 @@ function MixerPage() {
                 <div
                   className="relative"
                   style={{
-                    marginTop: isVerySmallScreen ? '-10px' : isSmallScreen ? '-8px' : (isMediumScreen ? '-3px' : '-5px'),
+                    marginTop: isVerySmallScreen ? '8px' : isSmallScreen ? '12px' : (isMediumScreen ? '16px' : '14px'), // Moved DOWN to give modules space
                     marginBottom: isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : (isMediumScreen ? '18px' : '16px'),
                     width: isVerySmallScreen ? '320px' : isSmallScreen ? '340px' : (isMediumScreen ? '360px' : '350px'),
                     height: isVerySmallScreen ? '120px' : isSmallScreen ? '130px' : (isMediumScreen ? '150px' : '140px'),
