@@ -2147,7 +2147,7 @@ function MixerPage() {
                     </div>
 
                     {/* Effect Dropdown & Knob */}
-                    <div style={{ marginBottom: '32px', textAlign: 'center' }}>
+                    <div style={{ marginBottom: isMobile ? '20px' : '32px', textAlign: 'center' }}>
                       <div className="flex flex-col items-center text-xs select-none knob-container" style={{ color: 'white' }}>
                         {/* Effect Type Dropdown */}
                         <div className="mb-0.5 relative">
@@ -2305,7 +2305,7 @@ function MixerPage() {
                       flexDirection: 'column', 
                       alignItems: 'center',
                       // Pull the bottom cluster (MUTE / SOLO / label) slightly upward on mobile
-                      marginBottom: isMobile ? '4px' : '0px',
+                      marginBottom: isMobile ? '0px' : '0px',
                     }}>
                       <button
                         onClick={() => {
@@ -2352,8 +2352,8 @@ function MixerPage() {
                       <div
                         className="track-label"
                         style={{
-                          fontSize: '10px',
-                          padding: '3px 6px',
+                          fontSize: isVerySmallScreen ? '9px' : isSmallScreen ? '9.5px' : isMobile ? '10px' : '10px',
+                          padding: isMobile ? '2px 4px' : '3px 6px',
                           borderRadius: '4px',
                           backgroundColor: '#FCFAEE',
                           color: primary,
@@ -2362,7 +2362,7 @@ function MixerPage() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           width: '100%',
-                          height: '40px',
+                          height: isMobile ? '28px' : '40px',
                           overflow: 'hidden',
                           boxSizing: 'border-box',
                           border: `1px solid ${primary}`,
