@@ -18,6 +18,7 @@ import CompressorConfigModal from '../../../components/CompressorConfigModal'
 import PoolsuiteLoadingScreen from '../../../components/PoolsuiteLoadingScreen'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
+import VisualPositionEditor from '../../../components/VisualPositionEditor'
 import RealTimelineMixerEngine from '../../../../audio/engine/realTimelineMixerEngine'
 
 // ==================== 🧾 Types ====================
@@ -2325,6 +2326,7 @@ function MixerPage() {
 
             {/* 🎚️ Mixer Modules */}
             <div
+              id="stems-container"
               className="stems-container"
               style={{
                 width: '100%',
@@ -2840,7 +2842,7 @@ function MixerPage() {
 
             {/* Mobile Effect Controls - Above VARISPEED */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div className="w-full flex justify-center sm:hidden" style={{ marginTop: isVerySmallScreen ? '24px' : isSmallScreen ? '28px' : '32px', marginBottom: '20px' }}>
+              <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ marginTop: isVerySmallScreen ? '24px' : isSmallScreen ? '28px' : '32px', marginBottom: '20px' }}>
                 <div className="flex justify-center gap-4">
                   {/* Master Effect Dropdown */}
                   <div className="relative">
@@ -3064,7 +3066,7 @@ function MixerPage() {
 
             {/* Mobile Portrait Varispeed */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div className="w-full flex justify-center sm:hidden">
+              <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden">
                 <div
                   className="relative"
                   style={{
@@ -3271,6 +3273,9 @@ function MixerPage() {
 
         </>
       )}
+
+      {/* Visual Position Editor - for visually moving elements */}
+      <VisualPositionEditor />
     </>
   )
 }
