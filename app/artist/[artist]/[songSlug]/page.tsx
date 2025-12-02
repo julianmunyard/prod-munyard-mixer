@@ -362,7 +362,7 @@ function MixerPage() {
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   
   // Function to toggle audio unlock (called by mute/unmute button)
-  // Simple like YouTube - immediate toggle, no complex logic
+  // Simple like YouTube - immediate toggle, no complex logic (matching unmute.js pattern)
   const toggleAudioUnlock = useCallback(() => {
     if (!silentModeBypassRef.current) return;
     
@@ -376,7 +376,20 @@ function MixerPage() {
     setAudioUnlocked(newState);
     
     if (newState) {
-      // UNMUTE: Play silent audio immediately (like unmute.js)
+      // UNMUTE: Recreate channel tag if destroyed, then play (like unmute.js)
+      // If src is "about:blank", recreate it (page was hidden)
+      if (audio.src === 'about:blank' || !audio.src) {
+        const huffman = (count: number, repeatStr: string): string => {
+          let e = repeatStr
+          for (; count > 1; count--) e += repeatStr
+          return e
+        }
+        const silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q=="
+        audio.src = silence
+        audio.load()
+      }
+      
+      // Play silent audio immediately (like unmute.js)
       // This forces WebAudio onto media channel on iOS
       audio.play()
         .then(() => {
@@ -403,19 +416,29 @@ function MixerPage() {
   }, [addDebugLog, isPlaying]);
   
   useEffect(() => {
-    // Create a hidden audio element that will play silence
+    // Create a hidden audio element that will play silence (matching unmute.js pattern)
     const audio = document.createElement('audio')
     audio.loop = true
     audio.volume = 0.001 // Very quiet, but not zero (zero gets muted by iOS)
     audio.preload = 'auto'
+    audio.controls = false
+    ;(audio as any).disableRemotePlayback = true // Prevent AirPlay (like unmute.js)
     audio.setAttribute('playsinline', 'true') // iOS compatibility
     audio.setAttribute('webkit-playsinline', 'true') // Older iOS
     ;(audio as any).playsInline = true // Critical for iOS (TypeScript workaround)
     audio.style.display = 'none' // Hidden but functional
     
-    // Create a minimal WAV data URI (1 second of silence at 44.1kHz mono)
-    const silentWavBase64 = 'UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
-    audio.src = `data:audio/wav;base64,${silentWavBase64}`
+    // Use high-quality MP3 silence from unmute.js (not WAV)
+    // The silence MP3 must be high quality - when web audio sounds are played in parallel,
+    // the web audio sound is mixed to match the bitrate of the html sound.
+    // This is 0.01 seconds of silence VBR220-260 Joint Stereo 859B
+    const huffman = (count: number, repeatStr: string): string => {
+      let e = repeatStr
+      for (; count > 1; count--) e += repeatStr
+      return e
+    }
+    const silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q=="
+    audio.src = silence
     
     // Load the audio immediately so it's ready when needed
     audio.load()
@@ -436,7 +459,59 @@ function MixerPage() {
       addDebugLog('🔇 Silent unlock audio can play')
     }, { once: true })
     
+    // Helper to destroy channel tag (like unmute.js)
+    const destroyChannelTag = () => {
+      if (audio && audio.src && audio.src !== 'about:blank') {
+        // Change src to nothing and trigger a load - this is required to actually hide/clear iOS playback controls
+        audio.src = 'about:blank'
+        audio.load()
+        audio.pause()
+        addDebugLog('🔇 Silent audio destroyed (page hidden)')
+      }
+    }
+    
+    // Helper to recreate channel tag (when page becomes visible again)
+    const recreateChannelTag = () => {
+      if (audio && audio.src === 'about:blank') {
+        audio.src = silence
+        audio.load()
+        addDebugLog('🔇 Silent audio recreated (page visible)')
+      }
+    }
+    
+    // Handle page visibility (like unmute.js - destroy tag when hidden to hide iOS media controls)
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page hidden - destroy channel tag to hide iOS media controls
+        destroyChannelTag()
+      } else {
+        // Page visible - recreate if needed (only if user had unmuted)
+        if (audioUnlockedRef.current || manuallyUnlockedRef.current) {
+          recreateChannelTag()
+          // If mixer is playing, restart silent audio
+          if (isPlaying) {
+            audio.play().catch((e: any) => console.warn('Silent audio play failed on visibility:', e))
+          }
+        }
+      }
+    }
+    
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // On iOS, also listen for focus/blur (because iOS page visibility API is buggy)
+    if (isIOS) {
+      window.addEventListener('focus', handleVisibilityChange)
+      window.addEventListener('blur', handleVisibilityChange)
+    }
+    
     return () => {
+      // Cleanup
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      if (isIOS) {
+        window.removeEventListener('focus', handleVisibilityChange)
+        window.removeEventListener('blur', handleVisibilityChange)
+      }
       if (audio) {
         audio.pause()
         audio.src = ''
@@ -445,7 +520,7 @@ function MixerPage() {
         }
       }
     }
-  }, [])
+  }, [isIOS, isPlaying])
 
   // ==================== 🎵 Timeline Engine Initialization ====================
   useEffect(() => {
@@ -931,8 +1006,22 @@ function MixerPage() {
       // On iOS: Start silent audio track FIRST (like unmute.js does)
       // This forces WebAudio onto the media channel instead of ringer channel
       if (isIOS && silentModeBypassRef.current) {
+        const audio = silentModeBypassRef.current;
+        
+        // Recreate channel tag if destroyed (page was hidden)
+        if (audio.src === 'about:blank' || !audio.src) {
+          const huffman = (count: number, repeatStr: string): string => {
+            let e = repeatStr
+            for (; count > 1; count--) e += repeatStr
+            return e
+          }
+          const silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q=="
+          audio.src = silence
+          audio.load()
+        }
+        
         try {
-          await silentModeBypassRef.current.play();
+          await audio.play();
           audioUnlockedRef.current = true;
           setAudioUnlocked(true);
           addDebugLog('🔊 Silent audio started (iOS media channel unlock)');
