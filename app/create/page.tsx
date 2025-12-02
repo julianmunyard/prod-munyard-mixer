@@ -733,7 +733,7 @@ effects: (
   </button>
 )}
 
-<div style={{ position: 'relative', width: '100%' }}>
+<div style={{ position: 'relative', width: '100%' }} data-dropdown>
   <label style={{ display: 'block', marginBottom: '0.5rem' }}>Choose Your Mixer Theme</label>
   <div
     onClick={() => setShowThemeDropdown((prev) => !prev)}
