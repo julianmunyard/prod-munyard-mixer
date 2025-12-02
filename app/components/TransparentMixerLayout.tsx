@@ -87,7 +87,7 @@ export default function TransparentMixerLayout({
       flexDirection: 'column',
       alignItems: 'center',
       fontSize: '10px',
-      color: 'white',
+      color: primaryColor, // Always primary color for transparent theme
       flexGrow: 1,
       justifyContent: 'center',
       marginBottom: isMobile ? '20px' : '30px', // <<<< matches main

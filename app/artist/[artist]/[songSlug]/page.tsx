@@ -2296,7 +2296,7 @@ function MixerPage() {
                             : isMobile 
                               ? '10px' 
                               : '10px',
-                        color: 'white',
+                        color: isTransparent ? primary : 'white',
                         flexGrow: 1,
                         justifyContent: 'center',
                         marginBottom: isVerySmallScreen 
@@ -2341,7 +2341,7 @@ function MixerPage() {
 
                     {/* Effect Dropdown & Knob */}
                     <div style={{ marginBottom: isMobile ? '20px' : '32px', textAlign: 'center' }}>
-                      <div className="flex flex-col items-center text-xs select-none knob-container" style={{ color: 'white' }}>
+                      <div className="flex flex-col items-center text-xs select-none knob-container" style={{ color: isTransparent ? primary : 'white' }}>
                         {/* Effect Type Dropdown */}
                         <div className="mb-0.5 relative">
                           {/* Custom Dropdown Menu - positioned above */}
@@ -2402,21 +2402,26 @@ function MixerPage() {
                             className="text-[#FCFAEE] px-2 py-1 rounded font-mono cursor-pointer flex items-center justify-between transition-colors"
                             style={{ 
                               fontSize: '10px',
-                              backgroundColor: primary,
+                              backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)' : primary,
+                              color: isTransparent ? primary : '#FCFAEE',
                               border: `1px solid ${primary}`
                             }}
                             onMouseEnter={(e) => {
-                              // Darken the color on hover
-                              const rgb = primary.match(/\d+/g);
-                              if (rgb) {
-                                const r = Math.max(0, parseInt(rgb[0]) - 30);
-                                const g = Math.max(0, parseInt(rgb[1]) - 30);
-                                const b = Math.max(0, parseInt(rgb[2]) - 30);
-                                e.currentTarget.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                              // Darken the color on hover (only for non-transparent)
+                              if (!isTransparent) {
+                                const rgb = primary.match(/\d+/g);
+                                if (rgb) {
+                                  const r = Math.max(0, parseInt(rgb[0]) - 30);
+                                  const g = Math.max(0, parseInt(rgb[1]) - 30);
+                                  const b = Math.max(0, parseInt(rgb[2]) - 30);
+                                  e.currentTarget.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+                                }
+                              } else {
+                                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)';
                               }
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = primary;
+                              e.currentTarget.style.backgroundColor = isTransparent ? 'rgba(255,255,255,0.1)' : primary;
                             }}
                             onClick={() => {
                               const dropdown = document.getElementById(`effect-dropdown-${stem.label}`)
@@ -2433,6 +2438,7 @@ function MixerPage() {
                         {/* Config Button */}
                         <span 
                           className="mb-1 cursor-pointer hover:opacity-75"
+                          style={{ color: isTransparent ? primary : 'white' }}
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
