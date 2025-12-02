@@ -146,12 +146,24 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             console.log(`Downloading file ${index + 1}: ${file.name}`)
             console.log(`Link: ${file.link}`)
             
-            // Add CORS headers to the fetch request
-            // Note: Dropbox direct links need to be accessed from the same origin
-            // or via a proxy to avoid CORS issues
-            const response = await fetch(file.link, {
+            // Convert Dropbox link to direct download format
+            // Dropbox chooser returns links like: https://www.dropbox.com/s/xxxxx/file.mp3?dl=0
+            // We need to convert to: https://www.dropbox.com/s/xxxxx/file.mp3?dl=1 for direct download
+            let downloadLink = file.link
+            if (downloadLink.includes('?dl=0')) {
+              downloadLink = downloadLink.replace('?dl=0', '?dl=1')
+            } else if (!downloadLink.includes('?dl=')) {
+              downloadLink = downloadLink + (downloadLink.includes('?') ? '&' : '?') + 'dl=1'
+            }
+            
+            console.log(`Using download link: ${downloadLink}`)
+            
+            // Fetch the file from Dropbox using direct download link
+            // Note: Dropbox direct download links should work without CORS issues
+            const response = await fetch(downloadLink, {
               method: 'GET',
-              mode: 'no-cors', // Try no-cors to avoid CORS issues
+              mode: 'cors',
+              credentials: 'omit',
               headers: {
                 'Accept': '*/*',
               }
@@ -164,13 +176,23 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             const blob = await response.blob()
             console.log(`Downloaded ${file.name}: ${blob.size} bytes, type: ${blob.type}`)
             
+            // Determine MIME type from file extension if blob type is generic
+            let mimeType = blob.type
+            if (!mimeType || mimeType === 'application/octet-stream') {
+              const ext = file.name.toLowerCase().split('.').pop()
+              if (ext === 'mp3') mimeType = 'audio/mpeg'
+              else if (ext === 'wav') mimeType = 'audio/wav'
+              else if (ext === 'm4a') mimeType = 'audio/mp4'
+              else mimeType = 'audio/wav' // default
+            }
+            
             return new File([blob], file.name, { 
-              type: blob.type || 'audio/wav',
+              type: mimeType,
               lastModified: Date.now()
             })
-          } catch (err) {
+          } catch (err: any) {
             console.error(`Error downloading file ${file.name}:`, err)
-            throw new Error(`Failed to download ${file.name}: ${err.message}`)
+            throw new Error(`Failed to download ${file.name}: ${err?.message || 'Unknown error'}`)
           }
         })
 
