@@ -1064,6 +1064,13 @@ function MixerPage() {
         }
       }
       
+      // Ensure we start from position 0 to avoid false start/audio glitch
+      // This prevents any buffered audio from playing before the actual song starts
+      if (typeof mixerEngineRef.current?.seek === 'function') {
+        mixerEngineRef.current.seek(0);
+        addDebugLog('🎯 Reset to position 0 before playback');
+      }
+      
       // Start playback IMMEDIATELY
       mixerEngineRef.current.play?.();
       setIsPlaying(true);
