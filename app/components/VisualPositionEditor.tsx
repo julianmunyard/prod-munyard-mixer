@@ -34,6 +34,18 @@ export default function VisualPositionEditor() {
     }
   }, [positions])
 
+  // Apply saved positions on load
+  useEffect(() => {
+    if (Object.keys(positions).length > 0) {
+      Object.entries(positions).forEach(([id, pos]) => {
+        const element = document.getElementById(id)
+        if (element) {
+          element.style.transform = `translate(${pos.x}px, ${pos.y}px)`
+        }
+      })
+    }
+  }, [positions])
+
   // Make elements draggable when enabled
   useEffect(() => {
     if (!isEnabled) return
@@ -52,22 +64,32 @@ export default function VisualPositionEditor() {
       const element = document.getElementById(elementId)
       if (!element) return
 
-      const rect = element.getBoundingClientRect()
+      // Get current position from saved positions or current transform
+      const currentPos = positions[elementId] || { x: 0, y: 0 }
+      
+      // Get initial mouse/touch position
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
       const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-      const startX = clientX - rect.left
-      const startY = clientY - rect.top
+      const startMouseX = clientX
+      const startMouseY = clientY
 
       const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
         const moveX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX
         const moveY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY
-        const newX = moveX - startX - rect.left
-        const newY = moveY - startY - rect.top
+        
+        // Calculate difference from start position
+        const deltaX = moveX - startMouseX
+        const deltaY = moveY - startMouseY
+        
+        // Add delta to current position
+        const newX = currentPos.x + deltaX
+        const newY = currentPos.y + deltaY
 
-        setPositions(prev => ({
-          ...prev,
+        const newPositions = {
+          ...positions,
           [elementId]: { x: newX, y: newY }
-        }))
+        }
+        setPositions(newPositions)
 
         // Apply transform immediately for visual feedback
         element.style.transform = `translate(${newX}px, ${newY}px)`
@@ -104,18 +126,47 @@ export default function VisualPositionEditor() {
           handle.className = 'drag-handle'
           handle.style.cssText = `
             position: absolute;
-            top: -20px;
+            top: -30px;
             left: 0;
-            background: rgba(184, 0, 31, 0.8);
+            background: rgba(184, 0, 31, 0.9);
             color: white;
-            padding: 2px 6px;
-            font-size: 10px;
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+            cursor: move;
+            z-index: 10001;
+            user-select: none;
+            pointer-events: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            font-weight: bold;
           `
           handle.textContent = `📐 ${label}`
-          handle.onmousedown = (e) => handleMouseDown(e as any, id)
-          handle.ontouchstart = (e) => handleTouchStart(e as any, id)
+          handle.onmousedown = (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            handleMouseDown(e as any, id)
+          }
+          handle.ontouchstart = (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            handleTouchStart(e as any, id)
+          }
           handle.style.touchAction = 'none'
           element.appendChild(handle)
+          
+          // Also make the element itself draggable
+          element.onmousedown = (e) => {
+            if ((e.target as HTMLElement).classList.contains('drag-handle')) return
+            e.preventDefault()
+            e.stopPropagation()
+            handleMouseDown(e as any, id)
+          }
+          element.ontouchstart = (e) => {
+            if ((e.target as HTMLElement).classList.contains('drag-handle')) return
+            e.preventDefault()
+            e.stopPropagation()
+            handleTouchStart(e as any, id)
+          }
         }
       }
     })
@@ -127,6 +178,8 @@ export default function VisualPositionEditor() {
           element.style.cursor = ''
           element.style.position = ''
           element.style.zIndex = ''
+          element.onmousedown = null
+          element.ontouchstart = null
           const handle = element.querySelector('.drag-handle')
           if (handle) handle.remove()
         }
