@@ -65,9 +65,10 @@ export default function TransparentMixerLayout({
   className="mixer-module"
   style={{
     width: isiPhoneSE ? '70px' : isVerySmallScreen ? '75px' : stems.length >= 6 ? '86px' : '96px',
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     backdropFilter: 'blur(2px)',
     border: `1px solid ${primaryColor}`,
+    boxShadow: '0 0 6px rgba(255,255,255,0.2)',
     borderRadius: '10px',
     padding: isVerySmallScreen ? '8px' : '16px',
     display: 'flex',

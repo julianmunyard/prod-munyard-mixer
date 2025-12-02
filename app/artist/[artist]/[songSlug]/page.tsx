@@ -2208,7 +2208,9 @@ function MixerPage() {
                           : '32px',
                 }}
               >
-                {stems.map((stem) => (
+                {stems.map((stem) => {
+                  const isTransparent = songData?.color === 'Transparent'
+                  return (
                   <div
                     key={stem.label}
                     className="mixer-module"
@@ -2222,9 +2224,12 @@ function MixerPage() {
                             : stems.length >= 6 
                               ? '86px' 
                               : '96px',
-                      backgroundColor: primary,
-                      border: '1px solid #444',
-                      boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
+                      backgroundColor: isTransparent ? 'rgba(255,255,255,0.05)' : primary,
+                      border: isTransparent ? `1px solid ${primary}` : '1px solid #444',
+                      boxShadow: isTransparent 
+                        ? '0 0 6px rgba(255,255,255,0.2)' 
+                        : 'inset 0 2px 4px rgba(0, 0, 0, 0.25)',
+                      backdropFilter: isTransparent ? 'blur(2px)' : 'none',
                       borderRadius: '10px',
                       padding: isVerySmallScreen 
                         ? '8px' 
@@ -2565,7 +2570,8 @@ function MixerPage() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
 
