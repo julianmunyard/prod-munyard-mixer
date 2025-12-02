@@ -2332,24 +2332,24 @@ function MixerPage() {
                 width: '100%',
                 // Use min-height instead of fixed height to prevent cutoff on iOS initial load
                 // Use dvh (dynamic viewport height) for better iOS Safari support
-                // Responsive heights: EXTEND modules to show full bottom border and labels
+                // Responsive heights: Properly scaled modules with visible bottom border
                 minHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? 'clamp(320px, 40dvh, 380px)'  // iPhone SE, iPhone 12 mini - EXTENDED EVEN MORE
+                      ? 'clamp(300px, 38dvh, 350px)'  // iPhone SE, iPhone 12 mini - PROPERLY SCALED
                       : isSmallScreen 
-                        ? 'clamp(340px, 42dvh, 400px)'  // iPhone 13, iPhone 14 - EXTENDED EVEN MORE
-                        : 'clamp(380px, 46dvh, 480px)')  // iPhone 16 Pro Max - EXTENDED EVEN MORE to show full bottom
+                        ? 'clamp(320px, 40dvh, 370px)'  // iPhone 13, iPhone 14 - PROPERLY SCALED
+                        : 'clamp(350px, 43dvh, 420px)')  // iPhone 16 Pro Max - PROPERLY SCALED
                   : 'auto',
                 maxHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? '380px' 
+                      ? '350px' 
                       : isSmallScreen 
-                        ? '400px' 
-                        : '480px')  // EXTENDED EVEN MORE to show full bottom
+                        ? '370px' 
+                        : '420px')  // PROPERLY SCALED
                   : 'none',
-                marginTop: isMobile ? '4px' : '-20px', // Reduced top margin to give more space
-                marginBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '16px' : '20px') : '0px',
-                paddingBottom: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '12px') : '0px', // Add padding to show bottom border
+                marginTop: isMobile ? '4px' : '-20px',
+                marginBottom: isMobile ? (isVerySmallScreen ? '16px' : isSmallScreen ? '18px' : '24px') : '0px', // Increased to show bottom
+                paddingBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : '16px') : '0px', // Increased padding to show bottom border
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'visible', // Allow content to be visible, prevent cutoff
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
@@ -2367,9 +2367,10 @@ function MixerPage() {
                     : '0 8px',
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch',
-                  overflowY: 'visible', // Changed to visible to show full modules
+                  overflowY: 'visible', // Visible to show full modules including bottom
                   height: '100%',
-                  alignItems: 'flex-start', // Changed from center to flex-start to show bottom
+                  alignItems: 'flex-start', // flex-start to show bottom border
+                  paddingBottom: isMobile ? '4px' : '0px', // Extra padding to ensure bottom border visible
                   gap: isVerySmallScreen 
                     ? '4px' 
                     : isSmallScreen 
@@ -2422,17 +2423,17 @@ function MixerPage() {
                         : undefined,
                       maxHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '370px'  // EXTENDED EVEN MORE to show full bottom
+                            ? '340px'  // PROPERLY SCALED - shows bottom border
                             : isSmallScreen 
-                              ? '390px'  // EXTENDED EVEN MORE to show full bottom
-                              : '470px')  // EXTENDED EVEN MORE to show full bottom on iPhone 16
+                              ? '360px'  // PROPERLY SCALED - shows bottom border
+                              : '410px')  // PROPERLY SCALED - shows bottom border on iPhone 16
                         : undefined,
                       minHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '320px'  // EXTENDED EVEN MORE
+                            ? '300px'  // PROPERLY SCALED
                             : isSmallScreen 
-                              ? '340px'  // EXTENDED EVEN MORE
-                              : '380px')  // EXTENDED EVEN MORE
+                              ? '320px'  // PROPERLY SCALED
+                              : '350px')  // PROPERLY SCALED
                         : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
