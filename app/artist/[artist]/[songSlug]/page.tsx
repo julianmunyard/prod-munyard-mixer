@@ -545,6 +545,43 @@ function MixerPage() {
     // This maintains media channel access for when playback resumes
   }, [isPlaying, isIOS, addDebugLog]);
 
+  // ==================== 🎥 Background Video Playback ====================
+  useEffect(() => {
+    if (songData?.background_video && songData.color === 'Transparent' && backgroundVideoRef.current) {
+      const video = backgroundVideoRef.current
+      console.log('🎥 Attempting to play background video:', songData.background_video)
+      
+      // Force play the video
+      const playVideo = () => {
+        if (video.paused) {
+          video.play()
+            .then(() => {
+              console.log('✅ Background video playing successfully')
+            })
+            .catch((err) => {
+              console.error('❌ Failed to play background video:', err)
+            })
+        }
+      }
+      
+      // Try to play immediately
+      if (video.readyState >= 2) { // HAVE_CURRENT_DATA
+        playVideo()
+      } else {
+        // Wait for video to be ready
+        video.addEventListener('loadeddata', playVideo, { once: true })
+        video.addEventListener('canplay', playVideo, { once: true })
+        video.addEventListener('canplaythrough', playVideo, { once: true })
+      }
+      
+      return () => {
+        video.removeEventListener('loadeddata', playVideo)
+        video.removeEventListener('canplay', playVideo)
+        video.removeEventListener('canplaythrough', playVideo)
+      }
+    }
+  }, [songData?.background_video, songData?.color])
+
   // ==================== 🎵 Timeline Engine Initialization ====================
   useEffect(() => {
     const initializeTimeline = async () => {
@@ -642,6 +679,7 @@ function MixerPage() {
       });
 
       setSongData(data);
+      console.log('🎥 Song data loaded - background_video:', data.background_video, 'color:', data.color);
       setStems(stemObjs);
       setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])));
       setReverbs(Object.fromEntries(stemObjs.map(s => [s.label, 0])));
@@ -1720,6 +1758,7 @@ function MixerPage() {
               loop
               playsInline
               preload="auto"
+              crossOrigin="anonymous"
               style={{
                 position: 'fixed',
                 top: 0,
@@ -1733,23 +1772,43 @@ function MixerPage() {
               }}
               onError={(e) => {
                 console.error('Background video failed to load:', e)
+                console.error('Video source:', songData.background_video)
+              }}
+              onLoadedMetadata={() => {
+                console.log('Background video metadata loaded:', songData.background_video)
+                const video = backgroundVideoRef.current
+                if (video) {
+                  video.play().catch((err) => {
+                    console.error('Failed to play background video (onLoadedMetadata):', err)
+                  })
+                }
               }}
               onLoadedData={() => {
-                console.log('Background video loaded successfully')
+                console.log('Background video loaded successfully:', songData.background_video)
                 // Ensure video plays
                 const video = backgroundVideoRef.current
                 if (video) {
                   video.play().catch((err) => {
-                    console.error('Failed to play background video:', err)
+                    console.error('Failed to play background video (onLoadedData):', err)
                   })
                 }
               }}
               onCanPlay={() => {
+                console.log('Background video can play:', songData.background_video)
                 // Ensure video plays when ready
                 const video = backgroundVideoRef.current
                 if (video && video.paused) {
                   video.play().catch((err) => {
-                    console.error('Failed to play background video:', err)
+                    console.error('Failed to play background video (onCanPlay):', err)
+                  })
+                }
+              }}
+              onCanPlayThrough={() => {
+                console.log('Background video can play through:', songData.background_video)
+                const video = backgroundVideoRef.current
+                if (video && video.paused) {
+                  video.play().catch((err) => {
+                    console.error('Failed to play background video (onCanPlayThrough):', err)
                   })
                 }
               }}
