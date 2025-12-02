@@ -44,7 +44,8 @@ export default function EditProject() {
   const [songId, setSongId] = useState<string | null>(null)
   const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null)
   const [isVideoUploading, setIsVideoUploading] = useState(false)
- const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
+  const [videoRemoved, setVideoRemoved] = useState(false)
 
 
 
@@ -61,6 +62,15 @@ export default function EditProject() {
       document.body.style.color = ''
     }
   }, [])
+
+  // Cleanup video preview URL
+  useEffect(() => {
+    return () => {
+      if (videoPreviewUrl) {
+        URL.revokeObjectURL(videoPreviewUrl)
+      }
+    }
+  }, [videoPreviewUrl])
 
   // 🔄 Get user and song on mount
   useEffect(() => {
@@ -208,9 +218,13 @@ if (stems && stems.length > 0) {
 }
 
 
-let videoPublicUrl = existingVideoUrl; // Default to the existing video
+let videoPublicUrl: string | null = null;
 
-if (backgroundVideo) {
+// If video was explicitly removed, set to null
+if (videoRemoved) {
+  videoPublicUrl = null;
+} else if (backgroundVideo) {
+  // Upload new video
   setIsVideoUploading(true)
   try {
     const videoExt = backgroundVideo.name.split('.').pop()
@@ -222,13 +236,30 @@ if (backgroundVideo) {
         contentType: backgroundVideo.type,
         upsert: false,
       })
-    if (!uploadError) {
+    if (uploadError) {
+      console.error('Video upload error:', uploadError.message)
+      alert('Failed to upload video. Please try again.')
+      setIsSubmitting(false)
+      setIsVideoUploading(false)
+      return
+    }
+    if (uploadData) {
       const { data: publicUrlData } = supabase.storage.from('videos').getPublicUrl(videoPath)
       videoPublicUrl = publicUrlData.publicUrl
+      console.log('Video uploaded successfully:', videoPublicUrl)
     }
+  } catch (err: any) {
+    console.error('Video upload exception:', err)
+    alert('Failed to upload video. Please try again.')
+    setIsSubmitting(false)
+    setIsVideoUploading(false)
+    return
   } finally {
     setIsVideoUploading(false)
   }
+} else {
+  // Keep existing video if not removed and no new video uploaded
+  videoPublicUrl = existingVideoUrl;
 }
 
 
@@ -635,7 +666,7 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
 </div>
 
 
-{(color === 'Transparent' || color === 'Red (Classic)') && (
+{color === 'Transparent' && (
   <div style={{
     position: 'relative',
     width: '100%',
@@ -671,10 +702,14 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
       onChange={(e) => {
         const file = e.target.files?.[0];
         if (file) {
+          // Cleanup previous preview URL if exists
+          if (videoPreviewUrl) {
+            URL.revokeObjectURL(videoPreviewUrl);
+          }
           setBackgroundVideo(file);
           setVideoPreviewUrl(URL.createObjectURL(file));
-          // show spinner instantly
-          setIsVideoUploading(true);
+          setVideoRemoved(false); // Reset removed flag when new video selected
+          setIsVideoUploading(false); // Don't show spinner until upload starts
         }
       }}
       style={{ display: 'none' }}
@@ -717,6 +752,35 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
             }} />
           </div>
         )}
+        <button
+          type="button"
+          onClick={() => {
+            if (videoPreviewUrl) {
+              URL.revokeObjectURL(videoPreviewUrl);
+            }
+            setBackgroundVideo(null);
+            setVideoPreviewUrl(null);
+            setExistingVideoUrl(null);
+            setVideoRemoved(true);
+            const input = document.getElementById('video-upload') as HTMLInputElement;
+            if (input) input.value = '';
+          }}
+          style={{
+            position: 'absolute',
+            top: '4px',
+            right: '4px',
+            padding: '2px 6px',
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '10px',
+            zIndex: 3
+          }}
+        >
+          Remove
+        </button>
       </div>
     )}
     <style>{`
