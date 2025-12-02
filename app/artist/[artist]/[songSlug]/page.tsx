@@ -2331,23 +2331,24 @@ function MixerPage() {
                 // Use min-height instead of fixed height to prevent cutoff on iOS initial load
                 // Use dvh (dynamic viewport height) for better iOS Safari support
                 // Responsive heights: smaller for iPhone 13, larger for iPhone 16 Pro Max
+                // Reduced to ensure bottom border and labels are NEVER cut off
                 minHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? 'clamp(260px, 35dvh, 300px)'  // iPhone SE, iPhone 12 mini
+                      ? 'clamp(250px, 33dvh, 290px)'  // iPhone SE, iPhone 12 mini
                       : isSmallScreen 
-                        ? 'clamp(280px, 36dvh, 320px)'  // iPhone 13, iPhone 14 (390x844px)
-                        : 'clamp(320px, 40dvh, 400px)')  // iPhone 16 Pro Max, larger phones (430x932px)
+                        ? 'clamp(270px, 34dvh, 310px)'  // iPhone 13, iPhone 14 (390x844px)
+                        : 'clamp(310px, 38dvh, 380px)')  // iPhone 16 Pro Max, larger phones (430x932px)
                   : 'auto',
                 maxHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? '300px' 
+                      ? '290px' 
                       : isSmallScreen 
-                        ? '320px' 
-                        : '395px')  // Slightly reduced to show bottom border on iPhone 16
+                        ? '310px' 
+                        : '380px')  // Reduced to prevent bottom cutoff
                   : 'none',
                 marginTop: isMobile ? '8px' : '-20px',
-                marginBottom: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '16px') : '0px',
-                paddingBottom: isMobile && isMediumScreen ? '4px' : '0px', // Extra padding for bottom border visibility
+                marginBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : '20px') : '0px',
+                paddingBottom: isMobile ? (isVerySmallScreen ? '6px' : isSmallScreen ? '8px' : '10px') : '0px', // Extra padding to show bottom border
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'visible', // Allow content to be visible, prevent cutoff
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
@@ -2413,27 +2414,28 @@ function MixerPage() {
                       alignItems: 'center',
                       height: isMobile 
                         ? (isVerySmallScreen 
-                            ? '100%' 
+                            ? 'calc(100% - 8px)'  // Leave space for bottom border
                             : isSmallScreen 
-                              ? '100%' 
-                              : '100%')
+                              ? 'calc(100% - 8px)' 
+                              : 'calc(100% - 10px)')  // Leave space for bottom border on larger phones
                         : undefined,
                       maxHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '280px' 
+                            ? '270px'  // Reduced to prevent cutoff
                             : isSmallScreen 
-                              ? '300px' 
-                              : '375px')  // Slightly reduced to show bottom border on iPhone 16
+                              ? '290px'  // Reduced to prevent cutoff
+                              : '360px')  // Reduced to prevent cutoff on iPhone 16
                         : undefined,
                       minHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '260px' 
+                            ? '250px' 
                             : isSmallScreen 
-                              ? '280px' 
-                              : '320px')  // Larger for iPhone 16 Pro Max
+                              ? '270px' 
+                              : '310px')  // Reduced to prevent cutoff
                         : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
+                      boxSizing: 'border-box', // Ensure border is included in height
                       minWidth: isVerySmallScreen 
                         ? '70px' 
                         : isSmallScreen 
