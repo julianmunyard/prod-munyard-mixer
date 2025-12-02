@@ -2343,10 +2343,11 @@ function MixerPage() {
                       ? '300px' 
                       : isSmallScreen 
                         ? '320px' 
-                        : '400px')  // Larger for iPhone 16 Pro Max
+                        : '395px')  // Slightly reduced to show bottom border on iPhone 16
                   : 'none',
                 marginTop: isMobile ? '8px' : '-20px',
-                marginBottom: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '12px') : '0px',
+                marginBottom: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '16px') : '0px',
+                paddingBottom: isMobile && isMediumScreen ? '4px' : '0px', // Extra padding for bottom border visibility
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'visible', // Allow content to be visible, prevent cutoff
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
@@ -2422,7 +2423,7 @@ function MixerPage() {
                             ? '280px' 
                             : isSmallScreen 
                               ? '300px' 
-                              : '380px')  // Larger for iPhone 16 Pro Max
+                              : '375px')  // Slightly reduced to show bottom border on iPhone 16
                         : undefined,
                       minHeight: isMobile 
                         ? (isVerySmallScreen 
