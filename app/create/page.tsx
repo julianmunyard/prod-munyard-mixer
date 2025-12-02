@@ -46,6 +46,7 @@ export default function Create() {
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const [backgroundVideo, setBackgroundVideo] = useState<File | null>(null)
   const [videoFile, setVideoFile] = useState<File | null>(null)
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
   const [primaryColor, setPrimaryColor] = useState('#B8001F') // default red
   const [showThemeDropdown, setShowThemeDropdown] = useState(false)
   const [showEffectDropdown, setShowEffectDropdown] = useState(false)
@@ -88,6 +89,15 @@ useEffect(() => {
     document.body.style.color = ''
   }
 }, [])
+
+  // Cleanup video preview URL
+  useEffect(() => {
+    return () => {
+      if (videoPreviewUrl) {
+        URL.revokeObjectURL(videoPreviewUrl)
+      }
+    }
+  }, [videoPreviewUrl])
   
   useEffect(() => {
     async function getUser() {
@@ -850,7 +860,7 @@ effects: (
 </div>
 
 
-{(color === 'Transparent' || color === 'Red (Classic)') && (
+{color === 'Transparent' && (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
     <span style={{ fontWeight: 'bold' }}>Optional Background Video (MP4 or WebM)</span>
     
@@ -874,13 +884,62 @@ effects: (
       This video will loop fullscreen behind the mixer.
     </span>
 
+    {videoPreviewUrl && (
+      <div style={{ 
+        position: 'relative', 
+        width: '100%', 
+        maxWidth: '400px', 
+        marginTop: '1rem',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        border: '1px solid #ccc'
+      }}>
+        <video
+          src={videoPreviewUrl}
+          controls
+          style={{
+            width: '100%',
+            height: 'auto',
+            display: 'block'
+          }}
+        />
+        <button
+          onClick={() => {
+            setBackgroundVideo(null)
+            setVideoPreviewUrl(null)
+            const input = document.getElementById('video-upload') as HTMLInputElement
+            if (input) input.value = ''
+          }}
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            padding: '4px 8px',
+            backgroundColor: 'rgba(0,0,0,0.7)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '12px'
+          }}
+        >
+          Remove
+        </button>
+      </div>
+    )}
+
     <input
       id="video-upload"
       type="file"
       accept="video/mp4,video/webm"
       onChange={(e) => {
         const file = e.target.files?.[0]
-        if (file) setBackgroundVideo(file)
+        if (file) {
+          setBackgroundVideo(file)
+          // Create preview URL
+          const url = URL.createObjectURL(file)
+          setVideoPreviewUrl(url)
+        }
       }}
       style={{ display: 'none' }}
     />

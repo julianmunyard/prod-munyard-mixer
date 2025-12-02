@@ -361,6 +361,7 @@ function MixerPage() {
   const silentModeBypassRef = useRef<HTMLAudioElement | null>(null)
   const audioUnlockedRef = useRef(false)
   const manuallyUnlockedRef = useRef(false) // Track if user manually unlocked
+  const backgroundVideoRef = useRef<HTMLVideoElement | null>(null)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   
   // Function to toggle audio unlock (called by mute/unmute button)
@@ -1712,6 +1713,7 @@ function MixerPage() {
           {/* 🎥 Background Video - Only for Transparent theme */}
           {songData?.background_video && songData.color === 'Transparent' && (
             <video
+              ref={backgroundVideoRef}
               src={songData.background_video}
               autoPlay
               muted
@@ -1734,6 +1736,22 @@ function MixerPage() {
               }}
               onLoadedData={() => {
                 console.log('Background video loaded successfully')
+                // Ensure video plays
+                const video = backgroundVideoRef.current
+                if (video) {
+                  video.play().catch((err) => {
+                    console.error('Failed to play background video:', err)
+                  })
+                }
+              }}
+              onCanPlay={() => {
+                // Ensure video plays when ready
+                const video = backgroundVideoRef.current
+                if (video && video.paused) {
+                  video.play().catch((err) => {
+                    console.error('Failed to play background video:', err)
+                  })
+                }
               }}
             />
           )}
