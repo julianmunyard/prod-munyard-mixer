@@ -2335,17 +2335,17 @@ function MixerPage() {
                 // Responsive heights: EXTEND modules to show full bottom border and labels
                 minHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? 'clamp(280px, 36dvh, 320px)'  // iPhone SE, iPhone 12 mini - EXTENDED
+                      ? 'clamp(300px, 38dvh, 350px)'  // iPhone SE, iPhone 12 mini - EXTENDED MORE
                       : isSmallScreen 
-                        ? 'clamp(300px, 38dvh, 340px)'  // iPhone 13, iPhone 14 - EXTENDED
-                        : 'clamp(340px, 42dvh, 420px)')  // iPhone 16 Pro Max - EXTENDED to show full modules
+                        ? 'clamp(320px, 40dvh, 370px)'  // iPhone 13, iPhone 14 - EXTENDED MORE
+                        : 'clamp(360px, 44dvh, 450px)')  // iPhone 16 Pro Max - EXTENDED MORE to show full bottom
                   : 'auto',
                 maxHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? '320px' 
+                      ? '350px' 
                       : isSmallScreen 
-                        ? '340px' 
-                        : '420px')  // EXTENDED to show full modules
+                        ? '370px' 
+                        : '450px')  // EXTENDED MORE to show full bottom
                   : 'none',
                 marginTop: isMobile ? '4px' : '-20px', // Reduced top margin to give more space
                 marginBottom: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '12px') : '0px',
@@ -2422,17 +2422,17 @@ function MixerPage() {
                         : undefined,
                       maxHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '310px'  // EXTENDED to show full modules
+                            ? '340px'  // EXTENDED MORE to show full bottom
                             : isSmallScreen 
-                              ? '330px'  // EXTENDED to show full modules
-                              : '410px')  // EXTENDED to show full modules on iPhone 16
+                              ? '360px'  // EXTENDED MORE to show full bottom
+                              : '440px')  // EXTENDED MORE to show full bottom on iPhone 16
                         : undefined,
                       minHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '280px'  // EXTENDED
+                            ? '300px'  // EXTENDED MORE
                             : isSmallScreen 
-                              ? '300px'  // EXTENDED
-                              : '340px')  // EXTENDED
+                              ? '320px'  // EXTENDED MORE
+                              : '360px')  // EXTENDED MORE
                         : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
