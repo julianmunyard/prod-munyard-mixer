@@ -1694,39 +1694,46 @@ function MixerPage() {
           `}</style>
           
 
-          {/* 🎥 Background Video */}
-          {songData?.background_video &&
-            (songData.color === 'Transparent' || songData.color === 'Red (Classic)') && (
-              <video
-                src={songData.background_video}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  width: '100vw',
-                  height: '100dvh',
-                  objectFit: 'cover',
-                  zIndex: -1,
-                  pointerEvents: 'none',
-                  backgroundColor: '#FCFAEE',
-                }}
-              />
-            )}
+          {/* 🎥 Background Video - Only for Transparent theme */}
+          {songData?.background_video && songData.color === 'Transparent' && (
+            <video
+              src={songData.background_video}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100dvh',
+                objectFit: 'cover',
+                zIndex: 0,
+                pointerEvents: 'none',
+                backgroundColor: 'transparent',
+              }}
+              onError={(e) => {
+                console.error('Background video failed to load:', e)
+              }}
+              onLoadedData={() => {
+                console.log('Background video loaded successfully')
+              }}
+            />
+          )}
 
           {/* 🧱 Main Layout */}
           <main
             className={`min-h-screen font-sans relative ${
-              songData?.color === 'Transparent' && songData?.background_video
+              songData?.color === 'Transparent'
                 ? 'bg-transparent text-[#B8001F]'
                 : 'bg-[#FCFAEE] text-[#B8001F]'
             }`}
             style={{
               minHeight: '100dvh',
+              zIndex: 1,
+              position: 'relative',
               paddingBottom: isVerySmallScreen 
                 ? 'clamp(140px, 20vh, 160px)' 
                 : isSmallScreen 
