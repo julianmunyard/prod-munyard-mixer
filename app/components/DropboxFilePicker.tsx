@@ -66,12 +66,10 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             script.id = 'dropboxjs'
             script.src = src
             script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
-            // Add origin to the script attribute - must match Dropbox app settings exactly
-            // The origin must be registered in your Dropbox app console at:
-            // https://www.dropbox.com/developers/apps
-            const origin = getDropboxOrigin()
-            script.setAttribute('data-origin', origin)
-            console.log('Dropbox script origin set to:', origin)
+            // NOTE: Do NOT set data-origin attribute - it can cause communication errors
+            // Dropbox automatically detects the origin from the page context
+            // The domain must be registered in "Chooser / Saver / Embedder domains" in Dropbox app settings
+            console.log('Dropbox script loaded, current origin:', getDropboxOrigin())
             script.async = true
             script.crossOrigin = 'anonymous'
 
@@ -231,18 +229,18 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       linkType: 'direct',
       multiselect: true,
       extensions: ['audio'],
-      folderselect: false,
-      // Add origin to fix communication error - must match Dropbox app settings exactly
-      // IMPORTANT: This origin must be registered in your Dropbox app console
-      // Go to: https://www.dropbox.com/developers/apps
-      // Select your app -> Settings -> OAuth 2 -> Allow list
-      // Add both: https://munyardmixer.com and http://localhost:3000 (for development)
-      origin: getDropboxOrigin()
+      folderselect: false
+      // NOTE: Do NOT include 'origin' parameter - it causes communication errors
+      // The domain is already registered in "Chooser / Saver / Embedder domains" in Dropbox app settings
+      // Dropbox automatically detects the origin from the page context
     }
     
-    // Log the origin for debugging
-    console.log('Dropbox chooser origin:', options.origin)
-    console.log('⚠️ If you see "Could not communicate" error, check that this origin is registered in Dropbox app console')
+    console.log('Dropbox chooser options:', { 
+      linkType: options.linkType, 
+      multiselect: options.multiselect,
+      extensions: options.extensions,
+      currentOrigin: getDropboxOrigin()
+    })
 
     // Use Dropbox.choose directly as shown in the article
     try {
