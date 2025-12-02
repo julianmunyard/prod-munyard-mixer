@@ -2019,58 +2019,99 @@ function MixerPage() {
               <button
                 onClick={playAll}
                 disabled={!timelineReady || !allAssetsLoaded}
-                className={`pressable font-mono tracking-wide flex items-center gap-2 transition-all duration-200 ${
+                className={`pressable flex items-center justify-center transition-all duration-200 ${
                   !timelineReady || !allAssetsLoaded
-                    ? 'bg-gray-500 text-gray-300 cursor-not-allowed opacity-60' 
+                    ? 'opacity-60 cursor-not-allowed' 
                     : 'hover:opacity-90'
                 }`}
                 style={{
-                  ...(timelineReady && allAssetsLoaded ? { backgroundColor: primary, color: 'white' } : {}),
-                  padding: isVerySmallScreen 
-                    ? '6px 10px' 
-                    : isSmallScreen 
-                      ? '8px 12px' 
-                      : isMobile 
-                        ? '8px 16px' 
-                        : '12px 24px',
-                  fontSize: isVerySmallScreen 
-                    ? '11px' 
-                    : isSmallScreen 
-                      ? '12px' 
-                      : isMobile 
-                        ? '13px' 
-                        : '14px',
+                  backgroundColor: isTransparent 
+                    ? 'rgba(255,255,255,0.05)' 
+                    : (timelineReady && allAssetsLoaded ? primary : '#ccc'),
+                  backdropFilter: isTransparent ? 'blur(2px)' : 'none',
+                  width: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
+                  height: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
+                  borderRadius: '50%',
+                  border: isTransparent ? `1px solid ${primary}` : 'none',
+                  padding: 0,
+                  boxShadow: isTransparent ? '0 0 6px rgba(255,255,255,0.2)' : 'none',
                 }}
+                aria-label="Play"
               >
-                Play
+                <svg
+                  width={isVerySmallScreen ? '18' : isSmallScreen ? '20' : isMobile ? '22' : '24'}
+                  height={isVerySmallScreen ? '18' : isSmallScreen ? '20' : isMobile ? '22' : '24'}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 5v14l11-7z"
+                    fill={isTransparent 
+                      ? primary 
+                      : (timelineReady && allAssetsLoaded ? 'white' : '#666')}
+                    stroke={isTransparent 
+                      ? primary 
+                      : (timelineReady && allAssetsLoaded ? 'white' : '#666')}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
 
               <button
                 onClick={pauseAll}
                 disabled={!timelineReady}
-                className="pressable text-white font-mono tracking-wide"
+                className="pressable flex items-center justify-center transition-all duration-200 hover:opacity-90"
                 style={{
-                  backgroundColor: primary,
-                  padding: isVerySmallScreen 
-                    ? '6px 10px' 
-                    : isSmallScreen 
-                      ? '8px 12px' 
-                      : isMobile 
-                        ? '8px 16px' 
-                        : '12px 24px',
-                  fontSize: isVerySmallScreen 
-                    ? '11px' 
-                    : isSmallScreen 
-                      ? '12px' 
-                      : isMobile 
-                        ? '13px' 
-                        : '14px',
+                  backgroundColor: isTransparent 
+                    ? 'rgba(255,255,255,0.05)' 
+                    : primary,
+                  backdropFilter: isTransparent ? 'blur(2px)' : 'none',
+                  width: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
+                  height: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
+                  borderRadius: '50%',
+                  border: isTransparent ? `1px solid ${primary}` : 'none',
+                  padding: 0,
+                  boxShadow: isTransparent ? '0 0 6px rgba(255,255,255,0.2)' : 'none',
                 }}
+                aria-label="Pause"
               >
-                Pause
+                <svg
+                  width={isVerySmallScreen ? '18' : isSmallScreen ? '20' : isMobile ? '22' : '24'}
+                  height={isVerySmallScreen ? '18' : isSmallScreen ? '20' : isMobile ? '22' : '24'}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <rect
+                    x="6"
+                    y="4"
+                    width="4"
+                    height="16"
+                    fill={isTransparent ? primary : 'white'}
+                    stroke={isTransparent ? primary : 'white'}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <rect
+                    x="14"
+                    y="4"
+                    width="4"
+                    height="16"
+                    fill={isTransparent ? primary : 'white'}
+                    stroke={isTransparent ? primary : 'white'}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
 
-              <button
+              {/* UNSOLO Button - Hidden but logic preserved for future use */}
+              {/* <button
                 onClick={unsoloAll}
                 className="pressable text-white font-mono tracking-wide"
                 style={{
@@ -2092,7 +2133,7 @@ function MixerPage() {
                 }}
               >
                 UNSOLO
-              </button>
+              </button> */}
             </div>
 
             {/* 🎛️ Secondary Controls - Desktop Only */}
