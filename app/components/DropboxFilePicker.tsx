@@ -146,11 +146,19 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       }
     }
 
-    // Get the current origin - must match what's in Dropbox Redirect URIs
-    const currentOrigin = getDropboxOrigin()
-    console.log('Using origin for Dropbox chooser:', currentOrigin)
+    // Verify Dropbox is available
+    if (!window.Dropbox || !window.Dropbox.choose) {
+      setError('Dropbox API not available. Please refresh the page.')
+      setIsLoading(false)
+      return
+    }
+
+    console.log('Opening Dropbox chooser...')
+    console.log('Registered domain: munyardmixer.com')
+    console.log('Current page origin:', getDropboxOrigin())
     
     // Use the exact approach from Dropbox article
+    // Do NOT include origin parameter - let Dropbox auto-detect from registered domain
     const options = {
       success: (files: any[]) => {
         console.log('✅ Dropbox success callback triggered!')
