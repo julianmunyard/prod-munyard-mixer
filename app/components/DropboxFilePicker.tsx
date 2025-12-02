@@ -71,7 +71,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             // Setting data-origin explicitly can cause "Could not communicate" errors
             console.log('Dropbox script loaded, domain registered: munyardmixer.com')
             script.async = true
-            // Do NOT set crossOrigin - it can block Dropbox communication
+            script.crossOrigin = 'anonymous'
 
             script.onload = () => {
               console.log(`Dropbox script loaded from ${src}`)
