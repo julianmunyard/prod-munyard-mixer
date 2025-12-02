@@ -2680,54 +2680,73 @@ function MixerPage() {
                       </div>
                     </div>
 
-                    {/* Mute & Solo */}
+                    {/* Mute & Solo - Combined into one split button */}
                     <div style={{ 
                       display: 'flex', 
                       flexDirection: 'column', 
                       alignItems: 'center',
-                      // Pull the bottom cluster (MUTE / SOLO / label) slightly upward on mobile
                       marginBottom: isMobile ? '0px' : '0px',
                     }}>
-                      <button
-                        onClick={() => {
-                          const newMuteState = !mutes[stem.label];
-                          setMutes(prev => ({ ...prev, [stem.label]: newMuteState }));
-                          setSolos(prev => ({ ...prev, [stem.label]: false })); // Clear solo when muting
-                          setTrackMute(stem.label, newMuteState);
-                        }}
-                        style={{
-                          fontSize: '11px',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          marginBottom: '6px',
-                          backgroundColor: mutes[stem.label] ? '#FFB3B3' : '#FCFAEE',
-                          color: mutes[stem.label] ? 'black' : primary,
-                          border: `1px solid ${primary}`,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        MUTE
-                      </button>
-                      <button
-                        onClick={() => {
-                          const newSoloState = !solos[stem.label];
-                          setSolos(prev => ({ ...prev, [stem.label]: newSoloState }));
-                          setMutes(prev => ({ ...prev, [stem.label]: false })); // Clear mute when soloing
-                          setTrackSolo(stem.label, newSoloState);
-                        }}
-                        style={{
-                          fontSize: '11px',
-                          padding: '3px 8px',
-                          borderRadius: '4px',
-                          marginBottom: '6px',
-                          backgroundColor: solos[stem.label] ? '#FFD700' : '#FCFAEE',
-                          color: solos[stem.label] ? 'black' : primary,
-                          border: `1px solid ${primary}`,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        SOLO
-                      </button>
+                      {/* Split Button: M (left) for MUTE, S (right) for SOLO */}
+                      <div style={{
+                        display: 'flex',
+                        width: '100%',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        border: `1px solid ${primary}`,
+                        marginBottom: '6px',
+                        height: isMobile ? '28px' : '32px',
+                      }}>
+                        {/* Left side - MUTE (M) */}
+                        <button
+                          onClick={() => {
+                            const newMuteState = !mutes[stem.label];
+                            setMutes(prev => ({ ...prev, [stem.label]: newMuteState }));
+                            setSolos(prev => ({ ...prev, [stem.label]: false })); // Clear solo when muting
+                            setTrackMute(stem.label, newMuteState);
+                          }}
+                          style={{
+                            flex: 1,
+                            fontSize: isMobile ? '12px' : '13px',
+                            fontWeight: 'bold',
+                            padding: '0',
+                            border: 'none',
+                            borderRight: `1px solid ${primary}`,
+                            backgroundColor: mutes[stem.label] ? '#FFB3B3' : '#FCFAEE',
+                            color: mutes[stem.label] ? 'black' : primary,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          M
+                        </button>
+                        {/* Right side - SOLO (S) */}
+                        <button
+                          onClick={() => {
+                            const newSoloState = !solos[stem.label];
+                            setSolos(prev => ({ ...prev, [stem.label]: newSoloState }));
+                            setMutes(prev => ({ ...prev, [stem.label]: false })); // Clear mute when soloing
+                            setTrackSolo(stem.label, newSoloState);
+                          }}
+                          style={{
+                            flex: 1,
+                            fontSize: isMobile ? '12px' : '13px',
+                            fontWeight: 'bold',
+                            padding: '0',
+                            border: 'none',
+                            backgroundColor: solos[stem.label] ? '#FFD700' : '#FCFAEE',
+                            color: solos[stem.label] ? 'black' : primary,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          S
+                        </button>
+                      </div>
 
                       {/* Label */}
                       <div
@@ -2813,6 +2832,8 @@ function MixerPage() {
                   </div>
                   
                   {/* Mode Toggle Button - Centered below slider for desktop */}
+                  {/* ⚠️ IMPORTANT: This NATURAL/STRETCH button is the BOTTOM BOUNDARY of the page. 
+                      Nothing can be placed below this button. All content must be above this line. */}
                   <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: '-11px' }}>
                     <button
                       onClick={() => {
@@ -3114,6 +3135,8 @@ function MixerPage() {
                   </div>
                   
                   {/* Mode Toggle Button - Centered below slider for mobile */}
+                  {/* ⚠️ IMPORTANT: This NATURAL/STRETCH button is the BOTTOM BOUNDARY of the page. 
+                      Nothing can be placed below this button. All content must be above this line. */}
                   <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: '0px' }}>
                     <button
                       onClick={() => {
