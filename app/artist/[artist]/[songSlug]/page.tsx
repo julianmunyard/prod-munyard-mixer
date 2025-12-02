@@ -2321,7 +2321,7 @@ function MixerPage() {
 
 
             {/* Spacing for modules */}
-            <div className="mb-6 mt-6"></div>
+            <div style={{ marginBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '16px' : '20px') : '24px', marginTop: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '12px' : '16px') : '24px' }}></div>
 
             {/* 🎚️ Mixer Modules */}
             <div
@@ -2330,22 +2330,23 @@ function MixerPage() {
                 width: '100%',
                 // Use min-height instead of fixed height to prevent cutoff on iOS initial load
                 // Use dvh (dynamic viewport height) for better iOS Safari support
+                // Responsive heights: smaller for iPhone 13, larger for iPhone 16 Pro Max
                 minHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? 'clamp(340px, 52dvh, 430px)' 
+                      ? 'clamp(260px, 35dvh, 300px)'  // iPhone SE, iPhone 12 mini
                       : isSmallScreen 
-                        ? 'clamp(360px, 52dvh, 460px)' 
-                        : 'clamp(380px, 52dvh, 500px)')
+                        ? 'clamp(280px, 36dvh, 320px)'  // iPhone 13, iPhone 14 (390x844px)
+                        : 'clamp(320px, 40dvh, 400px)')  // iPhone 16 Pro Max, larger phones (430x932px)
                   : 'auto',
                 maxHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? '430px' 
+                      ? '300px' 
                       : isSmallScreen 
-                        ? '460px' 
-                        : '500px')
+                        ? '320px' 
+                        : '400px')  // Larger for iPhone 16 Pro Max
                   : 'none',
                 marginTop: isMobile ? '8px' : '-20px',
-                marginBottom: isMobile ? 'clamp(12px, 3dvh, 24px)' : '0px',
+                marginBottom: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '12px') : '0px',
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'visible', // Allow content to be visible, prevent cutoff
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
@@ -2400,11 +2401,11 @@ function MixerPage() {
                       backdropFilter: isTransparent ? 'blur(2px)' : 'none',
                       borderRadius: '10px',
                       padding: isVerySmallScreen 
-                        ? '8px' 
+                        ? '6px' 
                         : isSmallScreen 
-                          ? '10px' 
+                          ? '8px' 
                           : isMobile 
-                            ? '12px' 
+                            ? '10px' 
                             : '16px',
                       display: 'flex',
                       flexDirection: 'column',
@@ -2418,17 +2419,17 @@ function MixerPage() {
                         : undefined,
                       maxHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '420px' 
+                            ? '280px' 
                             : isSmallScreen 
-                              ? '460px' 
-                              : '500px')
+                              ? '300px' 
+                              : '380px')  // Larger for iPhone 16 Pro Max
                         : undefined,
                       minHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '340px' 
+                            ? '260px' 
                             : isSmallScreen 
-                              ? '360px' 
-                              : '380px')
+                              ? '280px' 
+                              : '320px')  // Larger for iPhone 16 Pro Max
                         : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
@@ -2444,18 +2445,18 @@ function MixerPage() {
                     <div style={{ 
                       width: '16px', 
                       height: isVerySmallScreen 
-                        ? '24px' 
+                        ? '16px' 
                         : isSmallScreen 
-                          ? '28px' 
+                          ? '18px' 
                           : isMobile 
-                            ? '30px' 
+                            ? '20px' 
                             : '40px', 
                       marginBottom: isVerySmallScreen 
-                        ? '12px' 
+                        ? '8px' 
                         : isSmallScreen 
-                          ? '14px' 
+                          ? '10px' 
                           : isMobile 
-                            ? '16px' 
+                            ? '12px' 
                             : '18px' 
                     }} />
 
@@ -2475,11 +2476,11 @@ function MixerPage() {
                         flexGrow: 1,
                         justifyContent: 'center',
                         marginBottom: isVerySmallScreen 
-                          ? '16px' 
+                          ? '10px' 
                           : isSmallScreen 
-                            ? '18px' 
+                            ? '12px' 
                             : isMobile 
-                              ? '20px' 
+                              ? '14px' 
                               : '30px',
                       }}
                     >
@@ -2502,11 +2503,11 @@ function MixerPage() {
                             WebkitAppearance: 'slider-vertical',
                             width: '4px',
                             height: isVerySmallScreen 
-                              ? '100px' 
+                              ? '80px' 
                               : isSmallScreen 
-                                ? '120px' 
+                                ? '90px' 
                                 : isMobile 
-                                  ? '140px' 
+                                  ? (isMediumScreen ? '120px' : '100px')  // Taller slider for larger phones
                                   : undefined,
                             background: 'transparent',
                           }}
@@ -2515,7 +2516,7 @@ function MixerPage() {
                     </div>
 
                     {/* Effect Dropdown & Knob */}
-                    <div style={{ marginBottom: isMobile ? '20px' : '32px', textAlign: 'center' }}>
+                    <div style={{ marginBottom: isMobile ? (isVerySmallScreen ? '10px' : isSmallScreen ? '12px' : '14px') : '32px', textAlign: 'center' }}>
                       <div className="flex flex-col items-center text-xs select-none knob-container" style={{ color: isTransparent ? primary : 'white' }}>
                         {/* Effect Type Dropdown */}
                         <div className="mb-0.5 relative">
@@ -3065,10 +3066,10 @@ function MixerPage() {
                 <div
                   className="relative"
                   style={{
-                    marginTop: '-5px',
-                    marginBottom: '20px',
-                    width: '350px',
-                    height: '140px',
+                    marginTop: isVerySmallScreen ? '-10px' : isSmallScreen ? '-8px' : (isMediumScreen ? '-3px' : '-5px'),
+                    marginBottom: isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : (isMediumScreen ? '18px' : '16px'),
+                    width: isVerySmallScreen ? '320px' : isSmallScreen ? '340px' : (isMediumScreen ? '360px' : '350px'),
+                    height: isVerySmallScreen ? '120px' : isSmallScreen ? '130px' : (isMediumScreen ? '150px' : '140px'),
                   }}
                 >
                   <div
