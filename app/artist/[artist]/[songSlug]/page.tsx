@@ -1634,6 +1634,20 @@ function MixerPage() {
             input[type="range"]::-ms-thumb {
               background: ${primary};
             }
+            ${isTransparent ? `
+            .volume-slider::-webkit-slider-runnable-track {
+              border: 1px solid ${primary};
+              border-radius: 2px;
+            }
+            .volume-slider::-moz-range-track {
+              border: 1px solid ${primary};
+              border-radius: 2px;
+            }
+            .volume-slider::-ms-track {
+              border: 1px solid ${primary};
+              border-radius: 2px;
+            }
+            ` : ''}
             @media screen and (max-width: 767px) and (orientation: landscape) {
               .mixer-module {
                 min-height: clamp(280px, 40vh, 320px) !important;
