@@ -357,36 +357,69 @@ function MixerPage() {
   // iOS treats Web Audio API as "system sounds" that respect silent mode
   // Solution: User taps mute/unmute button to unlock audio
   const silentModeBypassRef = useRef<HTMLAudioElement | null>(null)
+  const audioUnlockedRef = useRef(false)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   
   // Function to toggle audio unlock (called by mute/unmute button)
   const toggleAudioUnlock = useCallback(async () => {
     if (!silentModeBypassRef.current) return;
     
-    // Use functional update to get current state and avoid race conditions
-    setAudioUnlocked((currentState) => {
-      const newState = !currentState;
-      
-      if (newState) {
-        // Unmute: play silent audio to unlock iOS
-        silentModeBypassRef.current?.play()
-          .then(() => {
-            addDebugLog('🔊 Audio unmuted (can play in silent mode)');
-          })
-          .catch((error) => {
-            addDebugLog('❌ Failed to unmute audio');
-            console.warn('Audio unlock failed:', error);
-            // Revert state on error
-            setAudioUnlocked((prev) => prev === newState ? !newState : prev);
+    const audio = silentModeBypassRef.current;
+    const currentState = audioUnlockedRef.current;
+    const newState = !currentState;
+    
+    // Update ref immediately
+    audioUnlockedRef.current = newState;
+    // Update UI state immediately for responsive UI
+    setAudioUnlocked(newState);
+    
+    if (newState) {
+      // Unmute: play silent audio to unlock iOS
+      try {
+        // Ensure audio is loaded and ready
+        if (audio.readyState < 2) {
+          audio.load();
+          // Wait for audio to be ready
+          await new Promise<void>((resolve) => {
+            const checkReady = () => {
+              if (audio.readyState >= 2) {
+                resolve();
+              } else {
+                setTimeout(checkReady, 10);
+              }
+            };
+            checkReady();
           });
-      } else {
-        // Mute: stop the silent audio
-        silentModeBypassRef.current?.pause();
-        addDebugLog('🔇 Audio muted (silent mode active)');
+        }
+        
+        // Play the audio
+        await audio.play();
+        addDebugLog('🔊 Audio unmuted (can play in silent mode)');
+        
+        // Double-check it's actually playing
+        setTimeout(() => {
+          if (audio.paused || audio.ended) {
+            addDebugLog('⚠️ Audio stopped unexpectedly, restarting...');
+            audio.play().catch(() => {
+              addDebugLog('❌ Restart failed');
+              audioUnlockedRef.current = false;
+              setAudioUnlocked(false);
+            });
+          }
+        }, 50);
+      } catch (error: any) {
+        addDebugLog('❌ Failed to unmute audio: ' + (error?.message || 'Unknown error'));
+        console.warn('Audio unlock failed:', error);
+        // Revert state on error
+        audioUnlockedRef.current = false;
+        setAudioUnlocked(false);
       }
-      
-      return newState;
-    });
+    } else {
+      // Mute: stop the silent audio immediately
+      audio.pause();
+      audio.currentTime = 0;
+      addDebugLog('🔇 Audio muted (silent mode active)');
+    }
   }, [addDebugLog]);
   
   useEffect(() => {
@@ -395,16 +428,33 @@ function MixerPage() {
     audio.loop = true
     audio.volume = 0.001 // Very quiet, but not zero (zero gets muted by iOS)
     audio.preload = 'auto'
+    audio.setAttribute('playsinline', 'true') // iOS compatibility
+    audio.setAttribute('webkit-playsinline', 'true') // Older iOS
+    ;(audio as any).playsInline = true // Critical for iOS (TypeScript workaround)
     audio.style.display = 'none' // Hidden but functional
     
     // Create a minimal WAV data URI (1 second of silence at 44.1kHz mono)
     const silentWavBase64 = 'UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA='
     audio.src = `data:audio/wav;base64,${silentWavBase64}`
     
+    // Load the audio immediately so it's ready when needed
+    audio.load()
+    
     // Add to DOM (required for some browsers)
     document.body.appendChild(audio)
     
+    // Set ref immediately
     silentModeBypassRef.current = audio
+    
+    // Wait for audio to be ready
+    audio.addEventListener('canplaythrough', () => {
+      addDebugLog('🔇 Silent unlock audio ready')
+    }, { once: true })
+    
+    // Also listen for when it can play (earlier than canplaythrough)
+    audio.addEventListener('canplay', () => {
+      addDebugLog('🔇 Silent unlock audio can play')
+    }, { once: true })
     
     return () => {
       if (audio) {
@@ -898,71 +948,93 @@ function MixerPage() {
     if (!mixerEngineRef.current || !timelineReady) return;
     
     try {
-      // On iOS, ensure the silent unlock audio is playing before we try to play the mixer.
-      // This makes both orders work:
-      // 1) Unmute then Play
-      // 2) Play then Unmute (Play will also unlock on first tap)
-      if (isIOS && silentModeBypassRef.current && !audioUnlocked) {
-        try {
-          await silentModeBypassRef.current.play();
-          setAudioUnlocked(true);
-          addDebugLog('🔊 Audio unlocked via Play button');
-        } catch (err) {
-          addDebugLog('❌ Failed to unlock audio via Play button');
-          console.warn('Audio unlock via Play failed:', err);
-        }
-      }
-
-      // Resume audio context if needed (this is async, but we'll start playback immediately)
+      // Start playback IMMEDIATELY - don't wait for anything
+      mixerEngineRef.current.play?.();
+      setIsPlaying(true);
+      addDebugLog('▶️ Playback started');
+      
+      // Handle iOS unlock and AudioContext resume in parallel (non-blocking)
       const webaudioManager = mixerEngineRef.current.audioEngine?.webaudioManager as any;
       const ctx = webaudioManager?.audioContext;
       
-      // Ensure AudioContext is running before asserting playback on first user gesture
+      // Don't unlock automatically - only unlock if playback actually fails
+      // This way, if device is NOT in silent mode, audio works immediately
+      
+      // Resume AudioContext if needed (fire and forget - don't block playback)
       if (ctx && ctx.state !== 'running') {
-        try {
-          await ctx.resume();
-          addDebugLog('🔓 AudioContext resumed on user play');
-        } catch (err) {
-          console.warn('Failed to resume AudioContext:', err);
-        }
-      }
-
-      // Start playback
-      mixerEngineRef.current.play?.();
-      setIsPlaying(true);
-      
-      // If the first tap doesn't kick it off, re-assert playback shortly after.
-      // Some browsers need an extra tick after AudioContext resume.
-      try {
-        const initialTime =
-          typeof mixerEngineRef.current.getCurrentTime === 'function'
-            ? (mixerEngineRef.current.getCurrentTime() as number) || 0
-            : 0;
-        setTimeout(() => {
-          try {
-            const nowTime =
-              typeof mixerEngineRef.current?.getCurrentTime === 'function'
-                ? (mixerEngineRef.current.getCurrentTime() as number) || 0
-                : 0;
-            const progressed = nowTime > initialTime + 0.005; // ~5ms progress
-            if (isPlaying && !progressed) {
-              mixerEngineRef.current?.play?.();
-              addDebugLog('▶️ Reasserted playback after initial tap');
+        ctx.resume()
+          .then(() => {
+            addDebugLog('🔓 AudioContext resumed on user play');
+            // If playback didn't start, try again now that context is running
+            if (mixerEngineRef.current) {
+              mixerEngineRef.current.play?.();
             }
-          } catch {
-            // no-op
-          }
-        }, 120);
-      } catch {
-        // no-op
+          })
+          .catch((err: any) => {
+            console.warn('Failed to resume AudioContext:', err);
+          });
       }
       
-      addDebugLog('▶️ Playback started');
+      // Check if playback actually started - if not, try iOS unlock and retry
+      setTimeout(() => {
+        try {
+          const initialTime =
+            typeof mixerEngineRef.current?.getCurrentTime === 'function'
+              ? (mixerEngineRef.current.getCurrentTime() as number) || 0
+              : 0;
+          
+          setTimeout(() => {
+            try {
+              const nowTime =
+                typeof mixerEngineRef.current?.getCurrentTime === 'function'
+                  ? (mixerEngineRef.current.getCurrentTime() as number) || 0
+                  : 0;
+              const progressed = nowTime > initialTime + 0.005; // ~5ms progress
+              
+              if (!progressed && mixerEngineRef.current) {
+                // Playback didn't start - might be blocked by silent mode
+                // Try iOS unlock and retry
+                if (isIOS && silentModeBypassRef.current && !audioUnlockedRef.current) {
+                  silentModeBypassRef.current.play()
+                    .then(() => {
+                      audioUnlockedRef.current = true;
+                      setAudioUnlocked(true);
+                      addDebugLog('🔊 Audio unlocked after playback failed - device was in silent mode');
+                      // Retry playback now that it's unlocked
+                      if (mixerEngineRef.current) {
+                        mixerEngineRef.current.play?.();
+                      }
+                    })
+                    .catch(() => {
+                      addDebugLog('⚠️ Playback not starting - may need manual unmute');
+                    });
+                } else {
+                  // Not iOS or already unlocked - just retry
+                  mixerEngineRef.current.play?.();
+                  addDebugLog('▶️ Reasserted playback after initial tap');
+                }
+              } else if (progressed) {
+                // Playback is working! Device is NOT in silent mode - no unlock needed
+                if (audioUnlockedRef.current) {
+                  // Clear unlock state since audio works without it (both iOS and non-iOS)
+                  audioUnlockedRef.current = false;
+                  setAudioUnlocked(false);
+                  addDebugLog('✅ Playback working - device not in silent mode, unlock not needed');
+                }
+              }
+            } catch {
+              // no-op
+            }
+          }, 100);
+        } catch {
+          // no-op
+        }
+      }, 50);
     } catch (error) {
       addDebugLog(`❌ Failed to play: ${error}`);
       console.error('Playback error:', error);
     }
-  }, [timelineReady, addDebugLog, isIOS, audioUnlocked, addDebugLog]);
+  }, [timelineReady, addDebugLog, isIOS]);
 
   const pauseAll = useCallback(() => {
     if (!mixerEngineRef.current) return;
