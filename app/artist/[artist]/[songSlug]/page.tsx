@@ -2335,21 +2335,21 @@ function MixerPage() {
                 // Responsive heights: EXTEND modules to show full bottom border and labels
                 minHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? 'clamp(300px, 38dvh, 350px)'  // iPhone SE, iPhone 12 mini - EXTENDED MORE
+                      ? 'clamp(320px, 40dvh, 380px)'  // iPhone SE, iPhone 12 mini - EXTENDED EVEN MORE
                       : isSmallScreen 
-                        ? 'clamp(320px, 40dvh, 370px)'  // iPhone 13, iPhone 14 - EXTENDED MORE
-                        : 'clamp(360px, 44dvh, 450px)')  // iPhone 16 Pro Max - EXTENDED MORE to show full bottom
+                        ? 'clamp(340px, 42dvh, 400px)'  // iPhone 13, iPhone 14 - EXTENDED EVEN MORE
+                        : 'clamp(380px, 46dvh, 480px)')  // iPhone 16 Pro Max - EXTENDED EVEN MORE to show full bottom
                   : 'auto',
                 maxHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? '350px' 
+                      ? '380px' 
                       : isSmallScreen 
-                        ? '370px' 
-                        : '450px')  // EXTENDED MORE to show full bottom
+                        ? '400px' 
+                        : '480px')  // EXTENDED EVEN MORE to show full bottom
                   : 'none',
                 marginTop: isMobile ? '4px' : '-20px', // Reduced top margin to give more space
-                marginBottom: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '12px') : '0px',
-                paddingBottom: '0px', // Removed - let modules extend fully
+                marginBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '16px' : '20px') : '0px',
+                paddingBottom: isMobile ? (isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '12px') : '0px', // Add padding to show bottom border
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'visible', // Allow content to be visible, prevent cutoff
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
@@ -2367,9 +2367,9 @@ function MixerPage() {
                     : '0 8px',
                   scrollBehavior: 'smooth',
                   WebkitOverflowScrolling: 'touch',
-                  overflowY: 'hidden',
+                  overflowY: 'visible', // Changed to visible to show full modules
                   height: '100%',
-                  alignItems: 'center',
+                  alignItems: 'flex-start', // Changed from center to flex-start to show bottom
                   gap: isVerySmallScreen 
                     ? '4px' 
                     : isSmallScreen 
@@ -2422,17 +2422,17 @@ function MixerPage() {
                         : undefined,
                       maxHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '340px'  // EXTENDED MORE to show full bottom
+                            ? '370px'  // EXTENDED EVEN MORE to show full bottom
                             : isSmallScreen 
-                              ? '360px'  // EXTENDED MORE to show full bottom
-                              : '440px')  // EXTENDED MORE to show full bottom on iPhone 16
+                              ? '390px'  // EXTENDED EVEN MORE to show full bottom
+                              : '470px')  // EXTENDED EVEN MORE to show full bottom on iPhone 16
                         : undefined,
                       minHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '300px'  // EXTENDED MORE
+                            ? '320px'  // EXTENDED EVEN MORE
                             : isSmallScreen 
-                              ? '320px'  // EXTENDED MORE
-                              : '360px')  // EXTENDED MORE
+                              ? '340px'  // EXTENDED EVEN MORE
+                              : '380px')  // EXTENDED EVEN MORE
                         : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
