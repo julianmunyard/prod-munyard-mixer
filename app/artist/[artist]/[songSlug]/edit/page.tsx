@@ -39,7 +39,6 @@ export default function EditProject() {
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [primaryColor, setPrimaryColor] = useState('#B8001F') // default red
   const [showThemeDropdown, setShowThemeDropdown] = useState(false)
-  const [showEffectDropdown, setShowEffectDropdown] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [songId, setSongId] = useState<string | null>(null)
   const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null)
@@ -791,74 +790,6 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
     `}</style>
   </div>
 )}
-
-
-
-<div style={{ position: 'relative', width: '100%' }}>
-  <label style={{ display: 'block', marginBottom: '0.5rem' }}>Which Effects Do You Want?</label>
-  <div
-    onClick={() => setShowEffectDropdown((prev) => !prev)}
-    style={{
-      width: '100%',
-      padding: '0.5rem',
-      backgroundColor: 'white',
-      color: 'black',
-      border: '1px solid #ccc',
-      cursor: 'pointer',
-      appearance: 'none',
-      WebkitAppearance: 'none',
-      MozAppearance: 'none',
-      position: 'relative',
-    }}
-  >
-    {effect}
-    <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
-      ▼
-    </span>
-  </div>
-{showEffectDropdown && (
-  <div
-    style={{
-      position: 'absolute',
-      top: '100%',
-      left: 0,
-      width: '100%',
-      backgroundColor: 'white',
-      border: '1px solid #ccc',
-      zIndex: 10,
-      fontSize: '0.9rem',
-    }}
-  >
-    <div
-      onClick={() => {
-        setEffect('Delay (1/8 note tape-style echo)')
-        setShowEffectDropdown(false)
-      }}
-      style={{
-        padding: '0.5rem',
-        cursor: 'pointer',
-        backgroundColor: effect === 'Delay (1/8 note tape-style echo)' ? '#f3f3f3' : 'white',
-      }}
-    >
-      Delay (1/8 note tape-style echo)
-    </div>
-
-    <div
-      onClick={() => {
-        setEffect('Phaser (swooshy phase shifting)')
-        setShowEffectDropdown(false)
-      }}
-      style={{
-        padding: '0.5rem',
-        cursor: 'pointer',
-        backgroundColor: effect === 'Phaser (swooshy phase shifting)' ? '#f3f3f3' : 'white',
-      }}
-    >
-      Phaser (swooshy phase shifting)
-    </div>
-  </div>
-  )}
-</div>
 
 
 
