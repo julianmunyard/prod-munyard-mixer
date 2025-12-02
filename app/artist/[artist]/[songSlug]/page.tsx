@@ -2416,10 +2416,10 @@ function MixerPage() {
                       alignItems: 'center',
                       height: isMobile 
                         ? (isVerySmallScreen 
-                            ? '100%'  // Full height to show complete modules
+                            ? 'calc(100% - 4px)'  // Leave space for bottom border
                             : isSmallScreen 
-                              ? '100%' 
-                              : '100%')  // Full height to show complete modules
+                              ? 'calc(100% - 4px)' 
+                              : 'calc(100% - 4px)')  // Leave space for bottom border
                         : undefined,
                       maxHeight: isMobile 
                         ? (isVerySmallScreen 
