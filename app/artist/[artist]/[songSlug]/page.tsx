@@ -266,6 +266,7 @@ function MixerPage() {
 
   const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
+  const isTransparent = songData?.color === 'Transparent'
 
   // ==================== 🎵 Background Audio Support ====================
   useEffect(() => {
@@ -1954,11 +1955,13 @@ function MixerPage() {
                 {/* Custom Dropdown Menu */}
                 <div 
                   id="master-effect-dropdown"
-                  className="absolute left-0 bg-[#F5F5DC] rounded shadow-lg z-50 hidden min-w-full"
+                  className="absolute left-0 rounded shadow-lg z-50 hidden min-w-full"
                   style={{ 
                     top: '100%', 
                     marginTop: '4px',
-                    border: `1px solid ${primary}`
+                    border: `1px solid ${primary}`,
+                    backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC',
+                    backdropFilter: isTransparent ? 'blur(4px)' : 'none',
                   }}
                 >
                   <div 
@@ -2209,7 +2212,6 @@ function MixerPage() {
                 }}
               >
                 {stems.map((stem) => {
-                  const isTransparent = songData?.color === 'Transparent'
                   return (
                   <div
                     key={stem.label}
@@ -2347,11 +2349,13 @@ function MixerPage() {
                           {/* Custom Dropdown Menu - positioned above */}
                           <div 
                             id={`effect-dropdown-${stem.label}`}
-                            className="absolute left-0 bg-[#F5F5DC] rounded shadow-lg z-50 hidden min-w-full"
+                            className="absolute left-0 rounded shadow-lg z-50 hidden min-w-full"
                             style={{ 
                               bottom: '100%', 
                               marginBottom: '4px',
-                              border: `1px solid ${primary}`
+                              border: `1px solid ${primary}`,
+                              backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC',
+                              backdropFilter: isTransparent ? 'blur(4px)' : 'none',
                             }}
                           >
                             <div 
@@ -2690,11 +2694,13 @@ function MixerPage() {
                     {/* Custom Dropdown Menu */}
                     <div 
                       id="mobile-master-effect-dropdown"
-                      className="absolute left-0 bg-[#F5F5DC] rounded shadow-lg z-50 hidden min-w-full"
+                      className="absolute left-0 rounded shadow-lg z-50 hidden min-w-full"
                       style={{ 
                         top: '100%', 
                         marginTop: '4px',
-                        border: `1px solid ${primary}`
+                        border: `1px solid ${primary}`,
+                        backgroundColor: isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC',
+                        backdropFilter: isTransparent ? 'blur(4px)' : 'none',
                       }}
                     >
                       <div 
