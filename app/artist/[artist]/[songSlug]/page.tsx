@@ -376,26 +376,31 @@ function MixerPage() {
     setAudioUnlocked(newState);
     
     if (newState) {
-      // UNMUTE: Play silent audio immediately
-      // Don't wait for anything - just try to play
+      // UNMUTE: Play silent audio immediately (like unmute.js)
+      // This forces WebAudio onto media channel on iOS
       audio.play()
         .then(() => {
-          addDebugLog('🔊 Audio unmuted');
+          addDebugLog('🔊 Audio unmuted - silent track playing');
+          // If mixer is playing, make sure it continues
+          if (isPlaying && mixerEngineRef.current) {
+            mixerEngineRef.current.play?.();
+          }
         })
         .catch((error: any) => {
-          // If play fails, keep state as unmuted but log it
           addDebugLog('⚠️ Unmute play failed: ' + (error?.message || 'Unknown'));
           console.warn('Unmute play failed:', error);
           // Don't revert state - user clicked unmute, so keep it unmuted
         });
     } else {
-      // MUTE: Stop audio immediately
+      // MUTE: Stop silent audio immediately
       audio.pause();
       audio.currentTime = 0;
       manuallyUnlockedRef.current = false;
-      addDebugLog('🔇 Audio muted');
+      addDebugLog('🔇 Audio muted - silent track stopped');
+      // Note: This may cause mixer to stop on iOS if it was relying on the silent track
+      // User can unmute again to resume
     }
-  }, [addDebugLog]);
+  }, [addDebugLog, isPlaying]);
   
   useEffect(() => {
     // Create a hidden audio element that will play silence
@@ -923,34 +928,38 @@ function MixerPage() {
     if (!mixerEngineRef.current || !timelineReady) return;
     
     try {
-      // Start playback IMMEDIATELY - don't wait for anything
+      // On iOS: Start silent audio track FIRST (like unmute.js does)
+      // This forces WebAudio onto the media channel instead of ringer channel
+      if (isIOS && silentModeBypassRef.current) {
+        try {
+          await silentModeBypassRef.current.play();
+          audioUnlockedRef.current = true;
+          setAudioUnlocked(true);
+          addDebugLog('🔊 Silent audio started (iOS media channel unlock)');
+        } catch (err: any) {
+          addDebugLog('⚠️ Silent audio start failed: ' + (err?.message || 'Unknown'));
+        }
+      }
+      
+      // Resume AudioContext if needed
+      const webaudioManager = mixerEngineRef.current.audioEngine?.webaudioManager as any;
+      const ctx = webaudioManager?.audioContext;
+      
+      if (ctx && ctx.state !== 'running') {
+        try {
+          await ctx.resume();
+          addDebugLog('🔓 AudioContext resumed');
+        } catch (err: any) {
+          console.warn('Failed to resume AudioContext:', err);
+        }
+      }
+      
+      // Start playback IMMEDIATELY
       mixerEngineRef.current.play?.();
       setIsPlaying(true);
       addDebugLog('▶️ Playback started');
       
-      // Handle iOS unlock and AudioContext resume in parallel (non-blocking)
-      const webaudioManager = mixerEngineRef.current.audioEngine?.webaudioManager as any;
-      const ctx = webaudioManager?.audioContext;
-      
-      // Don't unlock automatically - only unlock if playback actually fails
-      // This way, if device is NOT in silent mode, audio works immediately
-      
-      // Resume AudioContext if needed (fire and forget - don't block playback)
-      if (ctx && ctx.state !== 'running') {
-        ctx.resume()
-          .then(() => {
-            addDebugLog('🔓 AudioContext resumed on user play');
-            // If playback didn't start, try again now that context is running
-            if (mixerEngineRef.current) {
-              mixerEngineRef.current.play?.();
-            }
-          })
-          .catch((err: any) => {
-            console.warn('Failed to resume AudioContext:', err);
-          });
-      }
-      
-      // Check if playback actually started - if not, try iOS unlock and retry
+      // Backup: Verify playback started and retry if needed
       setTimeout(() => {
         try {
           const initialTime =
@@ -967,45 +976,9 @@ function MixerPage() {
               const progressed = nowTime > initialTime + 0.005; // ~5ms progress
               
               if (!progressed && mixerEngineRef.current) {
-                // Playback didn't start - might be blocked by silent mode
-                if (isIOS && silentModeBypassRef.current) {
-                  if (!audioUnlockedRef.current) {
-                    // Not unlocked yet - try auto-unlock
-                    silentModeBypassRef.current.play()
-                      .then(() => {
-                        audioUnlockedRef.current = true;
-                        setAudioUnlocked(true);
-                        manuallyUnlockedRef.current = false; // This is auto-unlock
-                        addDebugLog('🔊 Audio auto-unlocked after playback failed - device was in silent mode');
-                        // Retry playback now that it's unlocked
-                        if (mixerEngineRef.current) {
-                          mixerEngineRef.current.play?.();
-                        }
-                      })
-                      .catch(() => {
-                        addDebugLog('⚠️ Auto-unlock failed - user may need to manually unmute');
-                      });
-                  } else {
-                    // Already unlocked (manually or auto) - just retry playback
-                    mixerEngineRef.current.play?.();
-                    addDebugLog('▶️ Retrying playback (already unlocked)');
-                  }
-                } else {
-                  // Not iOS or already unlocked - just retry
-                  mixerEngineRef.current.play?.();
-                  addDebugLog('▶️ Reasserted playback after initial tap');
-                }
-              } else if (progressed) {
-                // Playback is working!
-                // If user manually unlocked, NEVER clear it - they want it unlocked
-                if (audioUnlockedRef.current && manuallyUnlockedRef.current) {
-                  addDebugLog('✅ Playback working with manual unlock');
-                } else if (audioUnlockedRef.current && !manuallyUnlockedRef.current) {
-                  // Auto-unlock was set, but device is NOT in silent mode - clear it
-                  audioUnlockedRef.current = false;
-                  setAudioUnlocked(false);
-                  addDebugLog('✅ Playback working - cleared auto-unlock');
-                }
+                // Playback didn't start - retry
+                mixerEngineRef.current.play?.();
+                addDebugLog('▶️ Retrying playback');
               }
             } catch {
               // no-op
@@ -1025,12 +998,13 @@ function MixerPage() {
     if (!mixerEngineRef.current) return;
     
     try {
-      // Keep silent mode bypass playing (don't pause it)
-      // This maintains the "media player" status on iOS
-      
       mixerEngineRef.current.pause();
       setIsPlaying(false);
       addDebugLog('⏸️ Playback paused');
+      
+      // On iOS: Keep silent audio playing to maintain media channel access
+      // (like unmute.js - keeps the channel open for when playback resumes)
+      // Don't pause it - let the user control it via the unmute button
     } catch (error) {
       addDebugLog(`❌ Failed to pause: ${error}`);
     }
