@@ -3067,7 +3067,7 @@ function MixerPage() {
 
             {/* Mobile Portrait Varispeed */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ marginTop: '-25px', marginLeft: '9px' }}>
+              <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ marginTop: '-22px', marginLeft: '9px' }}>
                 <div
                   className="relative"
                   style={{
