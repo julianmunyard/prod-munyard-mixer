@@ -1664,6 +1664,20 @@ function MixerPage() {
         <>
           {/* 🎨 Global Inline Styles */}
           <style>{`
+            /* Disable text selection */
+            * {
+              -webkit-user-select: none;
+              -moz-user-select: none;
+              -ms-user-select: none;
+              user-select: none;
+            }
+            /* Allow selection for input fields and textareas */
+            input, textarea {
+              -webkit-user-select: text;
+              -moz-user-select: text;
+              -ms-user-select: text;
+              user-select: text;
+            }
             input[type="range"]::-webkit-slider-thumb {
               background: ${primary};
             }
