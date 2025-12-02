@@ -18,7 +18,6 @@ import CompressorConfigModal from '../../../components/CompressorConfigModal'
 import PoolsuiteLoadingScreen from '../../../components/PoolsuiteLoadingScreen'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
-import VisualPositionEditor from '../../../components/VisualPositionEditor'
 import RealTimelineMixerEngine from '../../../../audio/engine/realTimelineMixerEngine'
 
 // ==================== 🧾 Types ====================
@@ -3067,7 +3066,7 @@ function MixerPage() {
 
             {/* Mobile Portrait Varispeed */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ marginTop: '-22px', marginLeft: '9px' }}>
+              <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ marginTop: '-19px', marginLeft: '9px' }}>
                 <div
                   className="relative"
                   style={{
@@ -3142,87 +3141,6 @@ function MixerPage() {
               </div>
             )}
 
-            {/* 🐛 Debug Panel - Collapsible */}
-            {(debugLogs.length > 0 || loadingStems) && (
-              <>
-                {/* Debug Button */}
-                <button
-                  onClick={() => setShowDebugPanel(!showDebugPanel)}
-                  style={{
-                    position: 'fixed',
-                    bottom: '20px',
-                    right: '20px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    color: 'white',
-                    border: '1px solid #333',
-                    borderRadius: '6px',
-                    padding: '8px 12px',
-                    fontSize: '12px',
-                    fontFamily: 'monospace',
-                    cursor: 'pointer',
-                    zIndex: 1000,
-                    minWidth: '60px',
-                    minHeight: '36px'
-                  }}
-                >
-                  Logs ({debugLogs.length})
-                </button>
-
-                {/* Debug Panel Popup */}
-                {showDebugPanel && (
-                  <div
-                    style={{
-                      position: 'fixed',
-                      bottom: '70px',
-                      right: '20px',
-                      width: 'min(400px, calc(100vw - 40px))',
-                      maxHeight: '300px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                      color: 'white',
-                      padding: '15px',
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      fontFamily: 'monospace',
-                      zIndex: 1001,
-                      overflowY: 'auto',
-                      border: '1px solid #333',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
-                    }}
-                  >
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      marginBottom: '10px',
-                      borderBottom: '1px solid #444',
-                      paddingBottom: '5px'
-                    }}>
-                      <div style={{ fontWeight: 'bold' }}>Debug Logs</div>
-                      <button
-                        onClick={() => setShowDebugPanel(false)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'white',
-                          cursor: 'pointer',
-                          fontSize: '16px',
-                          padding: '0',
-                          width: '20px',
-                          height: '20px'
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                    <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
-                      {debugLogs.map((log, index) => (
-                        <div key={`debug-${index}`} style={{ marginBottom: '3px' }}>{log}</div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
 
           </main>
 
@@ -3275,8 +3193,6 @@ function MixerPage() {
         </>
       )}
 
-      {/* Visual Position Editor - for visually moving elements */}
-      <VisualPositionEditor />
     </>
   )
 }
