@@ -264,6 +264,36 @@ function MixerPage() {
     }
   }, [])
 
+  // Fix iOS viewport height calculation on initial load
+  useEffect(() => {
+    if (typeof window !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)) {
+      // Force viewport recalculation on iOS to fix initial load cutoff
+      const fixViewport = () => {
+        // Set CSS custom property for dynamic viewport height
+        const vh = window.innerHeight * 0.01
+        document.documentElement.style.setProperty('--vh', `${vh}px`)
+      }
+      
+      // Run immediately and after delays to catch iOS Safari's delayed viewport calculation
+      fixViewport()
+      const timeout = setTimeout(fixViewport, 100)
+      const timeout2 = setTimeout(fixViewport, 300)
+      const timeout3 = setTimeout(fixViewport, 600)
+      
+      // Also fix on scroll (when address bar hides/shows) and resize
+      window.addEventListener('scroll', fixViewport, { passive: true })
+      window.addEventListener('resize', fixViewport)
+      
+      return () => {
+        clearTimeout(timeout)
+        clearTimeout(timeout2)
+        clearTimeout(timeout3)
+        window.removeEventListener('scroll', fixViewport)
+        window.removeEventListener('resize', fixViewport)
+      }
+    }
+  }, [])
+
   const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
   const isTransparent = songData?.color === 'Transparent'
@@ -943,6 +973,39 @@ function MixerPage() {
     
     addDebugLog('🎵 Cleared all solo and mute states');
   };
+
+  // Master mute/unmute all tracks
+  const toggleMasterMute = useCallback(() => {
+    if (!mixerEngineRef.current?.audioEngine || stems.length === 0) return;
+    
+    // Check if all tracks are currently muted
+    const allMuted = stems.every(stem => mutes[stem.label] === true);
+    const newMuteState = !allMuted; // If all muted, unmute all. If not all muted, mute all.
+    
+    // Update UI state for all tracks
+    const newMutes: Record<string, boolean> = {};
+    stems.forEach(stem => {
+      newMutes[stem.label] = newMuteState;
+    });
+    setMutes(newMutes);
+    
+    // Clear solos when master muting/unmuting
+    setSolos(Object.fromEntries(stems.map(s => [s.label, false])));
+    
+    // Apply mute state to all tracks in audio engine
+    stems.forEach((stem, index) => {
+      mixerEngineRef.current!.audioEngine!.sendMessageToAudioProcessor({
+        type: "command",
+        data: { 
+          command: "setTrackMute", 
+          trackId: `track_${index}`,
+          muted: newMuteState 
+        }
+      });
+    });
+    
+    addDebugLog(`${newMuteState ? '🔇 Master muted' : '🔊 Master unmuted'} all tracks`);
+  }, [mutes, stems]);
 
   const setVarispeedControl = (speed: number, isNatural: boolean) => {
     if (!mixerEngineRef.current?.audioEngine) return;
@@ -1850,14 +1913,18 @@ function MixerPage() {
             }}
           >
             {/* 🔇 Mobile Silent Mode Unmute Floating Button (SVG in primary color) */}
+            {/* Also works as Master Mute/Unmute for all tracks */}
             {isMobile && (
               <button
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  // Keep the audio unlock functionality (for iOS silent mode)
                   toggleAudioUnlock();
+                  // Also master mute/unmute all tracks
+                  toggleMasterMute();
                 }}
-                aria-label={audioUnlocked ? 'Mute (disable background/silent mode audio)' : 'Unmute (enable audio in silent mode)'}
+                aria-label={audioUnlocked ? 'Mute all tracks (disable background/silent mode audio)' : 'Unmute all tracks (enable audio in silent mode)'}
                 className="pressable flex items-center justify-center"
                 style={{
                   position: 'fixed',
@@ -1871,7 +1938,7 @@ function MixerPage() {
                   border: `1px solid ${primary}`,
                   zIndex: 1000,
                 }}
-                title={audioUnlocked ? 'Audio unlocked (tap to mute)' : 'Audio muted - tap to unlock (required for silent mode)'}
+                title={audioUnlocked ? 'Audio unlocked - tap to master mute all tracks' : 'Audio muted - tap to unlock and master unmute all tracks'}
               >
                 <svg
                   width="22"
@@ -2261,13 +2328,14 @@ function MixerPage() {
               className="stems-container"
               style={{
                 width: '100%',
-                // Scale modules a bit smaller on mobile so the full module + VARISPEED controls fit comfortably.
-                height: isMobile 
+                // Use min-height instead of fixed height to prevent cutoff on iOS initial load
+                // Use dvh (dynamic viewport height) for better iOS Safari support
+                minHeight: isMobile 
                   ? (isVerySmallScreen 
-                      ? 'clamp(340px, 52vh, 430px)' 
+                      ? 'clamp(340px, 52dvh, 430px)' 
                       : isSmallScreen 
-                        ? 'clamp(360px, 52vh, 460px)' 
-                        : 'clamp(380px, 52vh, 500px)')
+                        ? 'clamp(360px, 52dvh, 460px)' 
+                        : 'clamp(380px, 52dvh, 500px)')
                   : 'auto',
                 maxHeight: isMobile 
                   ? (isVerySmallScreen 
@@ -2276,17 +2344,10 @@ function MixerPage() {
                         ? '460px' 
                         : '500px')
                   : 'none',
-                minHeight: isMobile 
-                  ? (isVerySmallScreen 
-                      ? '340px' 
-                      : isSmallScreen 
-                        ? '360px' 
-                        : '380px')
-                  : 'auto',
-                marginTop: '-20px',
-                marginBottom: isMobile ? 'clamp(12px, 3vh, 24px)' : '0px',
+                marginTop: isMobile ? '8px' : '-20px',
+                marginBottom: isMobile ? 'clamp(12px, 3dvh, 24px)' : '0px',
                 overflowX: 'auto', // Enable horizontal scrolling
-                overflowY: 'hidden',
+                overflowY: 'visible', // Allow content to be visible, prevent cutoff
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
               }}
             >
@@ -2350,17 +2411,24 @@ function MixerPage() {
                       alignItems: 'center',
                       height: isMobile 
                         ? (isVerySmallScreen 
-                            ? 'calc(100% - 20px)' 
+                            ? '100%' 
                             : isSmallScreen 
-                              ? 'calc(100% - 16px)' 
-                              : 'calc(100% - 12px)')
+                              ? '100%' 
+                              : '100%')
                         : undefined,
                       maxHeight: isMobile 
                         ? (isVerySmallScreen 
-                            ? '400px' 
+                            ? '420px' 
                             : isSmallScreen 
-                              ? '440px' 
-                              : '480px')
+                              ? '460px' 
+                              : '500px')
+                        : undefined,
+                      minHeight: isMobile 
+                        ? (isVerySmallScreen 
+                            ? '340px' 
+                            : isSmallScreen 
+                              ? '360px' 
+                              : '380px')
                         : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
@@ -2769,7 +2837,7 @@ function MixerPage() {
 
             {/* Mobile Effect Controls - Above VARISPEED */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div className="w-full flex justify-center sm:hidden mb-2" style={{ marginTop: '-10px' }}>
+              <div className="w-full flex justify-center sm:hidden" style={{ marginTop: '16px', marginBottom: '20px' }}>
                 <div className="flex justify-center gap-4">
                   {/* Master Effect Dropdown */}
                   <div className="relative">
