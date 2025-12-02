@@ -270,6 +270,7 @@ function MixerPage() {
   // ==================== 🎵 Background Audio Support ====================
   useEffect(() => {
     // Keep audio context alive when page is hidden (for background playback)
+    // Note: Silent audio visibility handling is in the silent audio useEffect below
     const handleVisibilityChange = async () => {
       const engine = mixerEngineRef.current?.audioEngine?.webaudioManager as any;
       const ctx = engine?.audioContext;
@@ -521,6 +522,26 @@ function MixerPage() {
       }
     }
   }, [isIOS, isPlaying])
+
+  // ==================== 🔄 Keep Silent Audio Playing While Mixer Plays ====================
+  // Critical: Silent audio must play continuously while mixer is playing (unmute.js pattern)
+  useEffect(() => {
+    if (!isIOS || !silentModeBypassRef.current) return;
+    
+    const audio = silentModeBypassRef.current;
+    
+    if (isPlaying) {
+      // Mixer is playing - ensure silent audio is also playing
+      if (audio.paused && audio.src && audio.src !== 'about:blank') {
+        audio.play().catch((e: any) => {
+          console.warn('Failed to keep silent audio playing:', e);
+          addDebugLog('⚠️ Silent audio play failed (keep playing): ' + (e?.message || 'Unknown'));
+        });
+      }
+    }
+    // Note: We DON'T pause silent audio when mixer pauses - let user control via unmute button
+    // This maintains media channel access for when playback resumes
+  }, [isPlaying, isIOS, addDebugLog]);
 
   // ==================== 🎵 Timeline Engine Initialization ====================
   useEffect(() => {
