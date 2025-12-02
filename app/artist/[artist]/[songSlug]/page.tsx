@@ -2843,7 +2843,7 @@ function MixerPage() {
 
             {/* Mobile Effect Controls - Above VARISPEED */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ marginTop: isVerySmallScreen ? '24px' : isSmallScreen ? '28px' : '32px', marginBottom: '20px' }}>
+              <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ marginTop: '-27px', marginLeft: '2px', marginBottom: '20px' }}>
                 <div className="flex justify-center gap-4">
                   {/* Master Effect Dropdown */}
                   <div className="relative">
@@ -3067,11 +3067,11 @@ function MixerPage() {
 
             {/* Mobile Portrait Varispeed */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden">
+              <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ marginTop: '-46px', marginLeft: '9px' }}>
                 <div
                   className="relative"
                   style={{
-                    marginTop: isVerySmallScreen ? '8px' : isSmallScreen ? '12px' : (isMediumScreen ? '16px' : '14px'), // Moved DOWN to give modules space
+                    marginTop: '0px', // Positioned by parent container
                     marginBottom: isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : (isMediumScreen ? '18px' : '16px'),
                     width: isVerySmallScreen ? '320px' : isSmallScreen ? '340px' : (isMediumScreen ? '360px' : '350px'),
                     height: isVerySmallScreen ? '120px' : isSmallScreen ? '130px' : (isMediumScreen ? '150px' : '140px'),
