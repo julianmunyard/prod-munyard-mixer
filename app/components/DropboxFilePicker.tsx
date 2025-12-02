@@ -66,12 +66,10 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             script.id = 'dropboxjs'
             script.src = src
             script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
-            // Set data-origin explicitly to match Redirect URIs
-            // This must match EXACTLY what's in Dropbox Redirect URIs (including https://)
-            const origin = getDropboxOrigin()
-            script.setAttribute('data-origin', origin)
-            console.log('Dropbox script origin set to:', origin)
-            console.log('⚠️ Make sure this EXACT origin is in Dropbox Redirect URIs:', origin)
+            // NOTE: Do NOT set data-origin - let Dropbox auto-detect from registered domain
+            // The domain 'munyardmixer.com' is registered in "Chooser / Saver / Embedder domains"
+            // Setting data-origin explicitly can cause "Could not communicate" errors
+            console.log('Dropbox script loaded, domain registered: munyardmixer.com')
             script.async = true
             script.crossOrigin = 'anonymous'
 
@@ -235,21 +233,20 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       linkType: 'direct',
       multiselect: true,
       extensions: ['audio'],
-      folderselect: false,
-      // IMPORTANT: Add origin parameter - it must match EXACTLY what's in Dropbox Redirect URIs
-      // In Dropbox app console, go to Settings -> OAuth 2 -> Redirect URIs
-      // Add: https://munyardmixer.com (and http://localhost:3000 for development)
-      // The origin must include the protocol (https:// or http://)
-      origin: currentOrigin
+      folderselect: false
+      // NOTE: Do NOT include 'origin' parameter for Chooser
+      // The domain is registered in "Chooser / Saver / Embedder domains" (munyardmixer.com)
+      // Dropbox automatically detects the origin from the page context
+      // Including 'origin' parameter can cause "Could not communicate" errors
     }
     
     console.log('Dropbox chooser options:', { 
       linkType: options.linkType, 
       multiselect: options.multiselect,
       extensions: options.extensions,
-      origin: options.origin
+      currentPageOrigin: currentOrigin
     })
-    console.log('⚠️ Make sure this origin is in Dropbox Redirect URIs:', options.origin)
+    console.log('ℹ️ Using domain from "Chooser / Saver / Embedder domains": munyardmixer.com')
 
     // Use Dropbox.choose directly as shown in the article
     try {
