@@ -358,6 +358,7 @@ function MixerPage() {
   // Solution: User taps mute/unmute button to unlock audio
   const silentModeBypassRef = useRef<HTMLAudioElement | null>(null)
   const audioUnlockedRef = useRef(false)
+  const manuallyUnlockedRef = useRef(false) // Track if user manually unlocked
   const [audioUnlocked, setAudioUnlocked] = useState(false)
   
   // Function to toggle audio unlock (called by mute/unmute button)
@@ -370,6 +371,8 @@ function MixerPage() {
     
     // Update ref immediately
     audioUnlockedRef.current = newState;
+    // Track if this was a manual unlock
+    manuallyUnlockedRef.current = newState;
     // Update UI state immediately for responsive UI
     setAudioUnlocked(newState);
     
@@ -418,6 +421,7 @@ function MixerPage() {
       // Mute: stop the silent audio immediately
       audio.pause();
       audio.currentTime = 0;
+      manuallyUnlockedRef.current = false; // Clear manual unlock flag when muting
       addDebugLog('🔇 Audio muted (silent mode active)');
     }
   }, [addDebugLog]);
@@ -993,33 +997,45 @@ function MixerPage() {
               
               if (!progressed && mixerEngineRef.current) {
                 // Playback didn't start - might be blocked by silent mode
-                // Try iOS unlock and retry
-                if (isIOS && silentModeBypassRef.current && !audioUnlockedRef.current) {
-                  silentModeBypassRef.current.play()
-                    .then(() => {
-                      audioUnlockedRef.current = true;
-                      setAudioUnlocked(true);
-                      addDebugLog('🔊 Audio unlocked after playback failed - device was in silent mode');
-                      // Retry playback now that it's unlocked
-                      if (mixerEngineRef.current) {
-                        mixerEngineRef.current.play?.();
-                      }
-                    })
-                    .catch(() => {
-                      addDebugLog('⚠️ Playback not starting - may need manual unmute');
-                    });
+                if (isIOS && silentModeBypassRef.current) {
+                  if (!audioUnlockedRef.current) {
+                    // Not unlocked yet - try auto-unlock
+                    silentModeBypassRef.current.play()
+                      .then(() => {
+                        audioUnlockedRef.current = true;
+                        setAudioUnlocked(true);
+                        manuallyUnlockedRef.current = false; // This is auto-unlock
+                        addDebugLog('🔊 Audio auto-unlocked after playback failed - device was in silent mode');
+                        // Retry playback now that it's unlocked
+                        if (mixerEngineRef.current) {
+                          mixerEngineRef.current.play?.();
+                        }
+                      })
+                      .catch(() => {
+                        addDebugLog('⚠️ Auto-unlock failed - user may need to manually unmute');
+                      });
+                  } else {
+                    // Already unlocked (manually or auto) - just retry playback
+                    mixerEngineRef.current.play?.();
+                    addDebugLog('▶️ Retrying playback (already unlocked)');
+                  }
                 } else {
                   // Not iOS or already unlocked - just retry
                   mixerEngineRef.current.play?.();
                   addDebugLog('▶️ Reasserted playback after initial tap');
                 }
               } else if (progressed) {
-                // Playback is working! Device is NOT in silent mode - no unlock needed
-                if (audioUnlockedRef.current) {
-                  // Clear unlock state since audio works without it (both iOS and non-iOS)
+                // Playback is working!
+                // Only clear unlock state if user didn't manually unlock
+                // (if they manually unlocked, keep it - they might want it for background playback)
+                if (audioUnlockedRef.current && !manuallyUnlockedRef.current) {
+                  // Auto-unlock was set, but device is NOT in silent mode - clear it
                   audioUnlockedRef.current = false;
                   setAudioUnlocked(false);
-                  addDebugLog('✅ Playback working - device not in silent mode, unlock not needed');
+                  addDebugLog('✅ Playback working - device not in silent mode, auto-unlock cleared');
+                } else if (audioUnlockedRef.current && manuallyUnlockedRef.current) {
+                  // User manually unlocked - keep it unlocked (they may want background audio)
+                  addDebugLog('✅ Playback working with manual unlock active');
                 }
               }
             } catch {
