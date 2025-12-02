@@ -66,10 +66,12 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             script.id = 'dropboxjs'
             script.src = src
             script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
-            // NOTE: Do NOT set data-origin attribute - it can cause communication errors
-            // Dropbox automatically detects the origin from the page context
-            // The domain must be registered in "Chooser / Saver / Embedder domains" in Dropbox app settings
-            console.log('Dropbox script loaded, current origin:', getDropboxOrigin())
+            // Set data-origin explicitly to match Redirect URIs
+            // This must match EXACTLY what's in Dropbox Redirect URIs (including https://)
+            const origin = getDropboxOrigin()
+            script.setAttribute('data-origin', origin)
+            console.log('Dropbox script origin set to:', origin)
+            console.log('⚠️ Make sure this EXACT origin is in Dropbox Redirect URIs:', origin)
             script.async = true
             script.crossOrigin = 'anonymous'
 
