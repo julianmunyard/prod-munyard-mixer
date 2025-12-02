@@ -1039,6 +1039,20 @@ function MixerPage() {
           const silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q=="
           audio.src = silence
           audio.load()
+          // Wait for audio to be ready before playing
+          await new Promise((resolve) => {
+            if (audio.readyState >= 2) { // HAVE_CURRENT_DATA
+              resolve(undefined);
+            } else {
+              audio.addEventListener('canplay', () => resolve(undefined), { once: true });
+            }
+          });
+        }
+        
+        // Ensure silent audio is at the start (no remnant audio)
+        if (!audio.paused) {
+          audio.pause();
+          audio.currentTime = 0;
         }
         
         try {
@@ -1046,8 +1060,25 @@ function MixerPage() {
           audioUnlockedRef.current = true;
           setAudioUnlocked(true);
           addDebugLog('🔊 Silent audio started (iOS media channel unlock)');
+          // Small delay to ensure silent audio is stable before mixer starts
+          // This prevents any audio glitch from the silent track
+          await new Promise(resolve => setTimeout(resolve, 20));
         } catch (err: any) {
           addDebugLog('⚠️ Silent audio start failed: ' + (err?.message || 'Unknown'));
+        }
+      }
+      
+      // CRITICAL: Stop mixer first to clear any buffered audio and reset state
+      // This prevents remnant audio from playing before the actual song starts
+      if (isPlaying) {
+        try {
+          mixerEngineRef.current.pause?.();
+          mixerEngineRef.current.stop?.();
+          addDebugLog('🛑 Stopped mixer to clear buffers');
+          // Small delay to ensure buffers are cleared
+          await new Promise(resolve => setTimeout(resolve, 10));
+        } catch (err: any) {
+          console.warn('Failed to stop mixer:', err);
         }
       }
       
@@ -1069,6 +1100,8 @@ function MixerPage() {
       if (typeof mixerEngineRef.current?.seek === 'function') {
         mixerEngineRef.current.seek(0);
         addDebugLog('🎯 Reset to position 0 before playback');
+        // Small delay to ensure seek completes
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
       
       // Start playback IMMEDIATELY
