@@ -2906,7 +2906,7 @@ function MixerPage() {
             {/* Optimized for iPhone 13/14 (390x844 viewport) - ONLY move down for small screens */}
             {isMobilePortrait && stems.length >= 1 && (
               <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ 
-                marginTop: isSmallScreen ? '8px' : '-27px', // Only move down for iPhone 13/14, keep original for larger phones
+                marginTop: isSmallScreen ? '12px' : '-22px', // Moved down a few pixels for both screen sizes
                 marginLeft: '2px', 
                 marginBottom: isSmallScreen ? '12px' : '20px' 
               }}>
@@ -3135,7 +3135,7 @@ function MixerPage() {
             {/* Optimized for iPhone 13/14 (390x844 viewport) - ONLY move down for small screens */}
             {isMobilePortrait && stems.length >= 1 && (
               <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ 
-                marginTop: isSmallScreen ? '4px' : '-19px', // Only move down for iPhone 13/14, keep original for larger phones
+                marginTop: isSmallScreen ? '8px' : '-14px', // Moved down a few pixels for both screen sizes
                 marginLeft: '9px',
                 marginBottom: isSmallScreen ? '8px' : '16px' // Extra bottom margin only for iPhone 13
               }}>
