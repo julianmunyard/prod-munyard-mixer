@@ -2903,12 +2903,12 @@ function MixerPage() {
             )}
 
             {/* Mobile Effect Controls - Above VARISPEED */}
-            {/* Optimized for iPhone 13 (390x844 viewport) - positioned to use bottom space */}
+            {/* Optimized for iPhone 13/14 (390x844 viewport) - ONLY move down for small screens */}
             {isMobilePortrait && stems.length >= 1 && (
               <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ 
-                marginTop: isSmallScreen ? '8px' : isVerySmallScreen ? '6px' : '10px', 
+                marginTop: isSmallScreen ? '8px' : '-27px', // Only move down for iPhone 13/14, keep original for larger phones
                 marginLeft: '2px', 
-                marginBottom: isSmallScreen ? '12px' : '14px' 
+                marginBottom: isSmallScreen ? '12px' : '20px' 
               }}>
                 <div className="flex justify-center gap-4">
                   {/* Master Effect Dropdown */}
@@ -3132,12 +3132,12 @@ function MixerPage() {
             )}
 
             {/* Mobile Portrait Varispeed */}
-            {/* Optimized for iPhone 13 (390x844 viewport) - positioned to use bottom space and not get cut off */}
+            {/* Optimized for iPhone 13/14 (390x844 viewport) - ONLY move down for small screens */}
             {isMobilePortrait && stems.length >= 1 && (
               <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ 
-                marginTop: isSmallScreen ? '4px' : isVerySmallScreen ? '2px' : '6px', 
+                marginTop: isSmallScreen ? '4px' : '-19px', // Only move down for iPhone 13/14, keep original for larger phones
                 marginLeft: '9px',
-                marginBottom: isSmallScreen ? '8px' : '10px' // Extra bottom margin for iPhone 13
+                marginBottom: isSmallScreen ? '8px' : '16px' // Extra bottom margin only for iPhone 13
               }}>
                 <div
                   className="relative"
