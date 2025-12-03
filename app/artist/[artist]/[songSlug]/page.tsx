@@ -2388,7 +2388,7 @@ function MixerPage() {
                         : '420px')  // PROPERLY SCALED
                   : 'none',
                 marginTop: isMobile ? '4px' : '-20px',
-                marginBottom: isMobile ? (isVerySmallScreen ? '16px' : isSmallScreen ? '18px' : '24px') : '0px', // Increased to show bottom
+                marginBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : '18px') : '0px', // Reduced for iPhone 13 to give space for controls below // Increased to show bottom
                 paddingBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : '16px') : '0px', // Increased padding to show bottom border
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'visible', // Allow content to be visible, prevent cutoff
@@ -2903,8 +2903,13 @@ function MixerPage() {
             )}
 
             {/* Mobile Effect Controls - Above VARISPEED */}
+            {/* Optimized for iPhone 13 (390x844 viewport) - positioned to use bottom space */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ marginTop: '-27px', marginLeft: '2px', marginBottom: '20px' }}>
+              <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ 
+                marginTop: isSmallScreen ? '8px' : isVerySmallScreen ? '6px' : '10px', 
+                marginLeft: '2px', 
+                marginBottom: isSmallScreen ? '12px' : '14px' 
+              }}>
                 <div className="flex justify-center gap-4">
                   {/* Master Effect Dropdown */}
                   <div className="relative">
@@ -3127,13 +3132,18 @@ function MixerPage() {
             )}
 
             {/* Mobile Portrait Varispeed */}
+            {/* Optimized for iPhone 13 (390x844 viewport) - positioned to use bottom space and not get cut off */}
             {isMobilePortrait && stems.length >= 1 && (
-              <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ marginTop: '-19px', marginLeft: '9px' }}>
+              <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ 
+                marginTop: isSmallScreen ? '4px' : isVerySmallScreen ? '2px' : '6px', 
+                marginLeft: '9px',
+                marginBottom: isSmallScreen ? '8px' : '10px' // Extra bottom margin for iPhone 13
+              }}>
                 <div
                   className="relative"
                   style={{
                     marginTop: '0px', // Positioned by parent container
-                    marginBottom: isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : (isMediumScreen ? '18px' : '16px'),
+                    marginBottom: isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : (isMediumScreen ? '14px' : '12px'), // Reduced for iPhone 13
                     width: isVerySmallScreen ? '320px' : isSmallScreen ? '340px' : (isMediumScreen ? '360px' : '350px'),
                     height: isVerySmallScreen ? '120px' : isSmallScreen ? '130px' : (isMediumScreen ? '150px' : '140px'),
                   }}
