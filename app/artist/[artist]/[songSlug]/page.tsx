@@ -296,7 +296,12 @@ function MixerPage() {
 
   const isSafari = typeof navigator !== 'undefined' && /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
-  const isTransparent = songData?.color === 'Transparent'
+  // CRITICAL FIX: Case-insensitive check for "Transparent" to handle any database inconsistencies
+  // Also ensure it's not a hex color (which would indicate a bug where color was overwritten)
+  const isTransparent = songData?.color && 
+    typeof songData.color === 'string' && 
+    songData.color.toLowerCase() === 'transparent' &&
+    !songData.color.startsWith('#') // Ensure it's not accidentally a hex color
 
   // ==================== 🎵 Background Audio Support ====================
   useEffect(() => {
@@ -577,7 +582,7 @@ function MixerPage() {
 
   // ==================== 🎥 Background Video Playback ====================
   useEffect(() => {
-    if (songData?.background_video && songData.color === 'Transparent' && backgroundVideoRef.current) {
+    if (songData?.background_video && isTransparent && backgroundVideoRef.current) {
       const video = backgroundVideoRef.current
       console.log('🎥 Attempting to play background video:', songData.background_video)
       
@@ -1741,29 +1746,105 @@ function MixerPage() {
               -ms-user-select: text;
               user-select: text;
             }
-            input[type="range"]::-webkit-slider-thumb {
-              background: ${primary};
+            /* Apply varispeed-style oval knobs to ALL volume sliders (both classic and transparent) */
+            /* Match varispeed exactly - inline sets slider-vertical, CSS overrides with none !important */
+            .volume-slider,
+            .transparent-volume-slider,
+            input[type="range"].volume-slider,
+            input[type="range"].transparent-volume-slider {
+              -webkit-appearance: none !important; /* Override inline slider-vertical (match varispeed) */
+              -moz-appearance: none !important;
+              appearance: none !important;
+              writing-mode: vertical-lr !important; /* Match varispeed exactly */
+              width: 20px !important; /* Wide enough to fit 18px thumb */
             }
-            input[type="range"]::-moz-range-thumb {
-              background: ${primary};
+            /* Track styling - MUST have height: 100% to match slider height */
+            .volume-slider::-webkit-slider-runnable-track,
+            .transparent-volume-slider::-webkit-slider-runnable-track,
+            input[type="range"].volume-slider::-webkit-slider-runnable-track,
+            input[type="range"].transparent-volume-slider::-webkit-slider-runnable-track {
+              -webkit-appearance: none !important;
+              background: ${isTransparent ? 'transparent' : '#FCFAEE'} !important;
+              border: ${isTransparent ? `1px solid ${primary}` : 'none'} !important;
+              border-radius: 2px !important;
+              height: 100% !important; /* Match slider height */
+              width: 20px !important; /* Wide enough to fit 18px thumb */
             }
-            input[type="range"]::-ms-thumb {
-              background: ${primary};
+            .volume-slider::-moz-range-track,
+            .transparent-volume-slider::-moz-range-track,
+            input[type="range"].volume-slider::-moz-range-track,
+            input[type="range"].transparent-volume-slider::-moz-range-track {
+              background: ${isTransparent ? 'transparent' : '#FCFAEE'} !important;
+              border: ${isTransparent ? `1px solid ${primary}` : 'none'} !important;
+              border-radius: 2px !important;
+              height: 100% !important; /* Match slider height */
+              width: 20px !important; /* Wide enough to fit 18px thumb */
             }
-            ${isTransparent ? `
-            .volume-slider::-webkit-slider-runnable-track {
-              border: 1px solid ${primary};
-              border-radius: 2px;
+            .volume-slider::-ms-track,
+            .transparent-volume-slider::-ms-track,
+            input[type="range"].volume-slider::-ms-track,
+            input[type="range"].transparent-volume-slider::-ms-track {
+              background: ${isTransparent ? 'transparent' : '#FCFAEE'} !important;
+              border: ${isTransparent ? `1px solid ${primary}` : 'none'} !important;
+              border-radius: 2px !important;
+              height: 100% !important; /* Match slider height */
+              width: 20px !important; /* Wide enough to fit 18px thumb */
+              color: transparent !important;
             }
-            .volume-slider::-moz-range-track {
-              border: 1px solid ${primary};
-              border-radius: 2px;
+            /* Thumb styling - oval/pill shape matching varispeed */
+            input[type="range"].volume-slider::-webkit-slider-thumb,
+            input[type="range"].transparent-volume-slider::-webkit-slider-thumb,
+            .volume-slider::-webkit-slider-thumb,
+            .transparent-volume-slider::-webkit-slider-thumb {
+              -webkit-appearance: none !important;
+              appearance: none !important;
+              height: 35px !important; /* Slightly longer */
+              width: 18px !important;
+              border-radius: 10px !important;
+              background: ${primary} !important;
+              border: none !important;
+              cursor: pointer !important;
+              box-shadow: none !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              /* Remove position/transform to allow natural movement */
             }
-            .volume-slider::-ms-track {
-              border: 1px solid ${primary};
-              border-radius: 2px;
+            /* DUPLICATE AT END TO FORCE OVERRIDE - slider-vertical default thumb */
+            input.volume-slider[type="range"]::-webkit-slider-thumb,
+            input.transparent-volume-slider[type="range"]::-webkit-slider-thumb {
+              -webkit-appearance: none !important;
+              appearance: none !important;
+              height: 35px !important; /* Slightly longer */
+              width: 18px !important;
+              border-radius: 10px !important;
+              background: ${primary} !important;
+              border: none !important;
+              cursor: pointer !important;
             }
-            ` : ''}
+            .volume-slider::-moz-range-thumb,
+            .transparent-volume-slider::-moz-range-thumb,
+            input[type="range"].volume-slider::-moz-range-thumb,
+            input[type="range"].transparent-volume-slider::-moz-range-thumb {
+              height: 45px !important; /* Slightly longer */
+              width: 18px !important;
+              border-radius: 10px !important;
+              background: ${primary} !important;
+              border: none !important;
+              cursor: pointer !important;
+              box-shadow: none !important;
+            }
+            .volume-slider::-ms-thumb,
+            .transparent-volume-slider::-ms-thumb,
+            input[type="range"].volume-slider::-ms-thumb,
+            input[type="range"].transparent-volume-slider::-ms-thumb {
+              height: 45px !important; /* Slightly longer */
+              width: 18px !important;
+              border-radius: 10px !important;
+              background: ${primary} !important;
+              border: none !important;
+              cursor: pointer !important;
+              box-shadow: none !important;
+            }
             @media screen and (max-width: 767px) and (orientation: landscape) {
               .mixer-module {
                 min-height: clamp(280px, 40vh, 320px) !important;
@@ -1826,7 +1907,7 @@ function MixerPage() {
           
 
           {/* 🎥 Background Video - Only for Transparent theme */}
-          {songData?.background_video && songData.color === 'Transparent' && (
+          {songData?.background_video && isTransparent && (
             <video
               ref={backgroundVideoRef}
               src={songData.background_video}
@@ -1895,7 +1976,7 @@ function MixerPage() {
           {/* 🧱 Main Layout */}
           <main
             className={`min-h-screen font-sans relative ${
-              songData?.color === 'Transparent'
+              isTransparent
                 ? 'bg-transparent text-[#B8001F]'
                 : 'bg-[#FCFAEE] text-[#B8001F]'
             }`}
@@ -1904,11 +1985,11 @@ function MixerPage() {
               zIndex: 1,
               position: 'relative',
               paddingBottom: isVerySmallScreen 
-                ? 'clamp(140px, 20vh, 160px)' 
+                ? 'clamp(120px, 18vh, 140px)' 
                 : isSmallScreen 
-                  ? 'clamp(150px, 20vh, 160px)' 
+                  ? 'clamp(130px, 18vh, 145px)'  // Reduced for iPhone 13 to show modules bottom border
                   : isMobile 
-                    ? 'clamp(160px, 20vh, 180px)' 
+                    ? 'clamp(150px, 19vh, 170px)' 
                     : '60px',
             }}
           >
@@ -2388,8 +2469,8 @@ function MixerPage() {
                         : '420px')  // PROPERLY SCALED
                   : 'none',
                 marginTop: isMobile ? '4px' : '-20px',
-                marginBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : '18px') : '0px', // Reduced for iPhone 13 to give space for controls below // Increased to show bottom
-                paddingBottom: isMobile ? (isVerySmallScreen ? '12px' : isSmallScreen ? '14px' : '16px') : '0px', // Increased padding to show bottom border
+                marginBottom: isMobile ? (isVerySmallScreen ? '16px' : isSmallScreen ? '18px' : '20px') : '0px', // Increased to ensure bottom border visible on iPhone 13
+                paddingBottom: isMobile ? (isVerySmallScreen ? '16px' : isSmallScreen ? '18px' : '20px') : '0px', // Increased padding to show bottom border clearly
                 overflowX: 'auto', // Enable horizontal scrolling
                 overflowY: 'visible', // Allow content to be visible, prevent cutoff
                 touchAction: isMobile ? 'pan-x' : 'auto', // Allow horizontal panning on mobile
@@ -2527,34 +2608,65 @@ function MixerPage() {
                             : isMobile 
                               ? '14px' 
                               : '30px',
+                        paddingTop: isVerySmallScreen 
+                          ? '25px'  // Add space above for LEVEL and extended slider
+                          : isSmallScreen 
+                            ? '28px'
+                            : isMobile 
+                              ? (isMediumScreen ? '35px' : '30px')
+                              : '40px', // Desktop: add space
+                        overflow: 'visible', // Allow slider to extend upward
+                        position: 'relative', // For absolute positioning of LEVEL
                       }}
                     >
-                      <span style={{ marginBottom: '4px' }}>LEVEL</span>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+                      <span style={{ 
+                        position: 'absolute',
+                        top: isVerySmallScreen 
+                          ? '-8px'  // Position just above slider
+                          : isSmallScreen 
+                            ? '-10px'
+                            : isMobile 
+                              ? (isMediumScreen ? '-15px' : '-12px')
+                              : '-20px', // Desktop: position just above
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        zIndex: 100, // Very high z-index to ensure above slider
+                      }}>LEVEL</span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', position: 'relative', zIndex: 1 }}>
                         <input
                           type="range"
                           min="0"
-                          max="1"
+                          max="1.4"
                           step="0.01"
-                          value={volumes[stem.label] ?? 1}
+                          value={1.4 - (volumes[stem.label] ?? 1)} // Invert: top = 140%, 100% sits lower, bottom = 0%
                           onChange={(e) => {
-                            const volume = parseFloat(e.target.value);
+                            const volume = 1.4 - parseFloat(e.target.value); // Invert back: 0-1.4 range
                             setVolumes((prev) => ({ ...prev, [stem.label]: volume }));
                             setTrackVolume(stem.label, volume);
                           }}
                           className="volume-slider"
                           style={{
-                            writingMode: 'bt-lr' as any,
-                            WebkitAppearance: 'slider-vertical',
-                            width: '4px',
+                            writingMode: 'vertical-lr' as any, // Match varispeed exactly
+                            WebkitAppearance: 'slider-vertical' as any, // Match varispeed - inline sets this
+                            appearance: 'slider-vertical' as any,
+                            MozAppearance: 'none',
+                            width: '20px', // Wide enough to fit 18px thumb
                             height: isVerySmallScreen 
-                              ? '80px' 
+                              ? '100px'  // Extended by 25% (80px * 1.25)
                               : isSmallScreen 
-                                ? '90px' 
+                                ? '113px'  // Extended by 25% (90px * 1.25)
                                 : isMobile 
-                                  ? (isMediumScreen ? '120px' : '100px')  // Taller slider for larger phones
-                                  : undefined,
+                                  ? (isMediumScreen ? '150px' : '125px')  // Extended by 25% (120px/100px * 1.25)
+                                  : '175px', // Extended by 25% (140px * 1.25)
                             background: 'transparent',
+                            marginTop: isVerySmallScreen 
+                              ? '-20px'  // Pull slider up into padding space
+                              : isSmallScreen 
+                                ? '-23px'
+                                : isMobile 
+                                  ? (isMediumScreen ? '-30px' : '-25px')
+                                  : '-35px', // Desktop: pull up
+                            zIndex: 1, // Lower than LEVEL
                           }}
                         />
                       </div>
@@ -3132,18 +3244,19 @@ function MixerPage() {
             )}
 
             {/* Mobile Portrait Varispeed */}
-            {/* Optimized for iPhone 13/14 (390x844 viewport) - ONLY move down for small screens */}
+            {/* Optimized for iPhone 13/14 (390x844 viewport) - Proper spacing for safe area */}
             {isMobilePortrait && stems.length >= 1 && (
               <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ 
-                marginTop: isSmallScreen ? '8px' : '-14px', // Moved down a few pixels for both screen sizes
+                marginTop: isSmallScreen ? '8px' : '-14px',
                 marginLeft: '9px',
-                marginBottom: isSmallScreen ? '8px' : '16px' // Extra bottom margin only for iPhone 13
+                marginBottom: isVerySmallScreen ? '20px' : isSmallScreen ? '24px' : '20px' // Increased for iPhone 13: safe area (34px) + comfortable spacing (20px) = 54px total clearance
               }}>
                 <div
                   className="relative"
                   style={{
-                    marginTop: '0px', // Positioned by parent container
-                    marginBottom: isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : (isMediumScreen ? '14px' : '12px'), // Reduced for iPhone 13
+                    marginTop: '0px',
+                    marginBottom: '0px', // Removed - spacing handled by parent
+                    paddingBottom: isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '8px', // Padding for NATURAL button clearance
                     width: isVerySmallScreen ? '320px' : isSmallScreen ? '340px' : (isMediumScreen ? '360px' : '350px'),
                     height: isVerySmallScreen ? '120px' : isSmallScreen ? '130px' : (isMediumScreen ? '150px' : '140px'),
                   }}
@@ -3187,8 +3300,10 @@ function MixerPage() {
                   
                   {/* Mode Toggle Button - Centered below slider for mobile */}
                   {/* ⚠️ IMPORTANT: This NATURAL/STRETCH button is the BOTTOM BOUNDARY of the page. 
-                      Nothing can be placed below this button. All content must be above this line. */}
-                  <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: '0px' }}>
+                      Positioned with safe spacing from container bottom to avoid browser chrome overlap. */}
+                  <div className="absolute left-1/2 transform -translate-x-1/2" style={{ 
+                    bottom: isVerySmallScreen ? '4px' : isSmallScreen ? '6px' : '4px' // Safe spacing from container bottom
+                  }}>
                     <button
                       onClick={() => {
                         const newMode = !isNaturalVarispeed;

@@ -56,6 +56,75 @@ export default function TransparentMixerLayout({
   const isiPhoneSE = typeof window !== 'undefined' && window.innerWidth <= 375
 
   return (
+    <>
+      {/* CSS to style volume sliders - Override main page styles to use component's primaryColor prop */}
+      <style>{`
+        .transparent-volume-slider {
+          -webkit-appearance: none !important; /* Override inline slider-vertical (match varispeed) */
+          -moz-appearance: none !important;
+          appearance: none !important;
+          writing-mode: vertical-lr !important; /* Match varispeed exactly */
+          height: 150px !important; /* Default height - inline styles will override */
+          width: 20px !important; /* Wide enough to fit 18px thumb */
+        }
+        .transparent-volume-slider::-webkit-slider-runnable-track {
+          -webkit-appearance: none !important;
+          background: transparent !important;
+          border: 1px solid ${primaryColor} !important;
+          border-radius: 2px !important;
+          height: 100% !important;
+          width: 20px !important; /* Wide enough to fit 18px thumb */
+        }
+        .transparent-volume-slider::-webkit-slider-thumb {
+          -webkit-appearance: none !important;
+          appearance: none !important;
+          height: 35px !important; /* Slightly longer */
+          width: 18px !important;
+          border-radius: 10px !important;
+          background: ${primaryColor} !important;
+          border: none !important;
+          cursor: pointer !important;
+          box-shadow: none !important;
+          /* Remove position/transform to allow natural movement */
+        }
+        .transparent-volume-slider::-moz-range-track {
+          background: transparent !important;
+          border: 1px solid ${primaryColor} !important;
+          border-radius: 2px !important;
+          height: 100% !important;
+          width: 20px !important; /* Wide enough to fit 18px thumb */
+        }
+        .transparent-volume-slider::-moz-range-thumb {
+          height: 45px !important; /* Slightly longer */
+          width: 18px !important;
+          border-radius: 10px !important;
+          background: ${primaryColor} !important;
+          border: none !important;
+          cursor: pointer !important;
+          box-shadow: none !important;
+        }
+        .transparent-volume-slider::-ms-track {
+          background: transparent !important;
+          border: 1px solid ${primaryColor} !important;
+          border-radius: 2px !important;
+          height: 100% !important;
+          width: 20px !important; /* Wide enough to fit 18px thumb */
+          color: transparent !important;
+        }
+        .transparent-volume-slider::-ms-thumb {
+          height: 45px !important; /* Slightly longer */
+          width: 18px !important;
+          border-radius: 10px !important;
+          background: ${primaryColor} !important;
+          border: none !important;
+          cursor: pointer !important;
+          box-shadow: none !important;
+        }
+        .transparent-volume-slider::-ms-fill-lower,
+        .transparent-volume-slider::-ms-fill-upper {
+          background: transparent !important;
+        }
+      `}</style>
     <div className="w-full flex flex-col items-center">
       <div className="flex overflow-x-auto w-full justify-start px-2 sm:overflow-visible">
         <div className={`flex ${isVerySmallScreen ? 'gap-2' : stems.length >= 6 ? 'gap-4' : 'gap-8'}`} style={{ minWidth: stems.length <= 4 ? '100%' : 'max-content', justifyContent: stems.length <= 4 ? 'center' : 'flex-start', margin: '0 auto' }}>
@@ -91,27 +160,43 @@ export default function TransparentMixerLayout({
       flexGrow: 1,
       justifyContent: 'center',
       marginBottom: isMobile ? '20px' : '30px', // <<<< matches main
+      paddingTop: isMobile ? '43px' : '43px', // Add space above for LEVEL and extended slider
+      overflow: 'visible', // Allow slider to extend upward
+      position: 'relative', // For absolute positioning of LEVEL
     }}
   >
-    <span style={{ marginBottom: '4px' }}>LEVEL</span>
-    <input
-      type="range"
-      min="0"
-      max="1"
-      step="0.01"
-      value={volumes[label]}
-      onChange={(e) => {
-        setVolumes((prev) => ({ ...prev, [label]: parseFloat(e.target.value) }))
-      }}
-      className="volume-slider"
-      style={{
-        writingMode: 'bt-lr' as any,
-        WebkitAppearance: 'slider-vertical',
-        width: '4px',
-        height: isMobile ? '150px' : '150px', // <<<< matches main
-        background: 'transparent',
-      }}
-                />
+    <span style={{ 
+      position: 'absolute',
+      top: '-25px', // Position just above slider
+      left: '50%',
+      transform: 'translateX(-50%)',
+      zIndex: 100, // Very high z-index to ensure above slider
+    }}>LEVEL</span>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
+      <input
+        type="range"
+        min="0"
+        max="1.4"
+        step="0.01"
+        value={1.4 - (volumes[label] ?? 1)} // Invert: top = 140%, 100% sits lower, bottom = 0%
+        onChange={(e) => {
+          setVolumes((prev) => ({ ...prev, [label]: 1.4 - parseFloat(e.target.value) })) // Invert back: 0-1.4 range
+        }}
+        className="transparent-volume-slider"
+        style={{
+          writingMode: 'vertical-lr' as any, // Match varispeed exactly
+          WebkitAppearance: 'slider-vertical' as any, // Match varispeed - inline sets this
+          appearance: 'slider-vertical',
+          MozAppearance: 'none',
+          width: '20px', // Wide enough to fit 18px thumb
+          height: isMobile ? '188px' : '188px', // Extended by 25% (150px * 1.25)
+          background: 'transparent',
+          cursor: 'pointer',
+          marginTop: isMobile ? '-38px' : '-38px', // Pull slider up into space above
+          zIndex: 1, // Lower than LEVEL
+        }}
+      />
+    </div>
               </div>
               <div style={{ marginBottom: '32px', textAlign: 'center' }}>
                 <DelayKnob
@@ -244,5 +329,6 @@ export default function TransparentMixerLayout({
 )}
 
     </div>
+    </>
   )
 }
