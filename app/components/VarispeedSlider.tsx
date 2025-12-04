@@ -115,7 +115,8 @@ const tickLabels = shouldFlipLabels
         paddingTop: '8px',
         paddingBottom: '8px',
         border: `1px solid ${primaryColor}`,
-      }}
+        '--varispeed-primary-color': primaryColor,
+      } as React.CSSProperties & { '--varispeed-primary-color': string }}
     >
       {/* Ticks */}
       <div className="absolute left-1/2 -translate-x-1/2 top-[8px] bottom-[8px] z-[5] flex flex-col justify-between pointer-events-none w-full">
@@ -183,7 +184,7 @@ const tickLabels = shouldFlipLabels
         }}
       />
 
-      {/* Styles */}
+      {/* Styles - Using template literal to inject primaryColor with CSS variable fallback */}
       <style>{`
         .varispeed-slider {
           -webkit-appearance: none !important;
@@ -205,18 +206,18 @@ const tickLabels = shouldFlipLabels
           height: 6px;
         }
 
-.varispeed-slider::-webkit-slider-thumb {
-  -webkit-appearance: none !important;
-  height: 30px;                  /* Make thumb slightly shorter */
-  width: 18px;
-  border-radius: 10px;
-  background: #004d26;
-  border: none;
-  position: relative;
-  top: 0;                        /* Reset top */
-  transform: translateY(1px);   /* ⬅️ FINAL pixel tweak */
-  z-index: 10;
-}
+        .varispeed-slider::-webkit-slider-thumb {
+          -webkit-appearance: none !important;
+          height: 35px !important;
+          width: 18px !important;
+          border-radius: 10px !important;
+          background: var(--varispeed-primary-color, ${primaryColor}) !important;
+          border: none !important;
+          position: relative;
+          top: 0;
+          transform: translateY(1px);
+          z-index: 10;
+        }
   
         .varispeed-slider::-moz-range-track {
           background: transparent !important;
@@ -226,11 +227,11 @@ const tickLabels = shouldFlipLabels
         }
 
         .varispeed-slider::-moz-range-thumb {
-          height: 40px;
-          width: 18px;
-          border-radius: 10px;
-          background: #004d26;
-          border: none;
+          height: 45px !important;
+          width: 18px !important;
+          border-radius: 10px !important;
+          background: var(--varispeed-primary-color, ${primaryColor}) !important;
+          border: none !important;
         }
 
         .varispeed-slider::-ms-track {
@@ -241,11 +242,11 @@ const tickLabels = shouldFlipLabels
         }
 
         .varispeed-slider::-ms-thumb {
-          height: 40px;
-          width: 18px;
-          border-radius: 10px;
-          background: #004d26;
-          border: none;
+          height: 45px !important;
+          width: 18px !important;
+          border-radius: 10px !important;
+          background: var(--varispeed-primary-color, ${primaryColor}) !important;
+          border: none !important;
         }
 
         .varispeed-slider::-ms-fill-lower,
