@@ -54,7 +54,16 @@ return (
       <meta name="apple-itunes-app" content="app-id=" />
       
     </head>
-    <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <body 
+      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      style={{
+        backgroundColor: '#FCFAEE',
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)'
+      }}
+    >
       {children}
     </body>
   </html>
