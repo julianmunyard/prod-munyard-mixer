@@ -96,14 +96,30 @@ export default function AlbumLandingPage() {
               console.log('✅ Found', idsData.length, 'songs by IDs')
             } else {
               console.warn('⚠️ No songs found with IDs:', songIds)
-              // Try to check if songs exist with a different query
+              // Try to check if songs exist WITHOUT user_id filter (debug)
               for (const songId of songIds) {
-                const { data: singleSong, error: singleError } = await supabase
+                // First try without user filter to see if song exists at all
+                const { data: songWithoutFilter, error: noFilterError } = await supabase
                   .from('songs')
-                  .select('id, title, album_id')
+                  .select('id, title, album_id, user_id')
                   .eq('id', songId)
                   .single()
-                console.log(`  Checking song ${songId}:`, { exists: !!singleSong, error: singleError?.message })
+                console.log(`  Checking song ${songId} WITHOUT user filter:`, { 
+                  exists: !!songWithoutFilter, 
+                  error: noFilterError?.message,
+                  songUserId: songWithoutFilter?.user_id,
+                  currentUserId: user.id,
+                  matches: songWithoutFilter?.user_id === user.id
+                })
+                
+                // Then try with user filter
+                const { data: singleSong, error: singleError } = await supabase
+                  .from('songs')
+                  .select('id, title, album_id, user_id')
+                  .eq('id', songId)
+                  .eq('user_id', user.id)
+                  .single()
+                console.log(`  Checking song ${songId} WITH user filter:`, { exists: !!singleSong, error: singleError?.message })
               }
             }
           }
