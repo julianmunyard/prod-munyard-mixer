@@ -42,6 +42,7 @@ export default function AlbumLandingPage() {
   const [cdSpinDuration, setCdSpinDuration] = useState(5)
   const [cdFinalRotation, setCdFinalRotation] = useState<number | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [audioUnlocked, setAudioUnlocked] = useState(false)
   const cdAccelerationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const cdAccelerationIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const cdDecelerationIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -49,6 +50,12 @@ export default function AlbumLandingPage() {
   const cdStartTimeRef = useRef<number | null>(null)
   const cdElementRef = useRef<HTMLDivElement | null>(null)
   const demoEngineRef = useRef<RealTimelineMixerEngine | null>(null)
+  const silentModeBypassRef = useRef<HTMLAudioElement | null>(null)
+  const audioUnlockedRef = useRef(false)
+  const manuallyUnlockedRef = useRef(false)
+  
+  // Detect iOS
+  const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
 
   useEffect(() => {
     const loadAlbum = async () => {
@@ -414,6 +421,14 @@ export default function AlbumLandingPage() {
         
         // Auto-play when demo is loaded
         try {
+          // On iOS: Start silent audio track FIRST (if unlocked)
+          if (isIOS && silentModeBypassRef.current && audioUnlockedRef.current) {
+            const audio = silentModeBypassRef.current;
+            if (audio.paused && audio.src && audio.src !== 'about:blank') {
+              await audio.play().catch((e: any) => console.warn('Silent audio play failed:', e));
+            }
+          }
+          
           await demoEngineRef.current.play()
           setIsPlaying(true)
           
@@ -592,6 +607,14 @@ export default function AlbumLandingPage() {
         console.log('⏸️ Demo paused - CD decelerating smoothly')
       } else {
         // Play: restart acceleration from slow
+        // On iOS: Start silent audio track FIRST (if unlocked)
+        if (isIOS && silentModeBypassRef.current && audioUnlockedRef.current) {
+          const audio = silentModeBypassRef.current;
+          if (audio.paused && audio.src && audio.src !== 'about:blank') {
+            await audio.play().catch((e: any) => console.warn('Silent audio play failed:', e));
+          }
+        }
+        
         await demoEngineRef.current.play()
         setIsPlaying(true)
         
@@ -985,6 +1008,31 @@ export default function AlbumLandingPage() {
                   >
                     {isPlaying ? '⏸' : '▶'}
                   </button>
+                  
+                  {/* iOS Silent Mode Unlock Button */}
+                  {isIOS && (
+                    <button
+                      onClick={toggleAudioUnlock}
+                      aria-label={audioUnlocked ? 'Mute (disable audio in silent mode)' : 'Unmute (enable audio in silent mode)'}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: audioUnlocked ? '#D4C5B9' : '#999',
+                        border: '2px solid #000',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '16px',
+                        boxShadow: audioUnlocked ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                        position: 'relative',
+                        zIndex: 30,
+                        pointerEvents: 'auto'
+                      }}
+                    >
+                      {audioUnlocked ? '🔊' : '🔇'}
+                    </button>
+                  )}
                 </div>
 
                 {/* Explore Stems Button */}
