@@ -522,161 +522,22 @@ export default function PremiumCreate() {
           console.log(`⚠️ No demoUrl for Song ${i + 1} - demo_mp3 will be null`)
         }
 
-        // DON'T add artwork_url to initial insert payload - causes schema cache errors
-        // We'll add it in a separate update step if the column exists
-        
-        // ALWAYS add album fields - this is required!
+        // Add album fields
         insertPayload.album_id = albumId
         insertPayload.album_title = albumTitle
         insertPayload.album_slug = albumSlug
         insertPayload.track_number = i + 1
         
-        let { data: songData, error: songError } = await supabase.from('songs').insert(insertPayload).select('*').single()
-        
-        // If insert failed because of album columns or artwork_url schema cache, try workaround
-        if (songError) {
-          const errorMessage = songError.message || ''
-          const isSchemaError = errorMessage.includes('schema cache') || errorMessage.includes('does not exist')
-          const isArtworkError = errorMessage.includes('artwork_url')
-          const isAlbumError = errorMessage.includes('album_id') || errorMessage.includes('album_title') || errorMessage.includes('track_number')
-          
-          console.log(`Insert failed for Song ${i + 1}:`, errorMessage)
-          console.log(`Schema error: ${isSchemaError}, Artwork error: ${isArtworkError}, Album error: ${isAlbumError}`)
-          
-          if (isArtworkError || isAlbumError || isSchemaError) {
-            console.log(`Trying workaround for Song ${i + 1} - removing problematic fields`)
-          
-            // Insert without album/artwork fields first - BUT INCLUDE demo_mp3!
-            const basePayload: any = {
-              user_id: user.id,
-              artist_name: artistName,
-              title: song.title,
-              effects: effect.includes('Delay') ? 'delay' : effect.includes('Phaser') ? 'phaser' : null,
-              color,
-              primary_color: primaryColor,
-              stems: uploadedStemUrls,
-              bpm: song.bpm !== '' ? Number(song.bpm) : null,
-              artist_slug: artistSlug,
-              song_slug: songSlug,
-              background_video: videoPublicUrl,
-            }
-            // CRITICAL: Add demo_mp3 to base payload!
-            if (demoUrl) {
-              basePayload.demo_mp3 = demoUrl
-              console.log(`✅ Adding demo_mp3 to base payload for Song ${i + 1}:`, demoUrl)
-            }
-            
-            // DON'T add artwork_url to base payload - it causes schema cache errors
-            // We'll try to add it in the update step if it works
-            
-            const { data: baseSong, error: baseError } = await supabase.from('songs').insert(basePayload).select('*').single()
-            
-            if (baseError || !baseSong) {
-              alert(`Error saving Song ${i + 1}: ${baseError?.message || 'Unknown error'}`)
-              setIsSubmitting(false)
-              return
-            }
-          
-          // Update with album fields - MUST succeed or fail loudly
-          // NEVER include artwork_url here - it causes schema cache errors
-          // We'll save artwork_url in a completely separate update call
-          const updatePayload: any = {
-            album_id: albumId,
-            album_title: albumTitle,
-            album_slug: albumSlug,
-            track_number: i + 1,
-          }
-          if (demoUrl) {
-            updatePayload.demo_mp3 = demoUrl
-          }
-          
-          // DO NOT add artwork_url to this payload - save it separately later
-          
-          const { data: updatedSong, error: updateError } = await supabase
-            .from('songs')
-            .update(updatePayload)
-            .eq('id', baseSong.id)
-            .select('*')
-            .single()
-          
-          if (updateError) {
-            console.error(`ALBUM UPDATE FAILED for "${song.title}":`, updateError)
-            alert(`CRITICAL ERROR: Could not save album fields for "${song.title}".\n\nError: ${updateError.message}\n\nYour RLS policy needs to allow updating album_id column.`)
-            setIsSubmitting(false)
-            return
-          }
-          
-          songData = updatedSong
-          songError = null
-          
-          // Verify album_id was actually saved
-          if (!songData?.album_id || songData.album_id !== albumId) {
-            console.error(`ALBUM_ID NOT SAVED! Expected: ${albumId}, Got: ${songData?.album_id}`)
-            alert(`ERROR: album_id was not saved for "${song.title}". Check your database.`)
-            setIsSubmitting(false)
-            return
-          }
-          
-          // Verify demo_mp3 was saved if we uploaded one
-          if (demoUrl && !songData?.demo_mp3) {
-            console.error(`⚠️ DEMO_MP3 NOT SAVED! Expected: ${demoUrl}, Got: ${songData?.demo_mp3}`)
-            // Don't fail - just warn, demo is optional
-          } else if (demoUrl && songData?.demo_mp3) {
-            console.log(`✅ demo_mp3 verified saved for Song ${i + 1}:`, songData.demo_mp3)
-          }
-          
-          // Try to save artwork_url separately if we have it (artwork is optional)
-          // This is a completely separate update call that won't affect album save
-          if (artworkUrl && songData) {
-            const { error: artworkError } = await supabase
-              .from('songs')
-              .update({ artwork_url: artworkUrl })
-              .eq('id', songData.id)
-            
-            if (artworkError) {
-              console.warn(`⚠️ Could not save artwork_url for Song ${i + 1} (column may not exist in schema cache):`, artworkError.message)
-              // Don't fail - artwork is optional and doesn't affect album creation
-            } else {
-              console.log(`✅ artwork_url saved for Song ${i + 1}`)
-            }
-          }
-          
-          songError = null
-        } else {
-          // Verify album_id was saved in the insert
-          if (!songData.album_id || songData.album_id !== albumId) {
-            console.error(`ALBUM_ID NOT SAVED in insert! Expected: ${albumId}, Got: ${songData.album_id}`)
-            alert(`ERROR: album_id was not saved for "${song.title}".`)
-            setIsSubmitting(false)
-            return
-          }
-          
-          // Verify demo_mp3 was saved if we uploaded one
-          if (demoUrl && !songData.demo_mp3) {
-            console.error(`⚠️ DEMO_MP3 NOT SAVED in insert! Expected: ${demoUrl}, Got: ${songData.demo_mp3}`)
-          } else if (demoUrl && songData.demo_mp3) {
-            console.log(`✅ demo_mp3 verified saved in insert for Song ${i + 1}:`, songData.demo_mp3)
-          }
-          
-          // Try to save artwork_url separately if we have it (artwork is optional)
-          if (artworkUrl && songData) {
-            const { error: artworkError } = await supabase
-              .from('songs')
-              .update({ artwork_url: artworkUrl })
-              .eq('id', songData.id)
-            
-            if (artworkError) {
-              console.warn(`⚠️ Could not save artwork_url for Song ${i + 1} (column may not exist in schema cache):`, artworkError.message)
-              // Don't fail - artwork is optional
-            } else {
-              console.log(`✅ artwork_url saved for Song ${i + 1}`)
-            }
-          }
+        // Add artwork if we have it
+        if (artworkUrl) {
+          insertPayload.artwork_url = artworkUrl
         }
-
+        
+        // Simple insert - if it fails, show error and stop
+        const { data: songData, error: songError } = await supabase.from('songs').insert(insertPayload).select('*').single()
+        
         if (songError) {
-          console.error('Database error saving song:', songError)
-          alert(`Error saving Song ${i + 1}: ${songError.message || songError.code || 'Unknown error'}`)
+          alert(`Error saving Song ${i + 1}: ${songError.message || 'Unknown error'}\n\nCheck your database schema and RLS policies.`)
           setIsSubmitting(false)
           return
         }
@@ -687,19 +548,11 @@ export default function PremiumCreate() {
           return
         }
         
-        // Try to save artwork_url separately after song is created (artwork is optional)
-        if (artworkUrl && songData) {
-          const { error: artworkError } = await supabase
-            .from('songs')
-            .update({ artwork_url: artworkUrl })
-            .eq('id', songData.id)
-          
-          if (artworkError) {
-            console.warn(`⚠️ Could not save artwork_url for Song ${i + 1} (schema cache issue - column may not exist):`, artworkError.message)
-            // Don't fail - artwork is optional
-          } else {
-            console.log(`✅ artwork_url saved for Song ${i + 1}`)
-          }
+        // Verify album_id was saved
+        if (!songData.album_id || songData.album_id !== albumId) {
+          alert(`ERROR: album_id was not saved for "${song.title}". Expected: ${albumId}, Got: ${songData.album_id}`)
+          setIsSubmitting(false)
+          return
         }
 
         createdSongs.push(songData)
