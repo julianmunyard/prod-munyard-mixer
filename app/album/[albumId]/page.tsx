@@ -1251,17 +1251,16 @@ export default function AlbumLandingPage() {
                     onClick={handlePlayPause}
                     disabled={!selectedSong?.demo_mp3 || !demoReady}
                     style={{
-                      width: '32px',
-                      height: '32px',
+                      padding: '8px 16px',
                       backgroundColor: (selectedSong?.demo_mp3 && demoReady) ? '#D4C5B9' : '#999',
                       border: '2px solid #000',
                       cursor: (selectedSong?.demo_mp3 && demoReady) ? 'pointer' : 'not-allowed',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '16px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      fontFamily: 'monospace',
                       boxShadow: (selectedSong?.demo_mp3 && demoReady) ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
                       opacity: (selectedSong?.demo_mp3 && demoReady) ? 1 : 0.5,
+                      transition: 'all 0.2s',
                       position: 'relative',
                       zIndex: 30,
                       pointerEvents: 'auto'
