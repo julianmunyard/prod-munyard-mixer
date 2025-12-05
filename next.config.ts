@@ -9,8 +9,44 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-
-      // ✅ Ensure ffmpeg WASM is served with correct MIME
+      // ✅ Required for SharedArrayBuffer (needed by FFmpeg.wasm for MP3 conversion)
+      // Only apply to pages that need MP3 conversion - NOT login/dashboard/signup
+      {
+        source: '/premium/create',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+        ],
+      },
+      {
+        source: '/premium/edit/:albumId',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+        ],
+      },
+      {
+        source: '/create',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+        ],
+      },
+      {
+        source: '/artist/:path*',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+        ],
+      },
+      {
+        source: '/album/:path*',
+        headers: [
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+        ],
+      },
+      // ✅ Ensure WASM files are served with correct MIME types
       {
         source: '/ffmpeg/:file*.wasm',
         headers: [
@@ -18,31 +54,9 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: '/ffmpeg/:file*.worker.js',
-        headers: [
-          { key: 'Content-Type', value: 'application/javascript' },
-        ],
-      },
-
-      // ✅ Add the same for Superpowered if you self-host their wasm/js in /public
-      {
         source: '/superpowered/:file*.wasm',
         headers: [
           { key: 'Content-Type', value: 'application/wasm' },
-        ],
-      },
-      {
-        source: '/superpowered/:file*.js',
-        headers: [
-          { key: 'Content-Type', value: 'application/javascript' },
-        ],
-      },
-
-      // ✅ And for your worklet processors (so they serve cleanly)
-      {
-        source: '/worklet/:file*.js',
-        headers: [
-          { key: 'Content-Type', value: 'application/javascript' },
         ],
       },
     ];
@@ -50,3 +64,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+

@@ -9,9 +9,25 @@ export default function LoginPage() {
 
   async function handleLogin(e) {
     e.preventDefault()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) setError(error.message)
-    else window.location.href = '/dashboard'
+    
+    if (!supabase) {
+      setError('Supabase client is not configured. Please check your environment variables.')
+      console.error('❌ Supabase client is null - check .env.local file')
+      return
+    }
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        console.error('Login error:', error)
+        setError(error.message || 'Failed to log in. Please check your credentials.')
+      } else {
+        window.location.href = '/dashboard'
+      }
+    } catch (err) {
+      console.error('Login exception:', err)
+      setError(err.message || 'Network error. Please check your internet connection and try again.')
+    }
   }
 
 

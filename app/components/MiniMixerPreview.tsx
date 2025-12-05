@@ -8,6 +8,7 @@ export default function MixerPreviewModule({ theme, accentColor }: MixerPreviewM
 
   return (
     <div
+      className="mixer-preview-module"
       style={{
         width: '86px',
         minHeight: '460px',
@@ -76,7 +77,7 @@ export default function MixerPreviewModule({ theme, accentColor }: MixerPreviewM
             borderRadius: '50%',
             backgroundColor: '#2C2F42',
             border: '2px solid white',
-            boxShadow: '0 0 0 2px #B8001F',
+            boxShadow: `0 0 0 2px ${accentColor}`,
             position: 'relative',
             margin: '0 auto',
           }}
@@ -128,14 +129,17 @@ export default function MixerPreviewModule({ theme, accentColor }: MixerPreviewM
           0%, 100% { opacity: 1 }
           50% { opacity: 0.5 }
         }
-        input[type="range"]::-webkit-slider-thumb {
-          background: ${accentColor};
+        .mixer-preview-module input[type="range"].volume-slider::-webkit-slider-thumb,
+        .mixer-preview-module .volume-slider::-webkit-slider-thumb {
+          background: ${accentColor} !important;
         }
-        input[type="range"]::-moz-range-thumb {
-          background: ${accentColor};
+        .mixer-preview-module input[type="range"].volume-slider::-moz-range-thumb,
+        .mixer-preview-module .volume-slider::-moz-range-thumb {
+          background: ${accentColor} !important;
         }
-        input[type="range"]::-ms-thumb {
-          background: ${accentColor};
+        .mixer-preview-module input[type="range"].volume-slider::-ms-thumb,
+        .mixer-preview-module .volume-slider::-ms-thumb {
+          background: ${accentColor} !important;
         }
       `}</style>
     </div>
