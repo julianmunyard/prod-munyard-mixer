@@ -158,3 +158,4 @@ ORDER BY column_name, privilege_type;
 -- 5. If policies don't show up, RLS might be disabled (check Table Editor settings)
 -- ============================================
 
+
