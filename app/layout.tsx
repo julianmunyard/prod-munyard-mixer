@@ -36,6 +36,12 @@ return (
       <link rel="shortcut icon" href="/munyard-icon.ico" />
       <link rel="manifest" href="/manifest.json" />
       <meta name="theme-color" content="#FCFAEE" />
+      
+      {/* iOS Safari Status Bar - Match pink background */}
+      <meta name="apple-mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+      <meta name="mobile-web-app-capable" content="yes" />
+      <meta name="format-detection" content="telephone=no" />
 
       {/* iMessage / Social Link Previews */}
       <meta property="og:title" content="Munyard Mixer" />
@@ -43,12 +49,6 @@ return (
       <meta property="og:image" content="/og-image.png" />
       <meta property="og:url" content="https://munyardmixer.com" />
       <meta name="twitter:card" content="summary_large_image" />
-      
-      {/* Media Player Recognition */}
-      <meta name="apple-mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      <meta name="mobile-web-app-capable" content="yes" />
-      <meta name="format-detection" content="telephone=no" />
       
       {/* Prevent iOS from treating this as a web page */}
       <meta name="apple-itunes-app" content="app-id=" />
