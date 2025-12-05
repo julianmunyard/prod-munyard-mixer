@@ -794,11 +794,43 @@ export default function AlbumLandingPage() {
         console.log('⏸️ Demo paused - CD decelerating smoothly')
       } else {
         // Play: restart acceleration from slow
-        // On iOS: Start silent audio track FIRST (if unlocked)
-        if (isIOS && silentModeBypassRef.current && audioUnlockedRef.current) {
+        // On iOS: Start silent audio track FIRST (auto-unmute like stem player)
+        if (isIOS && silentModeBypassRef.current) {
           const audio = silentModeBypassRef.current;
-          if (audio.paused && audio.src && audio.src !== 'about:blank') {
-            await audio.play().catch((e: any) => console.warn('Silent audio play failed:', e));
+          
+          // Recreate channel tag if destroyed
+          if (audio.src === 'about:blank' || !audio.src) {
+            const huffman = (count: number, repeatStr: string): string => {
+              let e = repeatStr
+              for (; count > 1; count--) e += repeatStr
+              return e
+            }
+            const silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q=="
+            audio.src = silence
+            audio.load()
+            await new Promise((resolve) => {
+              if (audio.readyState >= 2) {
+                resolve(undefined);
+              } else {
+                audio.addEventListener('canplay', () => resolve(undefined), { once: true });
+              }
+            });
+          }
+          
+          // Ensure silent audio is at the start
+          if (!audio.paused) {
+            audio.pause();
+            audio.currentTime = 0;
+          }
+          
+          try {
+            await audio.play();
+            audioUnlockedRef.current = true;
+            setAudioUnlocked(true);
+            console.log('🔊 Silent audio started (iOS media channel unlock)');
+            await new Promise(resolve => setTimeout(resolve, 20));
+          } catch (err: any) {
+            console.warn('⚠️ Silent audio start failed:', err?.message || 'Unknown');
           }
         }
         
