@@ -105,8 +105,18 @@ export default function EditProject() {
       setSongId(songData.id)
       setArtistName(songData.artist_name || '')
       setProjectTitle(songData.title || '')
-      setColor(songData.color || 'Red (Classic)')
-      setPrimaryColor(songData.primary_color || '#B8001F')
+      // CRITICAL FIX: Ensure color is either "Transparent" or "Red (Classic)", never a hex color
+      const loadedColor = songData.color || 'Red (Classic)'
+      const validColor = (loadedColor === 'Transparent' || loadedColor === 'Red (Classic)') 
+        ? loadedColor 
+        : 'Red (Classic)' // Fallback if somehow invalid
+      setColor(validColor)
+      // Validate primary_color is a valid hex color
+      const loadedPrimaryColor = songData.primary_color || '#B8001F'
+      const validPrimaryColor = /^#[0-9A-Fa-f]{6}$/.test(loadedPrimaryColor) 
+        ? loadedPrimaryColor 
+        : '#B8001F' // Fallback to default red if invalid
+      setPrimaryColor(validPrimaryColor)
       setExistingVideoUrl(songData.background_video || null)
       setEffect(
         songData.effects === 'delay' || songData.effects === 'Delay'
@@ -274,8 +284,8 @@ console.log('songId', songId)
 console.log('userId', user.id)
 console.log('artistName', artistName)
 console.log('projectTitle', projectTitle)
-console.log('color', color)
-console.log('primaryColor', primaryColor)
+console.log('color (raw state):', color)
+console.log('primaryColor (raw state):', primaryColor)
 console.log('effect', effect)
 console.log('updatedStems', updatedStems)
 console.log('bpm', bpm)
@@ -286,6 +296,18 @@ console.log('backgroundVideo', backgroundVideo)
 // Log right before update
 console.log('About to update song row...', artistSlug, newSongSlug, songId)
 
+// Validate and sanitize primaryColor - ensure it's a valid hex color
+let validPrimaryColor = primaryColor.trim()
+if (!validPrimaryColor || !/^#[0-9A-Fa-f]{6}$/.test(validPrimaryColor)) {
+  validPrimaryColor = '#B8001F' // Default to red if invalid
+}
+
+// CRITICAL FIX: Ensure color theme is preserved - never overwrite "Transparent" with primaryColor
+// The color field should always be either "Red (Classic)" or "Transparent", never a hex color
+const validColor = (color === 'Transparent' || color === 'Red (Classic)') 
+  ? color 
+  : 'Red (Classic)' // Fallback to classic if somehow invalid
+
 const { error: updateError } = await supabase.from('songs').update({
   user_id: user.id,
   artist_name: artistName,
@@ -295,8 +317,8 @@ const { error: updateError } = await supabase.from('songs').update({
     : effect.includes('Phaser') ? 'phaser'
     : null
   ),
-  color,
-  primary_color: primaryColor,
+  color: validColor, // Use validated color, not the raw state
+  primary_color: validPrimaryColor, // Use validated hex color
   stems: updatedStems,   // <<< NOT STRINGIFIED!!!
   bpm: bpm !== '' ? Number(bpm) : null,
   artist_slug: artistSlug,
@@ -635,7 +657,18 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
       value={primaryColor}
       onChange={(e) => {
         const val = e.target.value.trim()
-        setPrimaryColor(val)
+        // Only update if it's a valid hex color or empty (user is typing)
+        if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+          setPrimaryColor(val)
+        }
+      }}
+      onBlur={(e) => {
+        // Validate and fix color on blur
+        const val = e.target.value.trim()
+        if (!val || !/^#[0-9A-Fa-f]{6}$/.test(val)) {
+          // If invalid, reset to default
+          setPrimaryColor('#B8001F')
+        }
       }}
       placeholder="#B8001F"
       style={{

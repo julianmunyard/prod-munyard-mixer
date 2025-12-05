@@ -118,8 +118,8 @@ body {
   color: inherit;
 }
 
-/* UNIVERSAL RED SLIDER THUMB — FIXED FOR SAFARI */
-input[type="range"] {
+/* UNIVERSAL SLIDER STYLING - Exclude volume-slider class (they have custom styling) */
+input[type="range"]:not(.volume-slider):not(.transparent-volume-slider):not(.varispeed-slider) {
   -webkit-appearance: slider-vertical;
   appearance: slider-vertical;
   writing-mode: bt-lr;
@@ -131,12 +131,12 @@ input[type="range"] {
   margin: 0;
   position: relative;
 }
-input[type="range"]::-webkit-slider-runnable-track {
+input[type="range"]:not(.volume-slider):not(.transparent-volume-slider):not(.varispeed-slider)::-webkit-slider-runnable-track {
   background: #FCFAEE;
   height: 140px;
   border-radius: 2px;
 }
-input[type="range"]::-webkit-slider-thumb {
+input[type="range"]:not(.volume-slider):not(.transparent-volume-slider):not(.varispeed-slider)::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   height: 40px;
@@ -147,24 +147,100 @@ input[type="range"]::-webkit-slider-thumb {
   position: relative;
   top: 0;
 }
-input[type="range"]::-moz-range-track {
+input[type="range"]:not(.volume-slider):not(.transparent-volume-slider):not(.varispeed-slider)::-moz-range-track {
   background: #FCFAEE;
   height: 140px;
   border-radius: 2px;
 }
-input[type="range"]::-moz-range-thumb {
+input[type="range"]:not(.volume-slider):not(.transparent-volume-slider):not(.varispeed-slider)::-moz-range-thumb {
   height: 40px;
   width: 18px;
   background: #B8001F;
   border-radius: 9999px;
   border: none;
 }
-input[type="range"]::-ms-thumb {
+input[type="range"]:not(.volume-slider):not(.transparent-volume-slider):not(.varispeed-slider)::-ms-thumb {
   height: 40px;
   width: 18px;
   background: #B8001F;
   border-radius: 9999px;
   border: none;
+}
+/* GLOBAL VOLUME SLIDER STYLING - Match varispeed slider exactly */
+/* Inline sets slider-vertical, CSS overrides with none !important (like varispeed) */
+.volume-slider,
+input[type="range"].volume-slider {
+  -webkit-appearance: none !important; /* Override inline slider-vertical (match varispeed) */
+  -moz-appearance: none !important;
+  appearance: none !important;
+  writing-mode: vertical-lr !important; /* Match varispeed exactly */
+  height: 140px !important; /* Default desktop height - inline styles will override for mobile */
+  width: 20px !important; /* Wide enough to fit 18px thumb */
+}
+/* Track styling - MUST match slider height (100%) and be wide enough for thumb */
+.volume-slider::-webkit-slider-runnable-track,
+input[type="range"].volume-slider::-webkit-slider-runnable-track {
+  -webkit-appearance: none !important;
+  background: #FCFAEE !important;
+  height: 100% !important; /* Match slider height */
+  width: 20px !important; /* Wide enough to fit 18px thumb */
+  border-radius: 2px !important;
+}
+.volume-slider::-moz-range-track,
+input[type="range"].volume-slider::-moz-range-track {
+  background: #FCFAEE !important;
+  height: 100% !important; /* Match slider height */
+  width: 20px !important; /* Wide enough to fit 18px thumb */
+  border-radius: 2px !important;
+}
+.volume-slider::-ms-track,
+input[type="range"].volume-slider::-ms-track {
+  background: #FCFAEE !important;
+  height: 100% !important; /* Match slider height */
+  width: 20px !important; /* Wide enough to fit 18px thumb */
+  border-radius: 2px !important;
+  color: transparent !important;
+}
+/* Force custom thumb styling - use multiple selectors for maximum specificity */
+input[type="range"].volume-slider::-webkit-slider-thumb,
+.volume-slider::-webkit-slider-thumb,
+input.volume-slider[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  height: 35px !important; /* Slightly longer */
+  width: 18px !important;
+  border-radius: 10px !important;
+  background: var(--primary-color, #B8001F) !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  /* Allow browser to position thumb naturally based on value */
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+}
+.volume-slider::-moz-range-thumb,
+input[type="range"].volume-slider::-moz-range-thumb {
+  height: 45px !important; /* Slightly longer */
+  width: 18px !important;
+  border-radius: 10px !important;
+  background: var(--primary-color, #B8001F) !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+}
+.volume-slider::-ms-thumb,
+input[type="range"].volume-slider::-ms-thumb {
+  height: 45px !important; /* Slightly longer */
+  width: 18px !important;
+  border-radius: 10px !important;
+  background: var(--primary-color, #B8001F) !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
 }
 
 /* PRESSABLE BUTTON STYLES */

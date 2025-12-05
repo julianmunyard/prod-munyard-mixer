@@ -2772,8 +2772,18 @@ function MixerPage() {
                         
                         {/* Config Button */}
                         <span 
-                          className="mb-1 cursor-pointer hover:opacity-75"
-                          style={{ color: isTransparent ? primary : 'white' }}
+                          className="mb-1 cursor-pointer font-mono text-xs transition-all duration-200 ease-in-out relative"
+                          style={{ 
+                            color: isTransparent ? primary : 'white',
+                            fontSize: '10px',
+                            letterSpacing: '0.5px',
+                            display: 'inline-block',
+                            paddingBottom: '2px',
+                            padding: isMobile ? '4px 6px' : '0 0 2px 0',
+                            borderRadius: isMobile ? '4px' : '0',
+                            backgroundColor: isMobile ? (isTransparent ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.1)') : 'transparent',
+                            touchAction: 'manipulation'
+                          }}
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
@@ -2796,8 +2806,39 @@ function MixerPage() {
                               handleEchoConfigOpen(stem.label, stemIndex, { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY })
                             }
                           }}
+                          onMouseEnter={(e) => {
+                            if (!isMobile) {
+                              const underline = e.currentTarget.querySelector('.hover-underline') as HTMLElement
+                              if (underline) {
+                                underline.style.opacity = '1'
+                              }
+                              e.currentTarget.style.opacity = '0.8'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isMobile) {
+                              const underline = e.currentTarget.querySelector('.hover-underline') as HTMLElement
+                              if (underline) {
+                                underline.style.opacity = '0'
+                              }
+                              e.currentTarget.style.opacity = '1'
+                            }
+                          }}
                         >
                           {(selectedEffects[stem.label] || 'reverb') === 'reverb' ? 'REVERB' : 'ECHO'}
+                          <span 
+                            className="hover-underline"
+                            style={{ 
+                              position: 'absolute',
+                              bottom: '0',
+                              left: '0',
+                              right: '0',
+                              height: '1px',
+                              backgroundColor: isTransparent ? primary : 'white',
+                              opacity: isMobile ? '0.6' : '0',
+                              transition: 'opacity 0.2s ease-in-out'
+                            }}
+                          />
                         </span>
                         
                         {/* Effect Knob */}
