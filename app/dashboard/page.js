@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabaseClient'
 import Link from 'next/link'
 
+// Force dynamic rendering (no static generation)
+export const dynamic = 'force-dynamic'
 
 export default function Dashboard() {
   const [userEmail, setUserEmail] = useState(null)
