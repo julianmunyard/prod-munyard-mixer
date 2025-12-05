@@ -578,6 +578,8 @@ export default function PremiumCreate() {
             }
           
           // Update with album fields - MUST succeed or fail loudly
+          // NEVER include artwork_url here - it causes schema cache errors
+          // We'll save artwork_url in a completely separate update call
           const updatePayload: any = {
             album_id: albumId,
             album_title: albumTitle,
@@ -588,10 +590,7 @@ export default function PremiumCreate() {
             updatePayload.demo_mp3 = demoUrl
           }
           
-          // Try to add artwork_url, but don't fail if it doesn't exist
-          if (artworkUrl && !isArtworkError) {
-            updatePayload.artwork_url = artworkUrl
-          }
+          // DO NOT add artwork_url to this payload - save it separately later
           
           const { data: updatedSong, error: updateError } = await supabase
             .from('songs')
@@ -601,38 +600,14 @@ export default function PremiumCreate() {
             .single()
           
           if (updateError) {
-            // If error is about artwork_url, try update without it
-            if (updateError.message?.includes('artwork_url') || updateError.message?.includes('schema cache')) {
-              console.log(`⚠️ artwork_url update failed, retrying without it for Song ${i + 1}`)
-              const updateWithoutArtwork = { ...updatePayload }
-              delete updateWithoutArtwork.artwork_url
-              
-              const { data: retryUpdate, error: retryError } = await supabase
-                .from('songs')
-                .update(updateWithoutArtwork)
-                .eq('id', baseSong.id)
-                .select('*')
-                .single()
-              
-              if (retryError) {
-                console.error(`ALBUM UPDATE FAILED for "${song.title}":`, retryError)
-                alert(`CRITICAL ERROR: Could not save album fields for "${song.title}".\n\nError: ${retryError.message}`)
-                setIsSubmitting(false)
-                return
-              }
-              
-              songData = retryUpdate
-              songError = null
-            } else {
-              console.error(`ALBUM UPDATE FAILED for "${song.title}":`, updateError)
-              alert(`CRITICAL ERROR: Could not save album_id for "${song.title}".\n\nError: ${updateError.message}\n\nYour RLS policy needs to allow updating album_id column.`)
-              setIsSubmitting(false)
-              return
-            }
-          } else {
-            songData = updatedSong
-            songError = null
+            console.error(`ALBUM UPDATE FAILED for "${song.title}":`, updateError)
+            alert(`CRITICAL ERROR: Could not save album fields for "${song.title}".\n\nError: ${updateError.message}\n\nYour RLS policy needs to allow updating album_id column.`)
+            setIsSubmitting(false)
+            return
           }
+          
+          songData = updatedSong
+          songError = null
           
           // Verify album_id was actually saved
           if (!songData?.album_id || songData.album_id !== albumId) {
@@ -650,16 +625,17 @@ export default function PremiumCreate() {
             console.log(`✅ demo_mp3 verified saved for Song ${i + 1}:`, songData.demo_mp3)
           }
           
-          // Try to save artwork_url separately if we have it (skip if schema cache error)
-          if (artworkUrl && songData && !isArtworkError) {
+          // Try to save artwork_url separately if we have it (artwork is optional)
+          // This is a completely separate update call that won't affect album save
+          if (artworkUrl && songData) {
             const { error: artworkError } = await supabase
               .from('songs')
               .update({ artwork_url: artworkUrl })
               .eq('id', songData.id)
             
             if (artworkError) {
-              console.warn(`⚠️ Could not save artwork_url for Song ${i + 1} (column may not exist):`, artworkError.message)
-              // Don't fail - artwork is optional
+              console.warn(`⚠️ Could not save artwork_url for Song ${i + 1} (column may not exist in schema cache):`, artworkError.message)
+              // Don't fail - artwork is optional and doesn't affect album creation
             } else {
               console.log(`✅ artwork_url saved for Song ${i + 1}`)
             }
