@@ -576,16 +576,48 @@ export default function AlbumLandingPage() {
         
         // Auto-play when demo is loaded
         try {
-          // On iOS: Start silent audio track FIRST (if unlocked)
-          if (isIOS && silentModeBypassRef.current && audioUnlockedRef.current) {
-            const audio = silentModeBypassRef.current;
-            if (audio.paused && audio.src && audio.src !== 'about:blank') {
-              await audio.play().catch((e: any) => console.warn('Silent audio play failed:', e));
+        // On iOS: Start silent audio track FIRST (auto-unmute like stem player)
+        if (isIOS && silentModeBypassRef.current) {
+          const audio = silentModeBypassRef.current;
+          
+          // Recreate channel tag if destroyed
+          if (audio.src === 'about:blank' || !audio.src) {
+            const huffman = (count: number, repeatStr: string): string => {
+              let e = repeatStr
+              for (; count > 1; count--) e += repeatStr
+              return e
             }
+            const silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q=="
+            audio.src = silence
+            audio.load()
+            await new Promise((resolve) => {
+              if (audio.readyState >= 2) {
+                resolve(undefined);
+              } else {
+                audio.addEventListener('canplay', () => resolve(undefined), { once: true });
+              }
+            });
           }
           
-          await demoEngineRef.current.play()
-          setIsPlaying(true)
+          // Ensure silent audio is at the start
+          if (!audio.paused) {
+            audio.pause();
+            audio.currentTime = 0;
+          }
+          
+          try {
+            await audio.play();
+            audioUnlockedRef.current = true;
+            setAudioUnlocked(true);
+            console.log('🔊 Silent audio started (iOS media channel unlock)');
+            await new Promise(resolve => setTimeout(resolve, 20));
+          } catch (err: any) {
+            console.warn('⚠️ Silent audio start failed:', err?.message || 'Unknown');
+          }
+        }
+        
+        await demoEngineRef.current.play()
+        setIsPlaying(true)
           
           // Start CD acceleration
           setCdStopping(false)
@@ -770,11 +802,45 @@ export default function AlbumLandingPage() {
           }
         }
         
-        // On iOS: Start silent audio track FIRST (if unlocked)
-        if (isIOS && silentModeBypassRef.current && audioUnlockedRef.current) {
+        // On iOS: Start silent audio track FIRST (auto-unmute like stem player)
+        if (isIOS && silentModeBypassRef.current) {
           const audio = silentModeBypassRef.current;
-          if (audio.paused && audio.src && audio.src !== 'about:blank') {
-            await audio.play().catch((e: any) => console.warn('Silent audio play failed:', e));
+          
+          // Recreate channel tag if destroyed (page was hidden)
+          if (audio.src === 'about:blank' || !audio.src) {
+            const huffman = (count: number, repeatStr: string): string => {
+              let e = repeatStr
+              for (; count > 1; count--) e += repeatStr
+              return e
+            }
+            const silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q=="
+            audio.src = silence
+            audio.load()
+            // Wait for audio to be ready before playing
+            await new Promise((resolve) => {
+              if (audio.readyState >= 2) {
+                resolve(undefined);
+              } else {
+                audio.addEventListener('canplay', () => resolve(undefined), { once: true });
+              }
+            });
+          }
+          
+          // Ensure silent audio is at the start
+          if (!audio.paused) {
+            audio.pause();
+            audio.currentTime = 0;
+          }
+          
+          try {
+            await audio.play();
+            audioUnlockedRef.current = true;
+            setAudioUnlocked(true);
+            console.log('🔊 Silent audio started (iOS media channel unlock)');
+            // Small delay to ensure silent audio is stable before demo starts
+            await new Promise(resolve => setTimeout(resolve, 20));
+          } catch (err: any) {
+            console.warn('⚠️ Silent audio start failed:', err?.message || 'Unknown');
           }
         }
         
@@ -1169,33 +1235,8 @@ export default function AlbumLandingPage() {
                       pointerEvents: 'auto'
                     }}
                   >
-                    {isPlaying ? '⏸' : '▶'}
+                    {isPlaying ? 'PAUSE' : 'PLAY'}
                   </button>
-                  
-                  {/* iOS Silent Mode Unlock Button */}
-                  {isIOS && (
-                    <button
-                      onClick={toggleAudioUnlock}
-                      aria-label={audioUnlocked ? 'Mute (disable audio in silent mode)' : 'Unmute (enable audio in silent mode)'}
-                      style={{
-                        width: '32px',
-                        height: '32px',
-                        backgroundColor: audioUnlocked ? '#D4C5B9' : '#999',
-                        border: '2px solid #000',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '16px',
-                        boxShadow: audioUnlocked ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                        position: 'relative',
-                        zIndex: 30,
-                        pointerEvents: 'auto'
-                      }}
-                    >
-                      {audioUnlocked ? '🔊' : '🔇'}
-                    </button>
-                  )}
                 </div>
 
                 {/* Explore Stems Button */}
