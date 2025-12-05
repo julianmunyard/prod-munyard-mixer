@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import PoolsuiteLoadingScreen from '../../components/PoolsuiteLoadingScreen'
@@ -54,8 +54,163 @@ export default function AlbumLandingPage() {
   const audioUnlockedRef = useRef(false)
   const manuallyUnlockedRef = useRef(false)
   
-  // Detect iOS
-  const isIOS = typeof window !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream
+  // Detect iOS (same as stem player)
+  const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
+
+  // ==================== 🔇 Silent Mode Bypass (iOS Hack) ====================
+  // iOS treats Web Audio API as "system sounds" that respect silent mode
+  // Solution: User taps mute/unmute button to unlock audio
+  const toggleAudioUnlock = useCallback(() => {
+    if (!silentModeBypassRef.current) return;
+    
+    const audio = silentModeBypassRef.current;
+    const currentState = audioUnlockedRef.current;
+    const newState = !currentState;
+    
+    // Update state IMMEDIATELY - no waiting
+    audioUnlockedRef.current = newState;
+    manuallyUnlockedRef.current = newState;
+    setAudioUnlocked(newState);
+    
+    if (newState) {
+      // UNMUTE: Recreate channel tag if destroyed, then play
+      if (audio.src === 'about:blank' || !audio.src) {
+        const huffman = (count: number, repeatStr: string): string => {
+          let e = repeatStr
+          for (; count > 1; count--) e += repeatStr
+          return e
+        }
+        const silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q=="
+        audio.src = silence
+        audio.load()
+      }
+      
+      // Play silent audio immediately - this forces WebAudio onto media channel on iOS
+      audio.play()
+        .then(() => {
+          console.log('🔊 Audio unmuted - silent track playing');
+          // If demo is playing, make sure it continues
+          if (isPlaying && demoEngineRef.current) {
+            demoEngineRef.current.play?.();
+          }
+        })
+        .catch((error: any) => {
+          console.warn('⚠️ Unmute play failed:', error?.message || 'Unknown');
+        });
+    } else {
+      // MUTE: Stop silent audio immediately
+      audio.pause();
+      audio.currentTime = 0;
+      manuallyUnlockedRef.current = false;
+      console.log('🔇 Audio muted - silent track stopped');
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (!isIOS) return; // Only needed on iOS
+    
+    // Create a hidden audio element that will play silence
+    const audio = document.createElement('audio')
+    audio.loop = true
+    audio.volume = 0.001 // Very quiet, but not zero (zero gets muted by iOS)
+    audio.preload = 'auto'
+    audio.controls = false
+    ;(audio as any).disableRemotePlayback = true // Prevent AirPlay
+    audio.setAttribute('playsinline', 'true') // iOS compatibility
+    audio.setAttribute('webkit-playsinline', 'true') // Older iOS
+    ;(audio as any).playsInline = true // Critical for iOS
+    audio.style.display = 'none' // Hidden but functional
+    
+    // Use high-quality MP3 silence
+    const huffman = (count: number, repeatStr: string): string => {
+      let e = repeatStr
+      for (; count > 1; count--) e += repeatStr
+      return e
+    }
+    const silence = "data:audio/mpeg;base64,//uQx" + huffman(23, "A") + "WGluZwAAAA8AAAACAAACcQCA" + huffman(16, "gICA") + huffman(66, "/") + "8AAABhTEFNRTMuMTAwA8MAAAAAAAAAABQgJAUHQQAB9AAAAnGMHkkI" + huffman(320, "A") + "//sQxAADgnABGiAAQBCqgCRMAAgEAH" + huffman(15, "/") + "7+n/9FTuQsQH//////2NG0jWUGlio5gLQTOtIoeR2WX////X4s9Atb/JRVCbBUpeRUq" + huffman(18, "/") + "9RUi0f2jn/+xDECgPCjAEQAABN4AAANIAAAAQVTEFNRTMuMTAw" + huffman(97, "V") + "Q=="
+    audio.src = silence
+    
+    // Load the audio immediately so it's ready when needed
+    audio.load()
+    
+    // Add to DOM (required for some browsers)
+    document.body.appendChild(audio)
+    
+    // Set ref immediately
+    silentModeBypassRef.current = audio
+    
+    // Helper to destroy channel tag (when page is hidden)
+    const destroyChannelTag = () => {
+      if (audio && audio.src && audio.src !== 'about:blank') {
+        audio.src = 'about:blank'
+        audio.load()
+        audio.pause()
+        console.log('🔇 Silent audio destroyed (page hidden)')
+      }
+    }
+    
+    // Helper to recreate channel tag (when page becomes visible again)
+    const recreateChannelTag = () => {
+      if (audio && audio.src === 'about:blank') {
+        audio.src = silence
+        audio.load()
+        console.log('🔇 Silent audio recreated (page visible)')
+      }
+    }
+    
+    // Handle page visibility - destroy tag when hidden to hide iOS media controls
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        destroyChannelTag()
+      } else {
+        // Page visible - recreate if needed (only if user had unmuted)
+        if (audioUnlockedRef.current || manuallyUnlockedRef.current) {
+          recreateChannelTag()
+          // If demo is playing, restart silent audio
+          if (isPlaying) {
+            audio.play().catch((e: any) => console.warn('Silent audio play failed on visibility:', e))
+          }
+        }
+      }
+    }
+    
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // On iOS, also listen for focus/blur (because iOS page visibility API is buggy)
+    window.addEventListener('focus', handleVisibilityChange)
+    window.addEventListener('blur', handleVisibilityChange)
+    
+    return () => {
+      // Cleanup
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleVisibilityChange)
+      window.removeEventListener('blur', handleVisibilityChange)
+      if (audio) {
+        audio.pause()
+        audio.src = ''
+        if (audio.parentNode) {
+          audio.parentNode.removeChild(audio)
+        }
+      }
+    }
+  }, [isIOS, isPlaying])
+
+  // Keep silent audio playing while demo plays (critical for iOS)
+  useEffect(() => {
+    if (!isIOS || !silentModeBypassRef.current) return;
+    
+    const audio = silentModeBypassRef.current;
+    
+    if (isPlaying && audioUnlockedRef.current) {
+      // Demo is playing - ensure silent audio is also playing
+      if (audio.paused && audio.src && audio.src !== 'about:blank') {
+        audio.play().catch((e: any) => {
+          console.warn('Failed to keep silent audio playing:', e);
+        });
+      }
+    }
+  }, [isPlaying, isIOS, audioUnlocked])
 
   useEffect(() => {
     const loadAlbum = async () => {
