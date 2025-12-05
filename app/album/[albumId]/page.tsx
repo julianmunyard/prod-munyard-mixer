@@ -615,6 +615,14 @@ export default function AlbumLandingPage() {
           }
         }
         
+        // On iOS: Start silent audio track FIRST (if unlocked)
+        if (isIOS && silentModeBypassRef.current && audioUnlockedRef.current) {
+          const audio = silentModeBypassRef.current;
+          if (audio.paused && audio.src && audio.src !== 'about:blank') {
+            await audio.play().catch((e: any) => console.warn('Silent audio play failed:', e));
+          }
+        }
+        
         await demoEngineRef.current.play()
         setIsPlaying(true)
         
