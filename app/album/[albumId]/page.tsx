@@ -58,6 +58,26 @@ export default function AlbumLandingPage() {
   // Detect iOS (same as stem player)
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
 
+  // ==================== 🎨 Set Pink Theme Color for Album Page ====================
+  useEffect(() => {
+    // Set pink theme-color for iOS status bar on album page
+    let themeColorMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
+    if (!themeColorMeta) {
+      themeColorMeta = document.createElement('meta')
+      themeColorMeta.name = 'theme-color'
+      document.head.appendChild(themeColorMeta)
+    }
+    const originalColor = themeColorMeta.content
+    themeColorMeta.content = '#FFE5E5' // Pink for album page
+    
+    // Cleanup: restore cream color when component unmounts
+    return () => {
+      if (themeColorMeta) {
+        themeColorMeta.content = '#FCFAEE' // Restore cream
+      }
+    }
+  }, [])
+
   // ==================== 🔇 Silent Mode Bypass (iOS Hack) ====================
   // iOS treats Web Audio API as "system sounds" that respect silent mode
   // Solution: User taps mute/unmute button to unlock audio
