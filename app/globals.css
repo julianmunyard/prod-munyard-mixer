@@ -11,16 +11,23 @@ html {
   font-size: 100%; /* ✅ prevent root font shrinking */
   background-color: #FCFAEE; /* Match iOS status bar area */
   /* Extend background into safe areas (notch/camera area on iOS) */
-  padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  margin: 0;
+  padding: 0;
 }
 
 body {
   width: 100%;
   max-width: none;
   background-color: #FCFAEE; /* Match iOS status bar area */
+  margin: 0;
+  padding: 0;
+  /* Extend background into safe areas (notch/camera area on iOS) */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 body {

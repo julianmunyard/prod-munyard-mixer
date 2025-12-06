@@ -54,16 +54,20 @@ return (
       <meta name="apple-itunes-app" content="app-id=" />
       
     </head>
-    <body 
-      className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      style={{
-        backgroundColor: '#FCFAEE',
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-        paddingLeft: 'env(safe-area-inset-left)',
-        paddingRight: 'env(safe-area-inset-right)'
-      }}
-    >
+    <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      {/* Fixed background div to cover iOS safe areas */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 'env(safe-area-inset-top, 0px)',
+          backgroundColor: '#FCFAEE',
+          zIndex: 9999,
+          pointerEvents: 'none'
+        }}
+      />
       {children}
     </body>
   </html>

@@ -1251,22 +1251,31 @@ export default function AlbumLandingPage() {
                     onClick={handlePlayPause}
                     disabled={!selectedSong?.demo_mp3 || !demoReady}
                     style={{
-                      padding: '8px 16px',
+                      width: '32px',
+                      height: '32px',
                       backgroundColor: (selectedSong?.demo_mp3 && demoReady) ? '#D4C5B9' : '#999',
                       border: '2px solid #000',
                       cursor: (selectedSong?.demo_mp3 && demoReady) ? 'pointer' : 'not-allowed',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      fontFamily: 'monospace',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                       boxShadow: (selectedSong?.demo_mp3 && demoReady) ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
                       opacity: (selectedSong?.demo_mp3 && demoReady) ? 1 : 0.5,
-                      transition: 'all 0.2s',
                       position: 'relative',
                       zIndex: 30,
                       pointerEvents: 'auto'
                     }}
                   >
-                    {isPlaying ? 'PAUSE' : 'PLAY'}
+                    {isPlaying ? (
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="3" y="2" width="2" height="8" fill="#000"/>
+                        <rect x="7" y="2" width="2" height="8" fill="#000"/>
+                      </svg>
+                    ) : (
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 2L10 6L3 10V2Z" fill="#000"/>
+                      </svg>
+                    )}
                   </button>
                 </div>
 
