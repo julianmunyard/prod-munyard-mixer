@@ -239,14 +239,7 @@ export default function AlbumLandingPage() {
         setLoading(true)
         setError(null)
 
-        // Get current user first to ensure we're authenticated
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-        if (authError || !user) {
-          setError('You must be logged in to view this album.')
-          setLoading(false)
-          return
-        }
-
+        // Albums and songs are publicly viewable - no authentication required
         // Priority 1: Use song IDs from URL if available (most reliable)
         let data: any[] | null = null
         let queryErrors: string[] = []
@@ -259,7 +252,6 @@ export default function AlbumLandingPage() {
             .from('songs')
             .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, created_at')
             .in('id', songIds)
-            .eq('user_id', user.id) // Only get songs belonging to the user
             .order('created_at', { ascending: true })
           
           if (idsError) {
@@ -280,29 +272,17 @@ export default function AlbumLandingPage() {
             } else {
               console.warn('⚠️ No songs found with IDs:', songIds)
               // Try to check if songs exist WITHOUT user_id filter (debug)
+              // Debug: Check if songs exist
               for (const songId of songIds) {
-                // First try without user filter to see if song exists at all
-                const { data: songWithoutFilter, error: noFilterError } = await supabase
+                const { data: songCheck, error: checkError } = await supabase
                   .from('songs')
-                  .select('id, title, album_id, user_id')
+                  .select('id, title, album_id')
                   .eq('id', songId)
                   .single()
-                console.log(`  Checking song ${songId} WITHOUT user filter:`, { 
-                  exists: !!songWithoutFilter, 
-                  error: noFilterError?.message,
-                  songUserId: songWithoutFilter?.user_id,
-                  currentUserId: user.id,
-                  matches: songWithoutFilter?.user_id === user.id
+                console.log(`  Checking song ${songId}:`, { 
+                  exists: !!songCheck, 
+                  error: checkError?.message
                 })
-                
-                // Then try with user filter
-                const { data: singleSong, error: singleError } = await supabase
-                  .from('songs')
-                  .select('id, title, album_id, user_id')
-                  .eq('id', songId)
-                  .eq('user_id', user.id)
-                  .single()
-                console.log(`  Checking song ${songId} WITH user filter:`, { exists: !!singleSong, error: singleError?.message })
               }
             }
           }
@@ -315,7 +295,6 @@ export default function AlbumLandingPage() {
             .from('songs')
             .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, created_at')
             .eq('album_id', albumId)
-            .eq('user_id', user.id) // Only get songs belonging to the user
             .order('track_number', { ascending: true })
           
           if (albumIdError) {
@@ -338,7 +317,6 @@ export default function AlbumLandingPage() {
             .from('songs')
             .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, created_at')
             .eq('album_slug', albumId)
-            .eq('user_id', user.id) // Only get songs belonging to the user
             .order('track_number', { ascending: true })
           
           if (slugError) {
@@ -357,7 +335,6 @@ export default function AlbumLandingPage() {
           const { data: recentData, error: recentError } = await supabase
             .from('songs')
             .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, created_at')
-            .eq('user_id', user.id) // Only get songs belonging to the user
             .gte('created_at', oneDayAgo)
             .order('created_at', { ascending: false })
             .limit(20)
