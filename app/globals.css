@@ -9,7 +9,7 @@ html {
   width: 100%;
   max-width: none;
   font-size: 100%; /* ✅ prevent root font shrinking */
-  background-color: #FCFAEE; /* Match iOS status bar area */
+  background-color: #FFE5E5 !important; /* Pink background for iOS status bar area */
   /* Extend background into safe areas (notch/camera area on iOS) */
   margin: 0;
   padding: 0;
@@ -18,8 +18,8 @@ html {
 body {
   width: 100%;
   max-width: none;
-  background-color: #FCFAEE !important; /* Match iOS status bar area - force pink */
-  background: #FCFAEE !important; /* Override any other background */
+  background-color: #FFE5E5 !important; /* Pink background - force pink */
+  background: #FFE5E5 !important; /* Override any other background */
   margin: 0;
   padding: 0;
   /* Extend background into safe areas (notch/camera area on iOS) */

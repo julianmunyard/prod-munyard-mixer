@@ -35,7 +35,7 @@ return (
       <link rel="icon" type="image/x-icon" href="/munyard-icon.ico" />
       <link rel="shortcut icon" href="/munyard-icon.ico" />
       <link rel="manifest" href="/manifest.json" />
-      <meta name="theme-color" content="#FCFAEE" />
+      <meta name="theme-color" content="#FFE5E5" />
       
       {/* iOS Safari Status Bar - Match pink background */}
       <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -63,7 +63,7 @@ return (
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: '#FCFAEE',
+          backgroundColor: '#FFE5E5',
           zIndex: -1,
           pointerEvents: 'none'
         }}

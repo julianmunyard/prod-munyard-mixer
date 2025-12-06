@@ -963,7 +963,7 @@ export default function AlbumLandingPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FCFAEE' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FFE5E5' }}>
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold mb-4" style={{ color: '#B8001F' }}>Error</h1>
           <p className="text-gray-700">{error}</p>
@@ -976,7 +976,7 @@ export default function AlbumLandingPage() {
     <div 
       className="min-h-screen relative"
       style={{
-        backgroundColor: '#FCFAEE',
+        backgroundColor: '#FFE5E5',
         backgroundImage: `
           repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px),
           repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px)
