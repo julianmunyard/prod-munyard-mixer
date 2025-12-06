@@ -963,7 +963,7 @@ export default function AlbumLandingPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FFE5E5' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FCFAEE' }}>
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold mb-4" style={{ color: '#B8001F' }}>Error</h1>
           <p className="text-gray-700">{error}</p>
@@ -976,7 +976,7 @@ export default function AlbumLandingPage() {
     <div 
       className="min-h-screen relative"
       style={{
-        backgroundColor: '#FFE5E5',
+        backgroundColor: '#FCFAEE',
         backgroundImage: `
           repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px),
           repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px)
@@ -986,7 +986,11 @@ export default function AlbumLandingPage() {
         overflowY: 'auto',
         overflowX: 'hidden',
         WebkitOverflowScrolling: 'touch',
-        touchAction: 'pan-y'
+        touchAction: 'pan-y',
+        paddingTop: `calc(${isMobile ? '20px' : '40px'} + env(safe-area-inset-top, 0px))`,
+        paddingBottom: `calc(${isMobile ? '20px' : '40px'} + env(safe-area-inset-bottom, 0px))`,
+        paddingLeft: `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-left, 0px))`,
+        paddingRight: `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-right, 0px))`
       }}
     >
       <div className="max-w-4xl mx-auto relative z-10" style={{ position: 'relative', zIndex: 10 }}>

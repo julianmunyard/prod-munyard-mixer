@@ -62,9 +62,9 @@ return (
           top: 0,
           left: 0,
           right: 0,
-          height: 'env(safe-area-inset-top, 0px)',
+          bottom: 0,
           backgroundColor: '#FCFAEE',
-          zIndex: 9999,
+          zIndex: -1,
           pointerEvents: 'none'
         }}
       />
