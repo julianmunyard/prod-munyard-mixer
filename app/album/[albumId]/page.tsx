@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabaseClient'
 import PoolsuiteLoadingScreen from '../../components/PoolsuiteLoadingScreen'
 import RealTimelineMixerEngine from '../../../audio/engine/realTimelineMixerEngine'
@@ -1094,12 +1095,12 @@ export default function AlbumLandingPage() {
                     >
                       {/* Artwork Image */}
                       {song.artwork_url && song.artwork_url.trim() && (
-                        <img
+                        <Image
                           src={song.artwork_url}
                           alt={song.title}
+                          fill
+                          sizes="40px"
                           style={{
-                            width: '100%',
-                            height: '100%',
                             objectFit: 'cover',
                             borderRadius: '50%',
                             position: 'absolute',
@@ -1107,25 +1108,16 @@ export default function AlbumLandingPage() {
                             left: 0,
                             zIndex: 0
                           }}
+                          className="rounded-full"
+                          quality={70}
                           loading="lazy"
-                          crossOrigin="anonymous"
+                          placeholder="blur"
+                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                           onError={(e) => {
                             console.error('❌ Failed to load artwork for', song.title)
                             console.error('Artwork URL:', song.artwork_url)
-                            console.error('Attempting to verify URL...')
                             // Hide the broken image
                             e.currentTarget.style.display = 'none'
-                            // Try to verify the URL exists
-                            fetch(song.artwork_url, { method: 'HEAD' })
-                              .then(res => {
-                                console.log('URL fetch response:', res.status, res.statusText)
-                                if (!res.ok) {
-                                  console.error('URL returns error status:', res.status)
-                                }
-                              })
-                              .catch(err => {
-                                console.error('URL fetch error:', err)
-                              })
                           }}
                           onLoad={() => {
                             console.log('✅ Artwork loaded successfully for', song.title)
@@ -1363,12 +1355,12 @@ export default function AlbumLandingPage() {
           >
             {/* Artwork Image */}
             {selectedSong && selectedSong.artwork_url && selectedSong.artwork_url.trim() && (
-              <img
+              <Image
                 src={selectedSong.artwork_url}
                 alt={selectedSong.title}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 style={{
-                  width: '100%',
-                  height: '100%',
                   objectFit: 'cover',
                   borderRadius: '50%',
                   position: 'absolute',
@@ -1376,24 +1368,15 @@ export default function AlbumLandingPage() {
                   left: 0,
                   zIndex: 0
                 }}
+                className="rounded-full"
+                quality={85}
                 loading="lazy"
-                crossOrigin="anonymous"
+                placeholder="blur"
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                 onError={(e) => {
                   console.error('❌ Failed to load artwork for', selectedSong.title)
                   console.error('Artwork URL:', selectedSong.artwork_url)
-                  console.error('Attempting to verify URL...')
                   e.currentTarget.style.display = 'none'
-                  // Verify URL
-                  fetch(selectedSong.artwork_url, { method: 'HEAD' })
-                    .then(res => {
-                      console.log('URL verification - Status:', res.status, res.statusText)
-                      if (!res.ok) {
-                        console.error('URL is not accessible. Status:', res.status)
-                      }
-                    })
-                    .catch(err => {
-                      console.error('URL verification failed:', err)
-                    })
                 }}
                 onLoad={() => {
                   console.log('✅ Artwork loaded successfully for', selectedSong.title)
