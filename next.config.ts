@@ -15,12 +15,15 @@ const nextConfig = {
         pathname: '/storage/v1/object/public/**',
       },
     ],
-    // Enable image optimization
-    formats: ['image/avif', 'image/webp'],
-    // Set quality for optimized images
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    // Disable image optimization in development to avoid localhost issues with external URLs
+    unoptimized: process.env.NODE_ENV === 'development',
+    // Enable image optimization in production only
+    ...(process.env.NODE_ENV === 'production' && {
+      formats: ['image/avif', 'image/webp'],
+      deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+      imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+      minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    }),
   },
   async headers() {
     return [

@@ -7,6 +7,9 @@ import { supabase } from '@/lib/supabaseClient'
 import PoolsuiteLoadingScreen from '../../components/PoolsuiteLoadingScreen'
 import RealTimelineMixerEngine from '../../../audio/engine/realTimelineMixerEngine'
 
+// Check if we're in development mode
+const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+
 type Song = {
   id: string
   title: string
@@ -1076,6 +1079,7 @@ export default function AlbumLandingPage() {
                   >
                     {/* CD Icon with Artwork */}
                     <div
+                      className={selectedSong?.id === song.id && !demoReady && song.demo_mp3 ? 'vinyl-loading-flash' : ''}
                       style={{
                         width: isMobile ? '30px' : '40px',
                         height: isMobile ? '30px' : '40px',
@@ -1097,6 +1101,7 @@ export default function AlbumLandingPage() {
                           alt={song.title}
                           fill
                           sizes="40px"
+                          unoptimized={isDev}
                           style={{
                             objectFit: 'cover',
                             borderRadius: '50%',
@@ -1108,16 +1113,13 @@ export default function AlbumLandingPage() {
                           className="rounded-full"
                           quality={70}
                           loading="lazy"
-                          placeholder="blur"
-                          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                           onError={(e) => {
-                            console.error('❌ Failed to load artwork for', song.title)
-                            console.error('Artwork URL:', song.artwork_url)
-                            // Hide the broken image
-                            e.currentTarget.style.display = 'none'
+                            console.warn('⚠️ Artwork failed to load for', song.title, 'URL:', song.artwork_url)
+                            const target = e.currentTarget as HTMLImageElement
+                            target.style.display = 'none'
                           }}
                           onLoad={() => {
-                            console.log('✅ Artwork loaded successfully for', song.title)
+                            console.log('✅ Artwork loaded:', song.title)
                           }}
                         />
                       )}
@@ -1357,6 +1359,7 @@ export default function AlbumLandingPage() {
                 alt={selectedSong.title}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                unoptimized={process.env.NODE_ENV === 'development'}
                 style={{
                   objectFit: 'cover',
                   borderRadius: '50%',
@@ -1368,15 +1371,13 @@ export default function AlbumLandingPage() {
                 className="rounded-full"
                 quality={85}
                 loading="lazy"
-                placeholder="blur"
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                 onError={(e) => {
-                  console.error('❌ Failed to load artwork for', selectedSong.title)
-                  console.error('Artwork URL:', selectedSong.artwork_url)
-                  e.currentTarget.style.display = 'none'
+                  console.warn('⚠️ Artwork failed to load for', selectedSong.title, 'URL:', selectedSong.artwork_url)
+                  const target = e.currentTarget as HTMLImageElement
+                  target.style.display = 'none'
                 }}
                 onLoad={() => {
-                  console.log('✅ Artwork loaded successfully for', selectedSong.title)
+                  console.log('✅ Artwork loaded:', selectedSong.title)
                 }}
               />
             )}
@@ -1535,6 +1536,24 @@ export default function AlbumLandingPage() {
         
         .cd-spin-slowdown {
           animation: cdSlowdown 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        
+        @keyframes vinylFlash {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+            filter: brightness(1);
+          }
+          50% {
+            opacity: 0.6;
+            transform: scale(1.15);
+            filter: brightness(1.5);
+          }
+        }
+        
+        .vinyl-loading-flash {
+          animation: vinylFlash 0.5s ease-in-out infinite !important;
+          will-change: opacity, transform, filter;
         }
       `}</style>
     </div>
