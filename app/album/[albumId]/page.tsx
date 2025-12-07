@@ -150,9 +150,9 @@ export default function AlbumLandingPage() {
   // Detect iOS (same as stem player)
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
 
-  // ==================== 🎨 Set Terminal Theme Color for Album Page ====================
+  // ==================== 🎨 Set Theme Color for iOS Status Bar ====================
   useEffect(() => {
-    // Set terminal black theme-color for iOS status bar on album page
+    // Set theme-color for iOS status bar based on selected theme
     let themeColorMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!themeColorMeta) {
       themeColorMeta = document.createElement('meta')
@@ -160,7 +160,8 @@ export default function AlbumLandingPage() {
       document.head.appendChild(themeColorMeta)
     }
     const originalColor = themeColorMeta.content
-    themeColorMeta.content = '#000000' // Black for album page
+    // Set color based on theme: pink for OLD COMPUTER, black for TERMINAL THEME
+    themeColorMeta.content = pageTheme === 'OLD COMPUTER' ? '#FFE5E5' : '#000000'
     
     // Cleanup: restore cream color when component unmounts
     return () => {
@@ -168,7 +169,7 @@ export default function AlbumLandingPage() {
         themeColorMeta.content = '#FCFAEE' // Restore cream
       }
     }
-  }, [])
+  }, [pageTheme])
 
   // ==================== 🔇 Silent Mode Bypass (iOS Hack) ====================
   // iOS treats Web Audio API as "system sounds" that respect silent mode
@@ -1101,16 +1102,16 @@ export default function AlbumLandingPage() {
           repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px),
           repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px)
         ` : 'none',
-        padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px 6px' : '40px 20px') : (isMobile ? '8px 6px' : '20px 16px'),
+        padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '12px 10px' : '40px 20px') : (isMobile ? '12px 10px' : '20px 16px'),
         fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
         overflowY: 'auto',
         overflowX: 'hidden',
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
-        paddingTop: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '8px' : '40px'} + env(safe-area-inset-top, 0px))` : `calc(${isMobile ? '8px' : '20px'} + env(safe-area-inset-top, 0px))`,
-        paddingBottom: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '8px' : '40px'} + env(safe-area-inset-bottom, 0px))` : `calc(${isMobile ? '8px' : '20px'} + env(safe-area-inset-bottom, 0px))`,
-        paddingLeft: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '6px' : '20px'} + env(safe-area-inset-left, 0px))` : `calc(${isMobile ? '6px' : '16px'} + env(safe-area-inset-left, 0px))`,
-        paddingRight: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '6px' : '20px'} + env(safe-area-inset-right, 0px))` : `calc(${isMobile ? '6px' : '16px'} + env(safe-area-inset-right, 0px))`,
+        paddingTop: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '12px' : '40px'} + env(safe-area-inset-top, 0px))` : `calc(${isMobile ? '12px' : '20px'} + env(safe-area-inset-top, 0px))`,
+        paddingBottom: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '12px' : '40px'} + env(safe-area-inset-bottom, 0px))` : `calc(${isMobile ? '12px' : '20px'} + env(safe-area-inset-bottom, 0px))`,
+        paddingLeft: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-left, 0px))` : `calc(${isMobile ? '10px' : '16px'} + env(safe-area-inset-left, 0px))`,
+        paddingRight: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-right, 0px))` : `calc(${isMobile ? '10px' : '16px'} + env(safe-area-inset-right, 0px))`,
         color: currentTheme.text,
         fontSize: isMobile ? '12px' : '16px',
         lineHeight: '1.4',
@@ -1124,8 +1125,8 @@ export default function AlbumLandingPage() {
             backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.background,
             border: pageTheme === 'OLD COMPUTER' ? '3px solid #000000' : `2px solid ${currentTheme.border}`,
             boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none'),
-            marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '10px' : '20px') : (isMobile ? '8px' : '16px'),
-            padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '4px' : '8px') : '0',
+            marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '14px' : '20px') : (isMobile ? '12px' : '16px'),
+            padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '6px' : '8px') : '0',
             position: 'relative',
             zIndex: 10
           }}
@@ -1145,10 +1146,16 @@ export default function AlbumLandingPage() {
               fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
               color: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'TERMINAL THEME' ? currentTheme.text : currentTheme.text),
               fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit'),
-              textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none'
+              textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none',
+              position: 'relative'
             }}
           >
             <span>MIXTAPES</span>
+            {!selectedSong && (
+              <span className="flash-preview-text" style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: isMobile ? '10px' : '12px', color: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#999999' : '#999999') }}>
+                {pageTheme === 'OLD COMPUTER' ? 'CLICK A TRACK TO PREVIEW' : 'SELECT A TRACK TO PREVIEW'}
+              </span>
+            )}
             <span>{date1983}</span>
           </div>
 
@@ -1157,8 +1164,8 @@ export default function AlbumLandingPage() {
             style={{
               backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).windowContentBg || '#FFFFFF' : currentTheme.background,
               border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : 'none',
-              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '16px') : (isMobile ? '6px' : '10px'),
-              maxHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '40vh' : '400px') : (isMobile ? '35vh' : '350px'),
+              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '12px' : '16px') : (isMobile ? '10px' : '10px'),
+              maxHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '45vh' : '400px') : (isMobile ? '42vh' : '350px'),
               overflowY: 'auto',
               overflowX: 'hidden',
               WebkitOverflowScrolling: 'touch',
@@ -1172,7 +1179,7 @@ export default function AlbumLandingPage() {
               style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                gap: isMobile ? '4px' : '8px'
+                gap: isMobile ? '8px' : '8px'
               }}
             >
               {songs.map((song, index) => {
@@ -1186,8 +1193,8 @@ export default function AlbumLandingPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: isMobile ? '4px' : '8px',
-                      padding: isMobile ? '4px' : '8px',
+                      gap: isMobile ? '8px' : '8px',
+                      padding: isMobile ? '6px' : '8px',
                       cursor: 'pointer',
                       backgroundColor: pageTheme === 'OLD COMPUTER' ? (selectedSong?.id === song.id ? '#E0E0E0' : 'transparent') : (selectedSong?.id === song.id ? currentTheme.sectionBg : 'transparent'),
                       ...(pageTheme === 'OLD COMPUTER' ? {
@@ -1238,8 +1245,8 @@ export default function AlbumLandingPage() {
                     <div
                       className={selectedSong?.id === song.id && !demoReady && song.demo_mp3 ? 'vinyl-loading-flash' : ''}
                       style={{
-                        width: isMobile ? '32px' : '40px',
-                        height: isMobile ? '32px' : '40px',
+                        width: isMobile ? '40px' : '40px',
+                        height: isMobile ? '40px' : '40px',
                         borderRadius: '50%',
                         background: song.artwork_url && song.artwork_url.trim()
                           ? 'transparent'
@@ -1290,9 +1297,9 @@ export default function AlbumLandingPage() {
                           width: isMobile ? '8px' : '12px',
                           height: isMobile ? '8px' : '12px',
                           borderRadius: '50%',
-                          backgroundColor: currentTheme.sectionBg,
-                          border: isMobile ? '2px solid #FFFFFF' : '2.5px solid #FFFFFF',
-                          boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset 0 0 5px rgba(0,0,0,0.8)' : (pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.3), inset 0 0 5px rgba(0,0,0,0.8)' : 'inset 0 0 5px rgba(0,0,0,0.8)'),
+                          backgroundColor: '#000000',
+                          border: 'none',
+                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.8)',
                           zIndex: 2
                         }}
                       />
@@ -1354,7 +1361,7 @@ export default function AlbumLandingPage() {
               border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : 'none',
               padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '10px' : '20px') : (isMobile ? '8px' : '16px'),
               position: 'relative',
-              minHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '120px' : '200px') : (isMobile ? '100px' : '150px'),
+              minHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '160px' : '200px') : (isMobile ? '140px' : '150px'),
               zIndex: 20,
               color: pageTheme === 'OLD COMPUTER' ? '#FFF' : currentTheme.text,
               fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit')
@@ -1494,8 +1501,8 @@ export default function AlbumLandingPage() {
                 </button>
               </>
             ) : (
-              <div style={{ color: pageTheme === 'OLD COMPUTER' ? '#FFF' : '#999999', textAlign: 'center', padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '10px' : '20px') : (isMobile ? '10px' : '20px'), fontSize: isMobile ? '10px' : '15px', fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit'), textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.2)' : 'none' }}>
-                {pageTheme === 'OLD COMPUTER' ? 'Click a track to preview' : 'Select a track to preview'}
+              <div style={{ textAlign: 'center', padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '10px' : '20px') : (isMobile ? '10px' : '20px'), fontSize: isMobile ? '10px' : '15px', fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit'), color: 'transparent' }}>
+                {/* Preview text moved to MIXTAPES title bar */}
               </div>
             )}
           </div>
@@ -1507,8 +1514,8 @@ export default function AlbumLandingPage() {
             position: 'absolute',
             bottom: isMobile ? '-50px' : '-80px',
             right: isMobile ? '-40px' : '-60px',
-            width: isMobile ? '140px' : '180px',
-            height: isMobile ? '140px' : '180px',
+            width: isMobile ? '180px' : '360px',
+            height: isMobile ? '180px' : '360px',
             zIndex: 15,
             transition: 'all 0.3s ease',
             pointerEvents: 'none'
@@ -1536,14 +1543,29 @@ export default function AlbumLandingPage() {
                     : (selectedSong.primary_color || selectedSong.color 
                         ? `radial-gradient(circle, ${selectedSong.primary_color || selectedSong.color} 30%, ${selectedSong.primary_color || selectedSong.color}dd 60%, #333 65%, #333 100%)`
                         : `radial-gradient(circle, ${generateCDColor(songs.indexOf(selectedSong))} 30%, ${generateCDColor(songs.indexOf(selectedSong))}dd 60%, #333 65%, #333 100%)`))
-                : '#000000', // Black for empty CD
-              border: '3px solid #FFFFFF',
-              boxShadow: pageTheme === 'OLD COMPUTER' ? 'none' : (selectedSong ? '0 0 15px rgba(255,255,255,0.5), inset 0 0 10px rgba(255,255,255,0.2)' : '0 0 10px rgba(255,255,255,0.3)'),
+                : (pageTheme === 'OLD COMPUTER' ? '#FFF8E7' : '#000000'), // Cream for OLD COMPUTER, Black for TERMINAL THEME
+              border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : '2px solid #FFFFFF',
+              boxShadow: 'none',
               position: 'relative',
               overflow: 'hidden'
             }}
           >
-            {/* Artwork Image */}
+            {/* SVG Mask for artwork (hides center label area) */}
+            <svg width="0" height="0" style={{ position: 'absolute' }}>
+              <defs>
+                <radialGradient id="artworkMask">
+                  <stop offset="0%" stopColor="black" stopOpacity="0" />
+                  <stop offset="28%" stopColor="black" stopOpacity="0" />
+                  <stop offset="30%" stopColor="black" stopOpacity="1" />
+                  <stop offset="100%" stopColor="black" stopOpacity="1" />
+                </radialGradient>
+                <mask id="vinylArtworkMask">
+                  <rect width="100%" height="100%" fill="url(#artworkMask)" />
+                </mask>
+              </defs>
+            </svg>
+            
+            {/* Artwork Image - only shows on outer ring, not center */}
             {selectedSong && selectedSong.artwork_url && selectedSong.artwork_url.trim() && (
               <Image
                 src={selectedSong.artwork_url}
@@ -1557,7 +1579,9 @@ export default function AlbumLandingPage() {
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  zIndex: 0
+                  zIndex: 0,
+                  maskImage: 'radial-gradient(circle, transparent 20%, black 22%)',
+                  WebkitMaskImage: 'radial-gradient(circle, transparent 20%, black 22%)'
                 }}
                 className="rounded-full"
                 quality={85}
@@ -1582,14 +1606,31 @@ export default function AlbumLandingPage() {
                   width: '100%',
                   height: '100%',
                   borderRadius: '50%',
-                  boxShadow: pageTheme === 'OLD COMPUTER' ? 'none' : 'inset 0 0 30px rgba(0,255,0,0.2), inset 0 0 60px rgba(0,255,0,0.1)',
+                  boxShadow: 'none',
                   pointerEvents: 'none',
                   zIndex: 1
                 }}
               />
             )}
-            {/* Empty CD Radial Lines Pattern - Only show when no song selected */}
-            {!selectedSong && (
+            {/* CD Center Hole - Black hole only */}
+            <div
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: selectedSong ? '20px' : '18px',
+                height: selectedSong ? '20px' : '18px',
+                borderRadius: '50%',
+                backgroundColor: '#000000',
+                border: 'none',
+                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.8)',
+                zIndex: 3
+              }}
+            />
+            
+            {/* 80s Square Grid Pattern - Pink glow on black vinyl area - Only show when no artwork and TERMINAL THEME */}
+            {pageTheme !== 'OLD COMPUTER' && (!selectedSong || !selectedSong.artwork_url || !selectedSong.artwork_url.trim()) && (
               <svg
                 width="100%"
                 height="100%"
@@ -1597,89 +1638,126 @@ export default function AlbumLandingPage() {
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  opacity: 0.2
+                  zIndex: 1,
+                  pointerEvents: 'none',
+                  overflow: 'visible'
                 }}
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
+                viewBox="0 0 180 180"
+                preserveAspectRatio="xMidYMid meet"
               >
                 <defs>
-                  <pattern id="cdLines" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-                    {Array.from({ length: 36 }).map((_, i) => {
-                      const angle = i * 10
-                      return (
-                        <line
-                          key={i}
-                          x1="50"
-                          y1="50"
-                          x2="50"
-                          y2="0"
-                          stroke="#FFFFFF"
-                          strokeWidth="0.3"
-                          transform={`rotate(${angle} 50 50)`}
-                        />
-                      )
-                    })}
+                  {/* Square grid pattern */}
+                  <pattern id="gridPattern" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+                    <rect width="8" height="8" fill="none"/>
+                    <path d="M 0 0 L 8 0 M 0 0 L 0 8" stroke="#FF69B4" strokeWidth="0.3" opacity="0.6"/>
                   </pattern>
+                  {/* Pink glow filter */}
+                  <filter id="pinkGlow">
+                    <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+                    <feMerge>
+                      <feMergeNode in="coloredBlur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                  {/* Mask to only show grid on outer black area (outside inner label) */}
+                  <mask id="vinylAreaMask">
+                    <circle cx="90" cy="90" r="90" fill="white"/>
+                    <circle cx="90" cy="90" r="36" fill="black"/>
+                  </mask>
                 </defs>
-                <circle cx="50" cy="50" r="50" fill="url(#cdLines)" />
+                
+                {/* Grid pattern circle - masked to only show on outer black area */}
+                <circle
+                  cx="90"
+                  cy="90"
+                  r="90"
+                  fill="url(#gridPattern)"
+                  mask="url(#vinylAreaMask)"
+                  filter="url(#pinkGlow)"
+                  opacity="0.8"
+                />
               </svg>
             )}
             
-            {/* CD Center Hole */}
-            <div
+            
+            {/* Vinyl/CD Label SVG - Always show (even when no song selected) */}
+            <svg
+              width="100%"
+              height="100%"
               style={{
                 position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: selectedSong ? '40px' : '35px',
-                height: selectedSong ? '40px' : '35px',
-                borderRadius: '50%',
-                backgroundColor: selectedSong ? currentTheme.background : currentTheme.sectionBg,
-                border: selectedSong ? `4px solid ${currentTheme.border}` : `3px solid ${currentTheme.border}`,
-                boxShadow: selectedSong && pageTheme === 'TERMINAL THEME' ? '0 0 12px rgba(255,255,255,0.6), inset 0 0 8px rgba(255,255,255,0.2), inset 0 0 10px rgba(0,0,0,0.8)' : (pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.3), inset 0 0 10px rgba(0,0,0,0.8)' : 'none')
+                top: 0,
+                left: 0,
+                zIndex: 2,
+                pointerEvents: 'none',
+                overflow: 'visible'
               }}
-            />
-            
-            {/* CD Label/Artwork Area - Only show when song selected */}
-            {selectedSong && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '80px',
-                  height: '80px',
-                  borderRadius: '50%',
-                  ...(selectedSong.artwork_url && selectedSong.artwork_url.trim()
-                    ? {
-                        backgroundImage: `url("${selectedSong.artwork_url}")`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        backgroundRepeat: 'no-repeat',
-                      }
-                    : {
-                        background: 'rgba(135,206,235,0.1)',
-                      }
-                  ),
-                  border: '2.5px solid rgba(255,255,255,0.5)',
-                  boxShadow: pageTheme === 'OLD COMPUTER' ? (selectedSong.artwork_url && selectedSong.artwork_url.trim() ? 'inset 0 0 20px rgba(0,0,0,0.3)' : 'none') : (selectedSong.artwork_url && selectedSong.artwork_url.trim() ? 'inset 0 0 20px rgba(0,0,0,0.3)' : '0 0 8px rgba(255,255,255,0.4)'),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '16px',
-                  color: currentTheme.text,
-                  textShadow: pageTheme === 'OLD COMPUTER' ? 'none' : '0 0 6px rgba(255,255,255,0.5)',
-                  textAlign: 'center',
-                  fontWeight: 'bold',
-                  overflow: 'hidden',
-                  zIndex: 2
-                }}
-              >
-                {!selectedSong.artwork_url && selectedSong.title}
-              </div>
-            )}
+              viewBox="0 0 180 180"
+              preserveAspectRatio="xMidYMid meet"
+            >
+              <defs>
+                {/* Halftone dots pattern - same for both themes - 1.5x more dots, bolder black */}
+                <pattern id="halftoneDots" x="0" y="0" width="1.67" height="1.67" patternUnits="userSpaceOnUse">
+                  <circle cx="0.835" cy="0.835" r="0.35" fill="#000000" stroke="#000000" strokeWidth="0.1"/>
+                </pattern>
+                {/* Mask to exclude inner circle from halftone and create gap before final border */}
+                <mask id="halftoneMask">
+                  <circle cx="90" cy="90" r="34.5" fill="white"/>
+                  <circle cx="90" cy="90" r="12" fill="black"/>
+                </mask>
+              </defs>
+              
+              {/* Label circle base - cream for OLD COMPUTER, white for TERMINAL THEME */}
+              <circle
+                cx="90"
+                cy="90"
+                r="36"
+                fill={pageTheme === 'OLD COMPUTER' ? '#FFF8E7' : '#FFFFFF'}
+                opacity="1"
+              />
+              
+              {/* Halftone dots overlay - covers ring area, not inner circle - for both themes */}
+              <circle
+                cx="90"
+                cy="90"
+                r="36"
+                fill="url(#halftoneDots)"
+                mask="url(#halftoneMask)"
+              />
+              
+              {/* Thin black border before final border - creates gap that cuts off dots */}
+              <circle
+                cx="90"
+                cy="90"
+                r="34.5"
+                fill="none"
+                stroke="#000000"
+                strokeWidth="0.5"
+                opacity="1"
+              />
+              
+              {/* Final border at outer edge of inner label (meets vinyl/pink grid) - white for TERMINAL, black for OLD COMPUTER */}
+              <circle
+                cx="90"
+                cy="90"
+                r="36"
+                fill="none"
+                stroke={pageTheme === 'OLD COMPUTER' ? '#000000' : '#FFFFFF'}
+                strokeWidth="0.8"
+                opacity="1"
+              />
+              
+              {/* Thin ring/border around middle (around center hole, about 12px radius) - keep black for both */}
+              <circle
+                cx="90"
+                cy="90"
+                r="12"
+                fill="none"
+                stroke="#000000"
+                strokeWidth="0.8"
+                opacity="1"
+              />
+            </svg>
           </div>
         </div>
       </div>
@@ -1728,6 +1806,19 @@ export default function AlbumLandingPage() {
         
         .cd-spin-slowdown {
           animation: cdSlowdown 3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        
+        @keyframes flashPreview {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.3;
+          }
+        }
+        
+        .flash-preview-text {
+          animation: flashPreview 2s ease-in-out infinite;
         }
         
         @keyframes vinylFlash {
