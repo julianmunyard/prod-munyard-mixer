@@ -45,12 +45,48 @@ export default function EditAlbum() {
   const [effect, setEffect] = useState('Delay')
   const [primaryColor, setPrimaryColor] = useState('#B8001F')
   const [showThemeDropdown, setShowThemeDropdown] = useState(false)
+  const [showPageThemeDropdown, setShowPageThemeDropdown] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [backgroundVideo, setBackgroundVideo] = useState<File | null>(null)
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
   const [existingVideoUrl, setExistingVideoUrl] = useState<string | null>(null)
   const [videoRemoved, setVideoRemoved] = useState(false)
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
+  const [pageTheme, setPageTheme] = useState<'TERMINAL THEME' | 'OLD COMPUTER'>('OLD COMPUTER')
+
+  // Theme definitions
+  const themes = {
+    'OLD COMPUTER': {
+      background: '#FFE5E5',
+      text: '#000000',
+      border: '#000000',
+      inputBg: '#FFFFFF',
+      inputText: '#000000',
+      buttonBg: '#B8001F',
+      buttonText: '#FFFFFF',
+      cardBg: '#FFFFFF',
+      cardBorder: '#B8001F',
+      accent: '#B8001F',
+      sectionBg: '#FCFAEE',
+      glow: 'none'
+    },
+    'TERMINAL THEME': {
+      background: '#000000',
+      text: '#FFFFFF',
+      border: '#FFFFFF',
+      inputBg: '#000000',
+      inputText: '#FFFFFF',
+      buttonBg: '#000000',
+      buttonText: '#FFFFFF',
+      cardBg: '#000000',
+      cardBorder: '#FFFFFF',
+      accent: '#FFB6C1',
+      sectionBg: '#0A0A0A',
+      glow: '0 0 10px rgba(255,255,255,0.3)'
+    }
+  }
+  
+  const currentTheme = themes[pageTheme]
   
   // Album songs state
   const [albumSongs, setAlbumSongs] = useState<SongData[]>([])
@@ -63,14 +99,14 @@ export default function EditAlbum() {
 
   useEffect(() => {
     document.body.setAttribute('data-page', 'create')
-    document.body.style.backgroundColor = '#FCFAEE'
-    document.body.style.color = '#171717'
+    document.body.style.backgroundColor = currentTheme.background
+    document.body.style.color = currentTheme.text
     return () => {
       document.body.removeAttribute('data-page')
       document.body.style.backgroundColor = ''
       document.body.style.color = ''
     }
-  }, [])
+  }, [pageTheme, currentTheme])
 
   useEffect(() => {
     return () => {
@@ -85,6 +121,7 @@ export default function EditAlbum() {
       const target = event.target as HTMLElement
       if (!target.closest('[data-dropdown]')) {
         setShowThemeDropdown(false)
+        setShowPageThemeDropdown(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -130,6 +167,14 @@ export default function EditAlbum() {
       setPrimaryColor(firstSong.primary_color || '#B8001F')
       setColor(firstSong.color || 'Red (Classic)')
       setExistingVideoUrl(firstSong.background_video || null)
+      // Load page theme from first song (if saved)
+      if ((firstSong as any).page_theme && ((firstSong as any).page_theme === 'TERMINAL THEME' || (firstSong as any).page_theme === 'OLD COMPUTER')) {
+        console.log('🎨 Loading saved page theme:', (firstSong as any).page_theme)
+        setPageTheme((firstSong as any).page_theme)
+      } else {
+        console.log('🎨 No saved theme found, using default:', 'OLD COMPUTER')
+        setPageTheme('OLD COMPUTER')
+      }
       setEffect(
         firstSong.effects === 'delay' || firstSong.effects === 'Delay'
           ? 'Delay (1/8 note tape-style echo)'
@@ -515,7 +560,10 @@ export default function EditAlbum() {
         album_title: albumTitle,
         album_slug: albumSlug,
         track_number: i + 1,
+        page_theme: pageTheme, // Save the page theme
       }
+
+      console.log(`💾 Saving page_theme for Song ${i + 1}:`, pageTheme)
 
       // Always include demo_mp3 if we have a value (even if null, to clear it)
       if (demoUrl !== undefined) {
@@ -624,7 +672,9 @@ export default function EditAlbum() {
             album_title: albumTitle,
             album_slug: albumSlug,
             track_number: i + 1,
+            page_theme: pageTheme, // Save the page theme
           }
+          console.log(`💾 Saving page_theme in albumUpdate for Song ${i + 1}:`, pageTheme)
           if (demoUrl !== undefined) {
             albumUpdate.demo_mp3 = demoUrl
           }
@@ -673,13 +723,79 @@ export default function EditAlbum() {
       padding: '3rem 1.5rem 6rem',
       fontFamily: 'Geist Mono, monospace',
       textAlign: 'center',
-      backgroundColor: '#FCFAEE',
+      backgroundColor: currentTheme.background,
+      color: currentTheme.text,
+      textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.3)' : 'none',
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'flex-start',
     }}>
       <div style={{ width: '100%', maxWidth: '600px' }}>
-        <h1 style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '2rem' }}>EDIT ALBUM</h1>
+        {/* Theme Selector */}
+        <div style={{ marginBottom: '2rem', position: 'relative' }} data-dropdown>
+          <button
+            type="button"
+            onClick={() => setShowPageThemeDropdown(!showPageThemeDropdown)}
+            style={{
+              padding: '0.5rem 1rem',
+              backgroundColor: currentTheme.buttonBg,
+              color: currentTheme.buttonText,
+              border: `2px solid ${currentTheme.border}`,
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: 'bold',
+              boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+              fontFamily: 'monospace'
+            }}
+          >
+            THEME: {pageTheme} ▼
+          </button>
+          {showPageThemeDropdown && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              marginTop: '4px',
+              backgroundColor: currentTheme.cardBg,
+              border: `2px solid ${currentTheme.border}`,
+              borderRadius: '4px',
+              boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+              zIndex: 1000,
+              minWidth: '200px'
+            }}>
+              {(['TERMINAL THEME', 'OLD COMPUTER'] as const).map(themeOption => (
+                <div
+                  key={themeOption}
+                  onClick={() => { 
+                    console.log('🎨 Theme changed to:', themeOption)
+                    setPageTheme(themeOption)
+                    setShowPageThemeDropdown(false) 
+                  }}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    cursor: 'pointer',
+                    backgroundColor: pageTheme === themeOption ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : '#f3f3f3') : currentTheme.cardBg,
+                    color: currentTheme.text,
+                    borderBottom: `1px solid ${currentTheme.border}`,
+                    fontFamily: 'monospace',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  {themeOption}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        <h1 style={{ 
+          fontSize: '3rem', 
+          fontWeight: 'bold', 
+          marginBottom: '2rem',
+          color: currentTheme.text,
+          textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.4)' : 'none',
+          fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit'
+        }}>EDIT ALBUM</h1>
 
         {userEmail && (
           <p style={{ marginBottom: '2rem' }}>
@@ -694,7 +810,7 @@ export default function EditAlbum() {
               type="text"
               value={artistName}
               onChange={(e) => setArtistName(e.target.value)}
-              style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black', marginTop: '0.5rem' }}
+              style={{ padding: '0.5rem', width: '100%', backgroundColor: currentTheme.inputBg, color: currentTheme.inputText, marginTop: '0.5rem', border: `1px solid ${currentTheme.border}`, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}
             />
           </label>
 
@@ -704,16 +820,16 @@ export default function EditAlbum() {
               type="text"
               value={albumTitle}
               onChange={(e) => setAlbumTitle(e.target.value)}
-              style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black', marginTop: '0.5rem' }}
+              style={{ padding: '0.5rem', width: '100%', backgroundColor: currentTheme.inputBg, color: currentTheme.inputText, marginTop: '0.5rem', border: `1px solid ${currentTheme.border}`, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}
             />
           </label>
 
           {/* Album songs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginTop: '1rem' }}>
             {albumSongs.map((song, index) => (
-              <div key={index} style={{ border: '2px solid #B8001F', borderRadius: '8px', padding: '1.5rem', backgroundColor: 'white' }}>
+              <div key={index} style={{ border: `2px solid ${currentTheme.border}`, borderRadius: '8px', padding: '1.5rem', backgroundColor: currentTheme.cardBg, boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#B8001F' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', color: currentTheme.accent, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.4)' : 'none' }}>
                     SONG {index + 1} {song.existingId ? '(Existing)' : '(New)'}
                   </h3>
                   {albumSongs.length > 1 && (
@@ -741,7 +857,7 @@ export default function EditAlbum() {
                     value={song.title}
                     onChange={(e) => updateAlbumSong(index, { title: e.target.value })}
                     placeholder={`Song ${index + 1} title`}
-                    style={{ padding: '0.5rem', width: '100%', backgroundColor: '#FCFAEE', color: 'black', marginTop: '0.5rem' }}
+                    style={{ padding: '0.5rem', width: '100%', backgroundColor: currentTheme.sectionBg, color: currentTheme.text, marginTop: '0.5rem', border: `1px solid ${currentTheme.border}`, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}
                   />
                 </label>
 
@@ -753,7 +869,7 @@ export default function EditAlbum() {
                     value={song.bpm}
                     onChange={(e) => updateAlbumSong(index, { bpm: e.target.value === '' ? '' : Number(e.target.value) })}
                     placeholder="e.g. 120"
-                    style={{ padding: '0.5rem', width: '100%', backgroundColor: '#FCFAEE', color: 'black', marginTop: '0.5rem' }}
+                    style={{ padding: '0.5rem', width: '100%', backgroundColor: currentTheme.sectionBg, color: currentTheme.text, marginTop: '0.5rem', border: `1px solid ${currentTheme.border}`, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}
                   />
                 </label>
 
@@ -763,9 +879,15 @@ export default function EditAlbum() {
                     htmlFor={`album-song-${index}`}
                     style={{
                       padding: '0.5rem 1rem',
-                      backgroundColor: '#ffffff',
+                      backgroundColor: currentTheme.cardBg,
+                      color: currentTheme.accent,
+                      border: `2px solid ${currentTheme.border}`,
+                      boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+                      fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                       color: '#B8001F',
-                      border: '1px solid #B8001F',
+                      border: `2px solid ${currentTheme.border}`,
+                      boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+                      fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                       borderRadius: '4px',
                       cursor: 'pointer',
                       display: 'block',
@@ -806,7 +928,7 @@ export default function EditAlbum() {
                                   }}
                                   onBlur={() => setEditingIndex(null)}
                                   onKeyDown={(e) => { if (e.key === 'Enter') setEditingIndex(null) }}
-                                  style={{ width: '100%', padding: '0.4rem', backgroundColor: 'white', color: 'black', border: '1px solid #ccc', fontSize: '0.85rem' }}
+                                  style={{ width: '100%', padding: '0.4rem', backgroundColor: currentTheme.inputBg, color: currentTheme.inputText, border: `1px solid ${currentTheme.border}`, fontSize: '0.85rem', fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}
                                 />
                               ) : (
                                 <div 
@@ -860,7 +982,7 @@ export default function EditAlbum() {
                                   }}
                                   onBlur={() => setEditingIndex(null)}
                                   onKeyDown={(e) => { if (e.key === 'Enter') setEditingIndex(null) }}
-                                  style={{ width: '100%', padding: '0.4rem', backgroundColor: 'white', color: 'black', border: '1px solid #ccc', fontSize: '0.85rem' }}
+                                  style={{ width: '100%', padding: '0.4rem', backgroundColor: currentTheme.inputBg, color: currentTheme.inputText, border: `1px solid ${currentTheme.border}`, fontSize: '0.85rem', fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}
                                 />
                               ) : (
                                 <div 
@@ -909,9 +1031,15 @@ export default function EditAlbum() {
                     htmlFor={`demo-song-${index}`}
                     style={{
                       padding: '0.5rem 1rem',
-                      backgroundColor: '#ffffff',
+                      backgroundColor: currentTheme.cardBg,
+                      color: currentTheme.accent,
+                      border: `2px solid ${currentTheme.border}`,
+                      boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+                      fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                       color: '#B8001F',
-                      border: '1px solid #B8001F',
+                      border: `2px solid ${currentTheme.border}`,
+                      boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+                      fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                       borderRadius: '4px',
                       cursor: 'pointer',
                       display: 'block',
@@ -984,9 +1112,15 @@ export default function EditAlbum() {
                     htmlFor={`artwork-song-${index}`}
                     style={{
                       padding: '0.5rem 1rem',
-                      backgroundColor: '#ffffff',
+                      backgroundColor: currentTheme.cardBg,
+                      color: currentTheme.accent,
+                      border: `2px solid ${currentTheme.border}`,
+                      boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+                      fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                       color: '#B8001F',
-                      border: '1px solid #B8001F',
+                      border: `2px solid ${currentTheme.border}`,
+                      boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+                      fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                       borderRadius: '4px',
                       cursor: 'pointer',
                       display: 'block',
@@ -1042,9 +1176,13 @@ export default function EditAlbum() {
               onClick={addSongToAlbum}
               style={{
                 padding: '0.75rem',
-                backgroundColor: 'white',
+                backgroundColor: currentTheme.cardBg,
+                color: currentTheme.text,
+                border: `1px solid ${currentTheme.border}`,
+                fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                 color: '#B8001F',
-                border: '2px dashed #B8001F',
+                border: `2px dashed ${currentTheme.border}`,
+                boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
                 fontSize: '1rem',
@@ -1063,7 +1201,10 @@ export default function EditAlbum() {
               style={{
                 width: '100%',
                 padding: '0.5rem',
-                backgroundColor: 'white',
+                backgroundColor: currentTheme.cardBg,
+                color: currentTheme.text,
+                border: `1px solid ${currentTheme.border}`,
+                fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                 color: 'black',
                 border: '1px solid #ccc',
                 cursor: 'pointer',
@@ -1079,7 +1220,10 @@ export default function EditAlbum() {
                 top: '100%',
                 left: 0,
                 width: '100%',
-                backgroundColor: 'white',
+                backgroundColor: currentTheme.cardBg,
+                color: currentTheme.text,
+                border: `1px solid ${currentTheme.border}`,
+                fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                 border: '1px solid #ccc',
                 zIndex: 10,
               }}>
@@ -1090,7 +1234,9 @@ export default function EditAlbum() {
                     style={{
                       padding: '0.5rem',
                       cursor: 'pointer',
-                      backgroundColor: color === theme ? '#f3f3f3' : 'white',
+                      backgroundColor: color === theme ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : '#f3f3f3') : currentTheme.cardBg,
+                      color: currentTheme.text,
+                      fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                     }}
                   >
                     {theme}
@@ -1119,7 +1265,9 @@ export default function EditAlbum() {
                   width: '100%',
                   color: primaryColor,
                   border: `1px solid ${primaryColor}`,
-                  backgroundColor: '#fff',
+                  backgroundColor: currentTheme.cardBg,
+                  color: currentTheme.text,
+                  border: `1px solid ${currentTheme.border}`,
                 }}
               />
             </div>
@@ -1135,7 +1283,10 @@ export default function EditAlbum() {
               style={{
                 width: '100%',
                 padding: '0.5rem',
-                backgroundColor: 'white',
+                backgroundColor: currentTheme.cardBg,
+                color: currentTheme.text,
+                border: `1px solid ${currentTheme.border}`,
+                fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
                 color: 'black',
                 border: '1px solid #ccc',
               }}
@@ -1221,8 +1372,11 @@ export default function EditAlbum() {
             disabled={isSubmitting}
             style={{
               padding: '1rem 2rem',
-              backgroundColor: isSubmitting ? '#ccc' : '#B8001F',
-              color: 'white',
+              backgroundColor: isSubmitting ? (pageTheme === 'TERMINAL THEME' ? '#333' : '#ccc') : currentTheme.buttonBg,
+              color: currentTheme.buttonText,
+              border: `2px solid ${currentTheme.border}`,
+              boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+              fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
               border: 'none',
               cursor: isSubmitting ? 'not-allowed' : 'pointer',
               fontSize: '1.25rem',

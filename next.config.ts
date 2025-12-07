@@ -1,11 +1,27 @@
 import type { NextConfig } from 'next';
 
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  webpack: (config, { isServer }) => {
+    // Don't bundle FFmpeg on the server side
+    if (isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        '@ffmpeg/ffmpeg': 'commonjs @ffmpeg/ffmpeg',
+        '@ffmpeg/core': 'commonjs @ffmpeg/core',
+      });
+    } else {
+      // Client-side: resolve FFmpeg properly
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        crypto: false,
+      };
+    }
+    return config;
   },
   images: {
     remotePatterns: [

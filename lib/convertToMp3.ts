@@ -1,12 +1,34 @@
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
+// FFmpeg is browser-only, so we dynamically import it only on the client
+let ffmpegInstance: any = null;
+let ffmpegLoading: Promise<any> | null = null;
 
-const ffmpeg = createFFmpeg({
-  log: true,
-  corePath:
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/ffmpeg/ffmpeg-core.js`
-      : '/ffmpeg/ffmpeg-core.js',
-});
+async function getFFmpeg() {
+  // Only run on client side
+  if (typeof window === 'undefined') {
+    throw new Error('FFmpeg can only be used in the browser');
+  }
+
+  if (ffmpegInstance) {
+    return ffmpegInstance;
+  }
+
+  if (ffmpegLoading) {
+    return ffmpegLoading;
+  }
+
+  ffmpegLoading = (async () => {
+    const { createFFmpeg, fetchFile } = await import('@ffmpeg/ffmpeg');
+    
+    ffmpegInstance = createFFmpeg({
+      log: true,
+      corePath: `${window.location.origin}/ffmpeg/ffmpeg-core.js`,
+    });
+
+    return { ffmpegInstance, fetchFile };
+  })();
+
+  return ffmpegLoading;
+}
 
 export async function convertToMp3(file: File): Promise<File> {
   if (!file.type.startsWith('audio/')) {
@@ -18,6 +40,9 @@ export async function convertToMp3(file: File): Promise<File> {
   }
 
   try {
+    const { ffmpegInstance, fetchFile } = await getFFmpeg();
+    const ffmpeg = ffmpegInstance;
+
     if (!ffmpeg.isLoaded()) {
       console.log('Loading FFmpeg...');
       await ffmpeg.load();
@@ -52,14 +77,14 @@ export async function convertToMp3(file: File): Promise<File> {
       throw new Error(`FFmpeg did not produce output: ${outputName}`);
     }
 
-const data = ffmpeg.FS('readFile', outputName);
+    const data = ffmpeg.FS('readFile', outputName);
 
-// Cleanup
-ffmpeg.FS('unlink', inputName);
-ffmpeg.FS('unlink', outputName);
+    // Cleanup
+    ffmpeg.FS('unlink', inputName);
+    ffmpeg.FS('unlink', outputName);
 
-console.log(`MP3 conversion complete: ${outputName}`);
-return new File([data as any], outputName, { type: 'audio/mpeg' });
+    console.log(`MP3 conversion complete: ${outputName}`);
+    return new File([data as any], outputName, { type: 'audio/mpeg' });
 
   } catch (err) {
     console.error('MP3 conversion failed:', err);

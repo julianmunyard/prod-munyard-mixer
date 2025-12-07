@@ -23,6 +23,7 @@ type Song = {
   color: string
   demo_mp3?: string | null
   artwork_url?: string | null
+  page_theme?: 'TERMINAL THEME' | 'OLD COMPUTER' | null
 }
 
 export default function AlbumLandingPage() {
@@ -38,7 +39,50 @@ export default function AlbumLandingPage() {
   const [albumTitle, setAlbumTitle] = useState<string>('')
   const [artistName, setArtistName] = useState<string>('')
   const [primaryColor, setPrimaryColor] = useState('#B8001F')
+  const [pageTheme, setPageTheme] = useState<'TERMINAL THEME' | 'OLD COMPUTER'>('TERMINAL THEME')
   const [selectedSong, setSelectedSong] = useState<Song | null>(null)
+
+  // Theme definitions
+  const themes = {
+    'OLD COMPUTER': {
+      background: '#FFE5E5', // Pink background for page
+      text: '#000000',
+      border: '#000000',
+      inputBg: '#FFFFFF',
+      inputText: '#000000',
+      buttonBg: '#D4C5B9', // Beige for buttons
+      buttonText: '#000000',
+      cardBg: '#D4C5B9', // Beige for window container
+      cardBorder: '#000000', // Black border
+      accent: '#B8001F',
+      sectionBg: '#E0E0E0', // Light grey for selected items
+      playerBg: '#808080', // Grey for PLAYER section
+      playerText: '#FFFFFF', // White text in player
+      windowTitleBg: '#C0C0C0', // Grey for window title bars
+      windowContentBg: '#FFFFFF', // White for MIXTAPES content
+      glow: 'none',
+      vinylBorder: '#000000',
+      vinylGlow: 'none'
+    },
+    'TERMINAL THEME': {
+      background: '#000000',
+      text: '#FFFFFF',
+      border: '#FFFFFF',
+      inputBg: '#000000',
+      inputText: '#FFFFFF',
+      buttonBg: '#000000',
+      buttonText: '#FFFFFF',
+      cardBg: '#000000',
+      cardBorder: '#FFFFFF',
+      accent: '#FFB6C1',
+      sectionBg: '#0A0A0A',
+      glow: '0 0 10px rgba(255,255,255,0.3)',
+      vinylBorder: '#FFB6C1',
+      vinylGlow: '0 0 15px rgba(255,182,193,0.7), 0 0 8px rgba(255,182,193,0.5)'
+    }
+  }
+  
+  const currentTheme = themes[pageTheme]
   const [isPlaying, setIsPlaying] = useState(false)
   const [demoReady, setDemoReady] = useState(false)
   const [cdJustStarted, setCdJustStarted] = useState(false)
@@ -47,6 +91,38 @@ export default function AlbumLandingPage() {
   const [cdFinalRotation, setCdFinalRotation] = useState<number | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [audioUnlocked, setAudioUnlocked] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const timeUpdateIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // Get current date with 1983 as the year - updates daily (DD/MM/1983 format)
+  const [date1983, setDate1983] = useState(() => {
+    const now = new Date()
+    const day = String(now.getDate()).padStart(2, '0')
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    return `${day}/${month}/1983`
+  })
+  
+  // Update date once per day (checks every hour)
+  useEffect(() => {
+    const updateDate = () => {
+      const now = new Date()
+      const day = String(now.getDate()).padStart(2, '0')
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      const newDate = `${day}/${month}/1983`
+      setDate1983(newDate)
+    }
+    
+    // Update immediately
+    updateDate()
+    
+    // Check every hour to see if the day has changed
+    const interval = setInterval(() => {
+      updateDate()
+    }, 60 * 60 * 1000) // Every hour
+    
+    return () => clearInterval(interval)
+  }, [])
   const cdAccelerationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const cdAccelerationIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const cdDecelerationIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -58,12 +134,25 @@ export default function AlbumLandingPage() {
   const audioUnlockedRef = useRef(false)
   const manuallyUnlockedRef = useRef(false)
   
+  // Format time as MM:SS or HH:MM:SS
+  const formatTime = (seconds: number): string => {
+    if (!seconds || isNaN(seconds)) return '--:--'
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = Math.floor(seconds % 60)
+    
+    if (hours > 0) {
+      return `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    }
+    return `${minutes}:${String(secs).padStart(2, '0')}`
+  }
+  
   // Detect iOS (same as stem player)
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
 
-  // ==================== 🎨 Set Pink Theme Color for Album Page ====================
+  // ==================== 🎨 Set Terminal Theme Color for Album Page ====================
   useEffect(() => {
-    // Set pink theme-color for iOS status bar on album page
+    // Set terminal black theme-color for iOS status bar on album page
     let themeColorMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
     if (!themeColorMeta) {
       themeColorMeta = document.createElement('meta')
@@ -71,7 +160,7 @@ export default function AlbumLandingPage() {
       document.head.appendChild(themeColorMeta)
     }
     const originalColor = themeColorMeta.content
-    themeColorMeta.content = '#FFE5E5' // Pink for album page
+    themeColorMeta.content = '#000000' // Black for album page
     
     // Cleanup: restore cream color when component unmounts
     return () => {
@@ -253,7 +342,7 @@ export default function AlbumLandingPage() {
           
           const { data: idsData, error: idsError } = await supabase
             .from('songs')
-            .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, created_at')
+            .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, page_theme, created_at')
             .in('id', songIds)
             .order('created_at', { ascending: true })
           
@@ -296,7 +385,7 @@ export default function AlbumLandingPage() {
           console.log('🎵 Trying to query by album_id:', albumId)
           const { data: albumIdData, error: albumIdError } = await supabase
             .from('songs')
-            .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, created_at')
+            .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, page_theme, created_at')
             .eq('album_id', albumId)
             .order('track_number', { ascending: true })
           
@@ -318,7 +407,7 @@ export default function AlbumLandingPage() {
           console.log('🎵 Trying to query by album_slug:', albumId)
           const { data: slugData, error: slugError } = await supabase
             .from('songs')
-            .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, created_at')
+            .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, page_theme, created_at')
             .eq('album_slug', albumId)
             .order('track_number', { ascending: true })
           
@@ -337,7 +426,7 @@ export default function AlbumLandingPage() {
           
           const { data: recentData, error: recentError } = await supabase
             .from('songs')
-            .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, created_at')
+            .select('id, title, artist_name, artist_slug, song_slug, bpm, track_number, album_id, album_title, album_slug, primary_color, color, demo_mp3, artwork_url, page_theme, created_at')
             .gte('created_at', oneDayAgo)
             .order('created_at', { ascending: false })
             .limit(20)
@@ -437,6 +526,10 @@ export default function AlbumLandingPage() {
           setAlbumTitle((data[0] as any).album_title || 'Untitled Album')
           setArtistName(data[0].artist_name || '')
           setPrimaryColor(data[0].primary_color || data[0].color || '#B8001F')
+          // Load page theme from first song (if saved)
+          if (data[0].page_theme && (data[0].page_theme === 'TERMINAL THEME' || data[0].page_theme === 'OLD COMPUTER')) {
+            setPageTheme(data[0].page_theme)
+          }
         }
       } catch (err) {
         console.error('Error loading album:', err)
@@ -563,6 +656,20 @@ export default function AlbumLandingPage() {
         demoEngineRef.current = new RealTimelineMixerEngine()
         await demoEngineRef.current.init()
         
+        // Set up timeline cursor updates for current time
+        if (demoEngineRef.current.audioEngine) {
+          demoEngineRef.current.audioEngine.onTimelineFrameCursorUpdate = (cursor: number) => {
+            const timeInSeconds = cursor / 48000 // Convert samples to seconds
+            setCurrentTime(timeInSeconds)
+          }
+          
+          // Capture timeline duration when available
+          demoEngineRef.current.audioEngine.onTimelineDurationSet = (d: number) => {
+            setDuration(d)
+            console.log('📏 Duration set:', d, 'seconds')
+          }
+        }
+        
         // Load the demo as a single "stem" - SAME AS STEM PLAYER
         const demoStemData = [{
           name: 'Demo',
@@ -572,7 +679,13 @@ export default function AlbumLandingPage() {
         
         await demoEngineRef.current.loadStemsFromSupabase(demoStemData)
         
+        // Try to get duration after loading
+        // Note: This might need to be done after the timeline is actually ready
+        // The onTimelineDurationSet callback should handle it
+        
         setDemoReady(true)
+        setCurrentTime(0) // Reset time when loading new song
+        setDuration(0) // Reset duration
         console.log('✅ Demo engine ready!')
         
         // Auto-play when demo is loaded
@@ -688,10 +801,16 @@ export default function AlbumLandingPage() {
         clearInterval(cdDecelerationIntervalRef.current)
         cdDecelerationIntervalRef.current = null
       }
+      if (timeUpdateIntervalRef.current) {
+        clearInterval(timeUpdateIntervalRef.current)
+        timeUpdateIntervalRef.current = null
+      }
       if (demoEngineRef.current) {
         demoEngineRef.current.pause()
         demoEngineRef.current.stop()
       }
+      setCurrentTime(0)
+      setDuration(0)
     }
   }, [selectedSong])
 
@@ -964,10 +1083,10 @@ export default function AlbumLandingPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#FFE5E5' }}>
-        <div className="text-center p-8">
-          <h1 className="text-2xl font-bold mb-4" style={{ color: '#B8001F' }}>Error</h1>
-          <p className="text-gray-700">{error}</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: currentTheme.background, fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : 'inherit', color: currentTheme.text }}>
+        <div className="text-center p-8" style={{ border: `2px solid ${currentTheme.border}`, boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none', backgroundColor: currentTheme.background, padding: '20px' }}>
+          <h1 className="text-xl font-normal mb-4" style={{ color: currentTheme.accent, textShadow: pageTheme === 'TERMINAL THEME' ? `0 0 10px ${currentTheme.accent}80, 0 0 5px ${currentTheme.accent}50` : 'none' }}>ERROR</h1>
+          <p style={{ color: currentTheme.text, marginTop: '10px', fontSize: '16px', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.5)' : 'none' }}>{error}</p>
         </div>
       </div>
     )
@@ -977,74 +1096,83 @@ export default function AlbumLandingPage() {
     <div 
       className="min-h-screen relative"
       style={{
-        backgroundColor: '#FFE5E5',
-        backgroundImage: `
+        backgroundColor: currentTheme.background,
+        backgroundImage: pageTheme === 'OLD COMPUTER' ? `
           repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px),
           repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px)
-        `,
-        padding: isMobile ? '20px 10px' : '40px 20px',
-        fontFamily: 'monospace',
+        ` : 'none',
+        padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px 6px' : '40px 20px') : (isMobile ? '8px 6px' : '20px 16px'),
+        fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
         overflowY: 'auto',
         overflowX: 'hidden',
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
-        paddingTop: `calc(${isMobile ? '20px' : '40px'} + env(safe-area-inset-top, 0px))`,
-        paddingBottom: `calc(${isMobile ? '20px' : '40px'} + env(safe-area-inset-bottom, 0px))`,
-        paddingLeft: `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-left, 0px))`,
-        paddingRight: `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-right, 0px))`
+        paddingTop: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '8px' : '40px'} + env(safe-area-inset-top, 0px))` : `calc(${isMobile ? '8px' : '20px'} + env(safe-area-inset-top, 0px))`,
+        paddingBottom: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '8px' : '40px'} + env(safe-area-inset-bottom, 0px))` : `calc(${isMobile ? '8px' : '20px'} + env(safe-area-inset-bottom, 0px))`,
+        paddingLeft: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '6px' : '20px'} + env(safe-area-inset-left, 0px))` : `calc(${isMobile ? '6px' : '16px'} + env(safe-area-inset-left, 0px))`,
+        paddingRight: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '6px' : '20px'} + env(safe-area-inset-right, 0px))` : `calc(${isMobile ? '6px' : '16px'} + env(safe-area-inset-right, 0px))`,
+        color: currentTheme.text,
+        fontSize: isMobile ? '12px' : '16px',
+        lineHeight: '1.4',
+        textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.3)' : 'none'
       }}
     >
       <div className="max-w-4xl mx-auto relative z-10" style={{ position: 'relative', zIndex: 10 }}>
-        {/* Retro Window - Playlist */}
+        {/* Retro Window - Playlist (OLD COMPUTER) / Terminal Style - Playlist (TERMINAL) */}
         <div 
           style={{
-            backgroundColor: '#D4C5B9',
-            border: '3px solid',
-            borderColor: '#000000',
-            boxShadow: 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
-            marginBottom: '20px',
-            padding: '8px',
+            backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.background,
+            border: pageTheme === 'OLD COMPUTER' ? '3px solid #000000' : `2px solid ${currentTheme.border}`,
+            boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none'),
+            marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '10px' : '20px') : (isMobile ? '8px' : '16px'),
+            padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '4px' : '8px') : '0',
             position: 'relative',
             zIndex: 10
           }}
         >
-          {/* Window Title Bar */}
+          {/* Title Bar */}
           <div 
             style={{
-              backgroundColor: '#C0C0C0',
-              border: '2px solid #000',
-              padding: '4px 8px',
+              backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).windowTitleBg || '#C0C0C0' : currentTheme.background,
+              border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFB6C1' : `1px solid ${currentTheme.border}`),
+              boxShadow: pageTheme === 'TERMINAL THEME' ? '0 2px 8px rgba(255,182,193,0.3)' : 'none',
+              padding: pageTheme === 'OLD COMPUTER' ? '4px 8px' : (isMobile ? '6px 10px' : '8px 12px'),
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '4px',
-              fontSize: '11px',
-              fontWeight: 'bold'
+              marginBottom: pageTheme === 'OLD COMPUTER' ? '4px' : '0',
+              fontSize: isMobile ? '13px' : '15px',
+              fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
+              color: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'TERMINAL THEME' ? currentTheme.text : currentTheme.text),
+              fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit'),
+              textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none'
             }}
           >
             <span>MIXTAPES</span>
+            <span>{date1983}</span>
           </div>
 
-          {/* Playlist Content */}
+          {/* Content */}
           <div 
             style={{
-              backgroundColor: '#FFFFFF',
-              border: '2px solid #000',
-              padding: isMobile ? '12px' : '16px',
-              maxHeight: isMobile ? '60vh' : '400px',
+              backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).windowContentBg || '#FFFFFF' : currentTheme.background,
+              border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : 'none',
+              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '16px') : (isMobile ? '6px' : '10px'),
+              maxHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '40vh' : '400px') : (isMobile ? '35vh' : '350px'),
               overflowY: 'auto',
               overflowX: 'hidden',
               WebkitOverflowScrolling: 'touch',
               position: 'relative',
               zIndex: 20,
-              touchAction: 'pan-y'
+              touchAction: 'pan-y',
+              color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.text
             }}
           >
             <div 
               style={{
                 display: 'grid',
                 gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                gap: isMobile ? '8px' : '12px'
+                gap: isMobile ? '4px' : '8px'
               }}
             >
               {songs.map((song, index) => {
@@ -1058,22 +1186,51 @@ export default function AlbumLandingPage() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px',
+                      gap: isMobile ? '4px' : '8px',
+                      padding: isMobile ? '4px' : '8px',
                       cursor: 'pointer',
-                      backgroundColor: selectedSong?.id === song.id ? '#E0E0E0' : 'transparent',
-                      border: selectedSong?.id === song.id ? '2px solid #000' : '2px solid transparent',
-                      transition: 'all 0.2s',
+                      backgroundColor: pageTheme === 'OLD COMPUTER' ? (selectedSong?.id === song.id ? '#E0E0E0' : 'transparent') : (selectedSong?.id === song.id ? currentTheme.sectionBg : 'transparent'),
+                      ...(pageTheme === 'OLD COMPUTER' ? {
+                        border: selectedSong?.id === song.id ? '2px solid #000' : '2px solid transparent',
+                        borderTop: 'none',
+                        borderRight: 'none',
+                        borderBottom: 'none',
+                        borderLeft: 'none'
+                      } : {
+                        border: 'none',
+                        borderLeft: selectedSong?.id === song.id ? `3px solid ${currentTheme.border}` : '1px solid transparent'
+                      }),
+                      transition: pageTheme === 'OLD COMPUTER' ? 'all 0.2s' : 'all 0.15s',
                       position: 'relative',
                       zIndex: 30,
-                      pointerEvents: 'auto'
+                      pointerEvents: 'auto',
+                      color: pageTheme === 'OLD COMPUTER' ? '#000000' : (selectedSong?.id === song.id ? (pageTheme === 'TERMINAL THEME' ? currentTheme.text : currentTheme.text) : (pageTheme === 'TERMINAL THEME' ? '#CCCCCC' : '#666666')),
+                      textShadow: selectedSong?.id === song.id && pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.5), 0 0 4px rgba(255,255,255,0.4)' : (pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.2)' : 'none')
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#F0F0F0'
+                      if (selectedSong?.id !== song.id) {
+                        if (pageTheme === 'OLD COMPUTER') {
+                          e.currentTarget.style.backgroundColor = '#F0F0F0'
+                        } else {
+                          e.currentTarget.style.backgroundColor = currentTheme.sectionBg
+                          e.currentTarget.style.color = currentTheme.text
+                          e.currentTarget.style.borderLeft = `2px solid ${currentTheme.border}`
+                          e.currentTarget.style.boxShadow = pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.3)' : 'none'
+                          e.currentTarget.style.textShadow = pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none'
+                        }
+                      }
                     }}
                     onMouseLeave={(e) => {
                       if (selectedSong?.id !== song.id) {
-                        e.currentTarget.style.backgroundColor = 'transparent'
+                        if (pageTheme === 'OLD COMPUTER') {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                        } else {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                          e.currentTarget.style.color = pageTheme === 'TERMINAL THEME' ? '#CCCCCC' : '#666666'
+                          e.currentTarget.style.borderLeft = '1px solid transparent'
+                          e.currentTarget.style.boxShadow = 'none'
+                          e.currentTarget.style.textShadow = pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.2)' : 'none'
+                        }
                       }
                     }}
                   >
@@ -1081,16 +1238,16 @@ export default function AlbumLandingPage() {
                     <div
                       className={selectedSong?.id === song.id && !demoReady && song.demo_mp3 ? 'vinyl-loading-flash' : ''}
                       style={{
-                        width: isMobile ? '30px' : '40px',
-                        height: isMobile ? '30px' : '40px',
+                        width: isMobile ? '32px' : '40px',
+                        height: isMobile ? '32px' : '40px',
                         borderRadius: '50%',
                         background: song.artwork_url && song.artwork_url.trim()
                           ? 'transparent'
                           : `radial-gradient(circle, ${cdColor} 30%, ${cdColor}dd 60%, #333 65%, #333 100%)`,
-                        border: isMobile ? '1.5px solid #000' : '2px solid #000',
+                        border: isMobile ? `2px solid ${currentTheme.border}` : `2.5px solid ${currentTheme.border}`,
                         flexShrink: 0,
                         position: 'relative',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                        boxShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.4)' : 'none',
                         overflow: 'hidden'
                       }}
                     >
@@ -1133,21 +1290,21 @@ export default function AlbumLandingPage() {
                           width: isMobile ? '8px' : '12px',
                           height: isMobile ? '8px' : '12px',
                           borderRadius: '50%',
-                          backgroundColor: '#000',
-                          border: isMobile ? '1.5px solid #666' : '2px solid #666',
-                          zIndex: 2,
-                          boxShadow: 'inset 0 0 5px rgba(0,0,0,0.8)'
+                          backgroundColor: currentTheme.sectionBg,
+                          border: isMobile ? '2px solid #FFFFFF' : '2.5px solid #FFFFFF',
+                          boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset 0 0 5px rgba(0,0,0,0.8)' : (pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.3), inset 0 0 5px rgba(0,0,0,0.8)' : 'inset 0 0 5px rgba(0,0,0,0.8)'),
+                          zIndex: 2
                         }}
                       />
                     </div>
                     
                     {/* Track Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: isMobile ? '9px' : '10px', fontWeight: 'bold', color: '#000', lineHeight: '1.2' }}>
+                      <div style={{ fontSize: isMobile ? '10px' : '14px', fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal', color: pageTheme === 'OLD COMPUTER' ? '#000000' : (selectedSong?.id === song.id ? '#FFFFFF' : '#CCCCCC'), lineHeight: '1.2', fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit'), textShadow: pageTheme === 'TERMINAL THEME' ? (selectedSong?.id === song.id ? '0 0 8px rgba(255,255,255,0.5)' : '0 0 4px rgba(255,255,255,0.2)') : 'none' }}>
                         {String(trackNum).padStart(2, '0')}-{song.title.replace(/\s+/g, '')}.mp3
                       </div>
-                      <div style={{ fontSize: isMobile ? '8px' : '9px', color: '#666', lineHeight: '1.2' }}>
-                        {song.bpm ? `${Math.round(song.bpm)} BPM` : 'Unknown duration'}
+                      <div style={{ fontSize: isMobile ? '9px' : '13px', color: pageTheme === 'OLD COMPUTER' ? '#666' : '#999999', lineHeight: '1.2', fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit'), textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 3px rgba(255,255,255,0.15)' : 'none' }}>
+                        {song.bpm ? `${Math.round(song.bpm)} BPM` : (pageTheme === 'OLD COMPUTER' ? 'Unknown duration' : 'Unknown')}
                       </div>
                     </div>
                   </div>
@@ -1157,53 +1314,58 @@ export default function AlbumLandingPage() {
           </div>
         </div>
 
-        {/* Retro Window - Player */}
+        {/* Retro Window - Player (OLD COMPUTER) / Terminal Style - Player (TERMINAL) */}
         <div 
           style={{
-            backgroundColor: '#D4C5B9',
-            border: '3px solid',
-            borderColor: '#000000',
-            boxShadow: 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
-            padding: '8px',
+            backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.background,
+            border: pageTheme === 'OLD COMPUTER' ? '3px solid #000000' : `2px solid ${currentTheme.border}`,
+            boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none'),
+            padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '4px' : '8px') : '0',
             position: 'relative',
             overflow: 'visible',
             zIndex: 10
           }}
         >
-          {/* Window Title Bar */}
+          {/* Title Bar */}
           <div 
             style={{
-              backgroundColor: '#C0C0C0',
-              border: '2px solid #000',
-              padding: '4px 8px',
+              backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).windowTitleBg || '#C0C0C0' : currentTheme.background,
+              border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFB6C1' : `1px solid ${currentTheme.border}`),
+              boxShadow: pageTheme === 'TERMINAL THEME' ? '0 2px 8px rgba(255,182,193,0.3)' : 'none',
+              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '3px 6px' : '4px 8px') : (isMobile ? '4px 6px' : '8px 12px'),
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '4px',
-              fontSize: '11px',
-              fontWeight: 'bold'
+              marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '2px' : '4px') : '0',
+              fontSize: isMobile ? '11px' : '15px',
+              fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
+              color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.text,
+              fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit'),
+              textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none'
             }}
           >
             <span>PLAYER</span>
           </div>
 
-          {/* Player Content */}
+          {/* Content */}
           <div 
             style={{
-              backgroundColor: '#808080',
-              border: '2px solid #000',
-              padding: '20px',
+              backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).playerBg || '#808080' : currentTheme.background,
+              border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : 'none',
+              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '10px' : '20px') : (isMobile ? '8px' : '16px'),
               position: 'relative',
-              minHeight: '200px',
-              zIndex: 20
+              minHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '120px' : '200px') : (isMobile ? '100px' : '150px'),
+              zIndex: 20,
+              color: pageTheme === 'OLD COMPUTER' ? '#FFF' : currentTheme.text,
+              fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit')
             }}
           >
             {/* Album Info */}
-            <div style={{ marginBottom: '16px', color: '#FFF' }}>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '4px' }}>
+            <div style={{ marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '16px') : (isMobile ? '8px' : '14px'), color: pageTheme === 'OLD COMPUTER' ? '#FFF' : '#FFFFFF' }}>
+              <div style={{ fontSize: isMobile ? '10px' : '15px', fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal', marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '2px' : '4px') : (isMobile ? '2px' : '3px'), color: pageTheme === 'OLD COMPUTER' ? '#FFF' : '#FFB6C1', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,182,193,0.6), 0 0 4px rgba(255,182,193,0.4)' : 'none' }}>
                 Mixed by {artistName.toUpperCase()}
               </div>
-              <div style={{ fontSize: '14px', marginBottom: '4px' }}>
+              <div style={{ fontSize: pageTheme === 'OLD COMPUTER' ? (isMobile ? '11px' : '14px') : (isMobile ? '11px' : '16px'), marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '2px' : '4px') : '0', color: pageTheme === 'OLD COMPUTER' ? '#FFF' : '#FFFFFF', fontWeight: 'normal', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none' }}>
                 {albumTitle}
               </div>
             </div>
@@ -1213,27 +1375,31 @@ export default function AlbumLandingPage() {
               <>
                 <div 
                   style={{
-                    backgroundColor: '#000',
-                    color: '#FFF',
-                    padding: '12px',
-                    marginBottom: '16px',
-                    fontSize: '11px',
-                    fontFamily: 'monospace'
+                    backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000' : currentTheme.background,
+                    border: pageTheme === 'OLD COMPUTER' ? 'none' : `2px solid ${currentTheme.border}`,
+                    boxShadow: pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3), inset 0 0 8px rgba(255,255,255,0.1)' : 'none',
+                    color: pageTheme === 'OLD COMPUTER' ? '#FFF' : currentTheme.text,
+                    padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '12px') : (isMobile ? '8px' : '12px'),
+                    marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '16px') : (isMobile ? '8px' : '14px'),
+                    fontSize: isMobile ? '10px' : '15px',
+                    fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit')
                   }}
                 >
-                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                  <div style={{ fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal', marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '2px' : '4px') : (isMobile ? '3px' : '6px'), color: '#FFFFFF', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.5)' : 'none', fontSize: isMobile ? '10px' : '15px' }}>
                     {String(selectedSong.track_number || songs.indexOf(selectedSong) + 1).padStart(2, '0')}-{selectedSong.title.replace(/\s+/g, '')}.mp3
                   </div>
-                  <div>Audio file</div>
+                  <div style={{ color: '#CCCCCC', marginBottom: '3px', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.3)' : 'none', fontSize: isMobile ? '9px' : '15px' }}>Audio file</div>
                   {selectedSong.demo_mp3 ? (
                     <>
-                      <div>Duration: --:--:--</div>
-                      <div>22KHz 8 Bit - Stereo</div>
+                      <div style={{ color: '#CCCCCC', marginBottom: '3px', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.3)' : 'none', fontSize: isMobile ? '9px' : 'inherit' }}>
+                        Duration: {duration > 0 ? formatTime(Math.max(0, duration - currentTime)) : formatTime(duration)}
+                      </div>
+                      <div style={{ color: '#CCCCCC', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.3)' : 'none', fontSize: isMobile ? '9px' : 'inherit' }}>Format: 22KHz 8 Bit - Stereo</div>
                     </>
                   ) : (
                     <>
-                      <div>Duration: --:--:--</div>
-                      <div style={{ fontSize: '9px', color: '#aaa', marginTop: '4px' }}>No demo available - click EXPLORE STEMS to mix</div>
+                      <div style={{ color: '#CCCCCC', marginBottom: '3px', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.3)' : 'none' }}>Duration: --:--</div>
+                      <div style={{ fontSize: isMobile ? '9px' : '14px', color: pageTheme === 'OLD COMPUTER' ? '#FF6B9D' : '#FFB6C1', marginTop: '4px', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,182,193,0.6), 0 0 4px rgba(255,182,193,0.4)' : 'none' }}>{pageTheme === 'OLD COMPUTER' ? 'No demo available - click EXPLORE STEMS to mix' : '[!] No demo - run EXPLORE_STEMS'}</div>
                     </>
                   )}
                 </div>
@@ -1241,35 +1407,44 @@ export default function AlbumLandingPage() {
                 {/* Demo audio played via RealTimelineMixerEngine (Superpowered) - same as stem player */}
 
                 {/* Player Controls */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', gap: isMobile ? '6px' : '10px', alignItems: 'center', marginBottom: isMobile ? '8px' : '14px' }}>
                   <button
                     onClick={handlePlayPause}
                     disabled={!selectedSong?.demo_mp3 || !demoReady}
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      backgroundColor: (selectedSong?.demo_mp3 && demoReady) ? '#D4C5B9' : '#999',
-                      border: '2px solid #000',
+                      width: pageTheme === 'OLD COMPUTER' ? (isMobile ? '24px' : '32px') : (isMobile ? '24px' : '32px'),
+                      height: pageTheme === 'OLD COMPUTER' ? (isMobile ? '24px' : '32px') : (isMobile ? '24px' : '32px'),
+                      backgroundColor: pageTheme === 'OLD COMPUTER' ? ((selectedSong?.demo_mp3 && demoReady) ? '#D4C5B9' : '#999') : ((selectedSong?.demo_mp3 && demoReady) ? '#000000' : '#0A0A0A'),
+                      border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : `2px solid ${currentTheme.border}`,
+                      boxShadow: pageTheme === 'OLD COMPUTER' ? ((selectedSong?.demo_mp3 && demoReady) ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none') : (pageTheme === 'TERMINAL THEME' ? ((selectedSong?.demo_mp3 && demoReady) ? '0 0 10px rgba(255,255,255,0.5), inset 0 0 8px rgba(255,255,255,0.2)' : '0 0 6px rgba(255,255,255,0.2)') : 'none'),
                       cursor: (selectedSong?.demo_mp3 && demoReady) ? 'pointer' : 'not-allowed',
+                      opacity: pageTheme === 'OLD COMPUTER' ? ((selectedSong?.demo_mp3 && demoReady) ? 1 : 0.5) : ((selectedSong?.demo_mp3 && demoReady) ? 1 : 0.4),
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: (selectedSong?.demo_mp3 && demoReady) ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                      opacity: (selectedSong?.demo_mp3 && demoReady) ? 1 : 0.5,
                       position: 'relative',
                       zIndex: 30,
-                      pointerEvents: 'auto'
+                      pointerEvents: 'auto',
+                      color: '#FFFFFF'
                     }}
                   >
                     {isPlaying ? (
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="3" y="2" width="2" height="8" fill="#000"/>
-                        <rect x="7" y="2" width="2" height="8" fill="#000"/>
-                      </svg>
+                      pageTheme === 'OLD COMPUTER' ? (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="3" y="2" width="2" height="8" fill="#000"/>
+                          <rect x="7" y="2" width="2" height="8" fill="#000"/>
+                        </svg>
+                      ) : (
+                        <span style={{ color: '#FFFFFF', fontSize: isMobile ? '12px' : '14px', fontFamily: 'monospace', textShadow: '0 0 10px rgba(255,255,255,0.7), 0 0 5px rgba(255,255,255,0.5)' }}>||</span>
+                      )
                     ) : (
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3 2L10 6L3 10V2Z" fill="#000"/>
-                      </svg>
+                      pageTheme === 'OLD COMPUTER' ? (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M3 2L10 6L3 10V2Z" fill="#000"/>
+                        </svg>
+                      ) : (
+                        <span style={{ color: '#FFFFFF', fontSize: isMobile ? '12px' : '14px', fontFamily: 'monospace', textShadow: '0 0 10px rgba(255,255,255,0.7), 0 0 5px rgba(255,255,255,0.5)' }}>▶</span>
+                      )
                     )}
                   </button>
                 </div>
@@ -1279,32 +1454,48 @@ export default function AlbumLandingPage() {
                   onClick={() => handleExploreStems(selectedSong)}
                   style={{
                     width: '100%',
-                    padding: '8px 16px',
-                    backgroundColor: '#D4C5B9',
-                    border: '2px solid #000',
+                    padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '6px 10px' : '8px 16px') : (isMobile ? '6px 10px' : '10px 16px'),
+                    backgroundColor: pageTheme === 'OLD COMPUTER' ? '#E8D9CD' : currentTheme.background,
+                    border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : `2px solid ${currentTheme.border}`,
+                    boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.4)' : 'none'),
                     cursor: 'pointer',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    fontFamily: 'monospace',
-                    boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                    transition: 'all 0.2s',
+                    fontSize: isMobile ? '10px' : '15px',
+                    fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
+                    fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
+                    transition: pageTheme === 'OLD COMPUTER' ? 'all 0.2s' : 'all 0.15s',
                     position: 'relative',
                     zIndex: 30,
-                    pointerEvents: 'auto'
+                    pointerEvents: 'auto',
+                    color: pageTheme === 'OLD COMPUTER' ? '#000' : currentTheme.text,
+                    textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.5)' : 'none'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#E8D9CD'
+                    if (pageTheme === 'OLD COMPUTER') {
+                      e.currentTarget.style.backgroundColor = '#E8D9CD'
+                    } else {
+                      e.currentTarget.style.backgroundColor = '#0A0A0A'
+                      e.currentTarget.style.borderColor = '#FFB6C1'
+                      e.currentTarget.style.boxShadow = '0 0 15px rgba(255,182,193,0.6), 0 0 8px rgba(255,182,193,0.4)'
+                      e.currentTarget.style.textShadow = '0 0 10px rgba(255,255,255,0.7), 0 0 5px rgba(255,182,193,0.5)'
+                    }
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#D4C5B9'
+                    if (pageTheme === 'OLD COMPUTER') {
+                      e.currentTarget.style.backgroundColor = '#E8D9CD'
+                    } else {
+                      e.currentTarget.style.backgroundColor = '#000000'
+                      e.currentTarget.style.borderColor = '#FFFFFF'
+                      e.currentTarget.style.boxShadow = '0 0 10px rgba(255,255,255,0.4)'
+                      e.currentTarget.style.textShadow = '0 0 8px rgba(255,255,255,0.5)'
+                    }
                   }}
                 >
-                  EXPLORE STEMS
+                  EXPLORE_STEMS
                 </button>
               </>
             ) : (
-              <div style={{ color: '#FFF', textAlign: 'center', padding: '20px', fontSize: '11px' }}>
-                Click a track to preview
+              <div style={{ color: pageTheme === 'OLD COMPUTER' ? '#FFF' : '#999999', textAlign: 'center', padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '10px' : '20px') : (isMobile ? '10px' : '20px'), fontSize: isMobile ? '10px' : '15px', fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit'), textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.2)' : 'none' }}>
+                {pageTheme === 'OLD COMPUTER' ? 'Click a track to preview' : 'Select a track to preview'}
               </div>
             )}
           </div>
@@ -1314,10 +1505,10 @@ export default function AlbumLandingPage() {
         <div
           style={{
             position: 'absolute',
-            bottom: '-80px',
-            right: '-60px',
-            width: '180px',
-            height: '180px',
+            bottom: isMobile ? '-50px' : '-80px',
+            right: isMobile ? '-40px' : '-60px',
+            width: isMobile ? '140px' : '180px',
+            height: isMobile ? '140px' : '180px',
             zIndex: 15,
             transition: 'all 0.3s ease',
             pointerEvents: 'none'
@@ -1345,9 +1536,9 @@ export default function AlbumLandingPage() {
                     : (selectedSong.primary_color || selectedSong.color 
                         ? `radial-gradient(circle, ${selectedSong.primary_color || selectedSong.color} 30%, ${selectedSong.primary_color || selectedSong.color}dd 60%, #333 65%, #333 100%)`
                         : `radial-gradient(circle, ${generateCDColor(songs.indexOf(selectedSong))} 30%, ${generateCDColor(songs.indexOf(selectedSong))}dd 60%, #333 65%, #333 100%)`))
-                : '#F5F5F5', // Light gray for empty CD
-              border: '3px solid #000',
-              boxShadow: 'none',
+                : '#000000', // Black for empty CD
+              border: '3px solid #FFFFFF',
+              boxShadow: pageTheme === 'OLD COMPUTER' ? 'none' : (selectedSong ? '0 0 15px rgba(255,255,255,0.5), inset 0 0 10px rgba(255,255,255,0.2)' : '0 0 10px rgba(255,255,255,0.3)'),
               position: 'relative',
               overflow: 'hidden'
             }}
@@ -1359,7 +1550,7 @@ export default function AlbumLandingPage() {
                 alt={selectedSong.title}
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                unoptimized={process.env.NODE_ENV === 'development'}
+                unoptimized={isDev}
                 style={{
                   objectFit: 'cover',
                   borderRadius: '50%',
@@ -1391,7 +1582,7 @@ export default function AlbumLandingPage() {
                   width: '100%',
                   height: '100%',
                   borderRadius: '50%',
-                  boxShadow: 'inset 0 0 30px rgba(0,0,0,0.4), inset 0 0 60px rgba(0,0,0,0.2)',
+                  boxShadow: pageTheme === 'OLD COMPUTER' ? 'none' : 'inset 0 0 30px rgba(0,255,0,0.2), inset 0 0 60px rgba(0,255,0,0.1)',
                   pointerEvents: 'none',
                   zIndex: 1
                 }}
@@ -1406,7 +1597,7 @@ export default function AlbumLandingPage() {
                   position: 'absolute',
                   top: 0,
                   left: 0,
-                  opacity: 0.3
+                  opacity: 0.2
                 }}
                 viewBox="0 0 100 100"
                 preserveAspectRatio="none"
@@ -1422,7 +1613,7 @@ export default function AlbumLandingPage() {
                           y1="50"
                           x2="50"
                           y2="0"
-                          stroke="#000"
+                          stroke="#FFFFFF"
                           strokeWidth="0.3"
                           transform={`rotate(${angle} 50 50)`}
                         />
@@ -1444,9 +1635,9 @@ export default function AlbumLandingPage() {
                 width: selectedSong ? '40px' : '35px',
                 height: selectedSong ? '40px' : '35px',
                 borderRadius: '50%',
-                backgroundColor: selectedSong ? '#000' : '#1a1a1a',
-                border: selectedSong ? '4px solid #666' : '3px solid #444',
-                boxShadow: 'inset 0 0 10px rgba(0,0,0,0.8)'
+                backgroundColor: selectedSong ? currentTheme.background : currentTheme.sectionBg,
+                border: selectedSong ? `4px solid ${currentTheme.border}` : `3px solid ${currentTheme.border}`,
+                boxShadow: selectedSong && pageTheme === 'TERMINAL THEME' ? '0 0 12px rgba(255,255,255,0.6), inset 0 0 8px rgba(255,255,255,0.2), inset 0 0 10px rgba(0,0,0,0.8)' : (pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.3), inset 0 0 10px rgba(0,0,0,0.8)' : 'none')
               }}
             />
             
@@ -1469,19 +1660,20 @@ export default function AlbumLandingPage() {
                         backgroundRepeat: 'no-repeat',
                       }
                     : {
-                        background: 'rgba(255,255,255,0.1)',
+                        background: 'rgba(135,206,235,0.1)',
                       }
                   ),
-                  border: '2px solid rgba(255,255,255,0.2)',
+                  border: '2.5px solid rgba(255,255,255,0.5)',
+                  boxShadow: pageTheme === 'OLD COMPUTER' ? (selectedSong.artwork_url && selectedSong.artwork_url.trim() ? 'inset 0 0 20px rgba(0,0,0,0.3)' : 'none') : (selectedSong.artwork_url && selectedSong.artwork_url.trim() ? 'inset 0 0 20px rgba(0,0,0,0.3)' : '0 0 8px rgba(255,255,255,0.4)'),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '8px',
-                  color: '#FFF',
+                  fontSize: '16px',
+                  color: currentTheme.text,
+                  textShadow: pageTheme === 'OLD COMPUTER' ? 'none' : '0 0 6px rgba(255,255,255,0.5)',
                   textAlign: 'center',
                   fontWeight: 'bold',
                   overflow: 'hidden',
-                  boxShadow: selectedSong.artwork_url && selectedSong.artwork_url.trim() ? 'inset 0 0 20px rgba(0,0,0,0.3)' : 'none',
                   zIndex: 2
                 }}
               >
@@ -1545,9 +1737,9 @@ export default function AlbumLandingPage() {
             filter: brightness(1);
           }
           50% {
-            opacity: 0.6;
-            transform: scale(1.15);
-            filter: brightness(1.5);
+            opacity: 0.7;
+            transform: scale(1.1);
+            filter: brightness(1.3);
           }
         }
         
