@@ -305,6 +305,54 @@ function MixerPage() {
     }
   }, [songData?.page_theme])
   
+  // ==================== 🎨 Set Theme Color for iOS Status Bar ====================
+  useEffect(() => {
+    // Set theme-color for iOS status bar based on selected theme
+    let themeColorMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
+    if (!themeColorMeta) {
+      themeColorMeta = document.createElement('meta')
+      themeColorMeta.name = 'theme-color'
+      document.head.appendChild(themeColorMeta)
+    }
+    
+    // Set color based on theme
+    let backgroundColor = '#FCFAEE' // Default cream for CLASSIC
+    if (pageTheme === 'OLD COMPUTER') {
+      backgroundColor = '#FFE5E5' // Pink
+    } else if (pageTheme === 'TERMINAL THEME') {
+      backgroundColor = '#000000' // Black
+    }
+    
+    themeColorMeta.content = backgroundColor
+    
+    // Create or update a style element to override CSS with !important
+    let themeStyle = document.getElementById('theme-background-style') as HTMLStyleElement
+    if (!themeStyle) {
+      themeStyle = document.createElement('style')
+      themeStyle.id = 'theme-background-style'
+      document.head.appendChild(themeStyle)
+    }
+    themeStyle.textContent = `
+      html { background-color: ${backgroundColor} !important; }
+      body { background-color: ${backgroundColor} !important; background: ${backgroundColor} !important; }
+      #theme-background-overlay { background-color: ${backgroundColor} !important; }
+    `
+    
+    // Cleanup: restore cream color when component unmounts
+    return () => {
+      if (themeColorMeta) {
+        themeColorMeta.content = '#FCFAEE' // Restore cream
+      }
+      if (themeStyle) {
+        themeStyle.textContent = `
+          html { background-color: #FCFAEE !important; }
+          body { background-color: #FCFAEE !important; background: #FCFAEE !important; }
+          #theme-background-overlay { background-color: #FCFAEE !important; }
+        `
+      }
+    }
+  }, [pageTheme])
+  
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -2530,21 +2578,14 @@ function MixerPage() {
                       // Just open the modal for settings - don't toggle on/off
                       handleFlangerConfigOpen()
                     }}
-                      className="pressable font-mono tracking-wide"
+                      className="pressable px-4 py-2 font-mono tracking-wide"
                     style={{ 
-                      backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : '#FCFAEE',
-                      color: pageTheme === 'OLD COMPUTER' ? '#000000' : primary,
-                      border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `1px solid ${primary}`,
-                      padding: '8px 12px',
-                      fontSize: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
-                      boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                      fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit',
-                      borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px',
-                      outline: 'none'
+                      backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE'),
+                      color: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
+                      border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
+                      fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : undefined,
+                      boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
+                      fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
                     }}
                   >
                     FLANGE
@@ -2578,31 +2619,37 @@ function MixerPage() {
                     style={{ marginLeft: '8px' }}
                   >
                     <div 
-                      className="relative transition-all duration-200 ease-in-out overflow-visible"
+                      className={pageTheme === 'OLD COMPUTER' ? "relative transition-all duration-200 ease-in-out overflow-visible" : (pageTheme === 'TERMINAL THEME' ? "relative rounded-full border transition-all duration-200 ease-in-out" : "relative rounded-full border transition-all duration-200 ease-in-out")}
                       style={{ 
                         width: '44px',
                         height: '24px',
                         backgroundColor: (globalFlanger?.enabled || false) 
-                          ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : primary)
-                          : (pageTheme === 'OLD COMPUTER' ? '#808080' : '#FCFAEE'),
-                        border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `1px solid ${primary}`,
+                          ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary))
+                          : (pageTheme === 'OLD COMPUTER' ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                        border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
+                        borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
+                        borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
                         borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '9999px',
-                        boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                        boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
                       }}
                     >
                       <div 
-                        className="absolute transition-all duration-200 ease-in-out"
+                        className={pageTheme === 'OLD COMPUTER' ? "absolute transition-all duration-200 ease-in-out" : (pageTheme === 'TERMINAL THEME' ? "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm" : "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm")}
                         style={{ 
-                          width: '20px',
-                          height: '28px',
-                          top: '50%',
-                          left: (globalFlanger?.enabled || false) ? '26px' : '-2px',
-                          transform: 'translateY(-50%)',
+                          width: pageTheme === 'OLD COMPUTER' ? '20px' : '18px',
+                          height: pageTheme === 'OLD COMPUTER' ? '28px' : '18px',
+                          top: pageTheme === 'OLD COMPUTER' ? '50%' : undefined,
+                          left: pageTheme === 'OLD COMPUTER' 
+                            ? ((globalFlanger?.enabled || false) ? '26px' : '-2px')
+                            : undefined,
+                          transform: pageTheme === 'OLD COMPUTER' 
+                            ? 'translateY(-50%)' 
+                            : ((globalFlanger?.enabled || false) ? 'translateX(20px)' : 'translateX(2px)'),
                           backgroundColor: pageTheme === 'OLD COMPUTER' ? '#E0E0E0' : '#ffffff',
                           border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : 'none',
                           borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '9999px',
                           boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
-                          zIndex: 10
+                          zIndex: pageTheme === 'OLD COMPUTER' ? 10 : undefined
                         }}
                       />
                     </div>
@@ -2615,22 +2662,14 @@ function MixerPage() {
                       // Just open the modal for settings - don't toggle on/off
                       handleCompressorConfigOpen()
                     }}
-                      className="pressable font-mono tracking-wide"
+                      className="pressable px-4 py-2 font-mono tracking-wide"
                     style={{ 
-                      backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : '#FCFAEE',
-                      color: pageTheme === 'OLD COMPUTER' ? '#000000' : primary,
-                      border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `1px solid ${primary}`,
-                      height: '26px',
-                      width: '70px',
-                      fontSize: isVerySmallScreen ? '10px' : '12px',
-                      padding: '0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
-                      boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                      fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit',
-                      borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px'
+                      backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE'),
+                      color: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
+                      border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
+                      fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : undefined,
+                      boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
+                      fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
                     }}
                   >
                     COMPRESS
@@ -2664,31 +2703,37 @@ function MixerPage() {
                     style={{ marginLeft: '8px' }}
                   >
                     <div 
-                      className="relative transition-all duration-200 ease-in-out overflow-visible"
+                      className={pageTheme === 'OLD COMPUTER' ? "relative transition-all duration-200 ease-in-out overflow-visible" : (pageTheme === 'TERMINAL THEME' ? "relative rounded-full border transition-all duration-200 ease-in-out" : "relative rounded-full border transition-all duration-200 ease-in-out")}
                       style={{ 
                         width: '44px',
                         height: '24px',
                         backgroundColor: (globalCompressor?.enabled || false) 
-                          ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : primary)
-                          : (pageTheme === 'OLD COMPUTER' ? '#808080' : '#FCFAEE'),
-                        border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `1px solid ${primary}`,
+                          ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary))
+                          : (pageTheme === 'OLD COMPUTER' ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                        border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
+                        borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
+                        borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
                         borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '9999px',
-                        boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                        boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
                       }}
                     >
                       <div 
-                        className="absolute transition-all duration-200 ease-in-out"
+                        className={pageTheme === 'OLD COMPUTER' ? "absolute transition-all duration-200 ease-in-out" : (pageTheme === 'TERMINAL THEME' ? "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm" : "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm")}
                         style={{ 
-                          width: '20px',
-                          height: '28px',
-                          top: '50%',
-                          left: (globalCompressor?.enabled || false) ? '26px' : '-2px',
-                          transform: 'translateY(-50%)',
+                          width: pageTheme === 'OLD COMPUTER' ? '20px' : '18px',
+                          height: pageTheme === 'OLD COMPUTER' ? '28px' : '18px',
+                          top: pageTheme === 'OLD COMPUTER' ? '50%' : undefined,
+                          left: pageTheme === 'OLD COMPUTER' 
+                            ? ((globalCompressor?.enabled || false) ? '26px' : '-2px')
+                            : undefined,
+                          transform: pageTheme === 'OLD COMPUTER' 
+                            ? 'translateY(-50%)' 
+                            : ((globalCompressor?.enabled || false) ? 'translateX(20px)' : 'translateX(2px)'),
                           backgroundColor: pageTheme === 'OLD COMPUTER' ? '#E0E0E0' : '#ffffff',
                           border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : 'none',
                           borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '9999px',
                           boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
-                          zIndex: 10
+                          zIndex: pageTheme === 'OLD COMPUTER' ? 10 : undefined
                         }}
                       />
                     </div>
@@ -3652,21 +3697,14 @@ function MixerPage() {
                           // Just open the modal for settings - don't toggle on/off
                           handleFlangerConfigOpen()
                         }}
-                        className="pressable font-mono tracking-wide"
+                        className="pressable px-3 py-1 text-sm font-mono tracking-wide"
                         style={{ 
-                          backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : '#FCFAEE',
-                          color: pageTheme === 'OLD COMPUTER' ? '#000000' : primary,
-                          border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `1px solid ${primary}`,
-                          padding: '8px 12px',
-                          fontSize: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
-                          boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                          fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit',
-                          borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px',
-                          outline: 'none'
+                          backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE'),
+                          color: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
+                          border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
+                          fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : undefined,
+                          boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
+                          fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
                         }}
                       >
                         FLANGE
@@ -3700,31 +3738,37 @@ function MixerPage() {
                         style={{ marginLeft: '6px' }}
                       >
                         <div 
-                          className="relative transition-all duration-200 ease-in-out overflow-visible"
+                          className={pageTheme === 'OLD COMPUTER' ? "relative transition-all duration-200 ease-in-out overflow-visible" : (pageTheme === 'TERMINAL THEME' ? "relative rounded-full border transition-all duration-200 ease-in-out" : "relative rounded-full border transition-all duration-200 ease-in-out")}
                           style={{ 
                             width: '36px',
                             height: '20px',
                             backgroundColor: (globalFlanger?.enabled || false) 
-                          ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : primary)
-                          : (pageTheme === 'OLD COMPUTER' ? '#808080' : '#FCFAEE'),
-                            border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `1px solid ${primary}`,
+                          ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary))
+                          : (pageTheme === 'OLD COMPUTER' ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                            border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
+                            borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
+                            borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
                             borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '9999px',
-                            boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                            boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
                           }}
                         >
                           <div 
-                            className="absolute transition-all duration-200 ease-in-out"
+                            className={pageTheme === 'OLD COMPUTER' ? "absolute transition-all duration-200 ease-in-out" : (pageTheme === 'TERMINAL THEME' ? "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm" : "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm")}
                             style={{ 
-                              width: '16px',
-                              height: '24px',
-                              top: '50%',
-                              left: (globalFlanger?.enabled || false) ? '22px' : '-2px',
-                              transform: 'translateY(-50%)',
+                              width: pageTheme === 'OLD COMPUTER' ? '16px' : '14px',
+                              height: pageTheme === 'OLD COMPUTER' ? '24px' : '14px',
+                              top: pageTheme === 'OLD COMPUTER' ? '50%' : undefined,
+                              left: pageTheme === 'OLD COMPUTER' 
+                                ? ((globalFlanger?.enabled || false) ? '22px' : '-2px')
+                                : undefined,
+                              transform: pageTheme === 'OLD COMPUTER' 
+                                ? 'translateY(-50%)' 
+                                : ((globalFlanger?.enabled || false) ? 'translateX(16px)' : 'translateX(2px)'),
                               backgroundColor: pageTheme === 'OLD COMPUTER' ? '#E0E0E0' : '#ffffff',
                               border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : 'none',
                               borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '9999px',
                               boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
-                              zIndex: 10
+                              zIndex: pageTheme === 'OLD COMPUTER' ? 10 : undefined
                             }}
                           />
                         </div>
@@ -3737,22 +3781,14 @@ function MixerPage() {
                           // Just open the modal for settings - don't toggle on/off
                           handleCompressorConfigOpen()
                         }}
-                        className="pressable font-mono tracking-wide"
+                        className="pressable px-3 py-1 text-sm font-mono tracking-wide"
                         style={{ 
-                          backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : '#FCFAEE',
-                          color: pageTheme === 'OLD COMPUTER' ? '#000000' : primary,
-                          border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `1px solid ${primary}`,
-                          height: '26px',
-                          width: '70px',
-                          fontSize: isVerySmallScreen ? '10px' : '12px',
-                          padding: '0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
-                          boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                          fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit',
-                          borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px'
+                          backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE'),
+                          color: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
+                          border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
+                          fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : undefined,
+                          boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
+                          fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
                         }}
                       >
                         COMPRESS
@@ -3786,30 +3822,37 @@ function MixerPage() {
                         style={{ marginLeft: '6px' }}
                       >
                         <div 
-                          className="relative transition-all duration-200 ease-in-out overflow-visible"
+                          className={pageTheme === 'OLD COMPUTER' ? "relative transition-all duration-200 ease-in-out overflow-visible" : (pageTheme === 'TERMINAL THEME' ? "relative rounded-full border transition-all duration-200 ease-in-out" : "relative rounded-full border transition-all duration-200 ease-in-out")}
                           style={{ 
                             width: '36px',
                             height: '20px',
                             backgroundColor: (globalCompressor?.enabled || false) 
-                          ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : primary)
-                          : (pageTheme === 'OLD COMPUTER' ? '#808080' : '#FCFAEE'),
-                            border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `1px solid ${primary}`,
+                          ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary))
+                          : (pageTheme === 'OLD COMPUTER' ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                            border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
+                            borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
+                            borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
                             borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '9999px',
-                            boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'inset 0 1px 3px rgba(0,0,0,0.1)'
+                            boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
                           }}
                         >
                           <div 
-                            className="absolute transition-all duration-200 ease-in-out"
+                            className={pageTheme === 'OLD COMPUTER' ? "absolute transition-all duration-200 ease-in-out" : (pageTheme === 'TERMINAL THEME' ? "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm" : "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm")}
                             style={{ 
-                              width: '16px',
-                              height: '24px',
-                              top: '-2px',
-                              left: (globalCompressor?.enabled || false) ? '22px' : '-2px',
+                              width: pageTheme === 'OLD COMPUTER' ? '16px' : '14px',
+                              height: pageTheme === 'OLD COMPUTER' ? '24px' : '14px',
+                              top: pageTheme === 'OLD COMPUTER' ? '50%' : undefined,
+                              left: pageTheme === 'OLD COMPUTER' 
+                                ? ((globalCompressor?.enabled || false) ? '22px' : '-2px')
+                                : undefined,
+                              transform: pageTheme === 'OLD COMPUTER' 
+                                ? 'translateY(-50%)' 
+                                : ((globalCompressor?.enabled || false) ? 'translateX(16px)' : 'translateX(2px)'),
                               backgroundColor: pageTheme === 'OLD COMPUTER' ? '#E0E0E0' : '#ffffff',
                               border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : 'none',
                               borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '9999px',
                               boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
-                              zIndex: 10
+                              zIndex: pageTheme === 'OLD COMPUTER' ? 10 : undefined
                             }}
                           />
                         </div>
