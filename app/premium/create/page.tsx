@@ -625,59 +625,6 @@ export default function PremiumCreate() {
       textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 4px rgba(255,255,255,0.3)' : 'none'
     }}>
       <div style={{ width: '100%', maxWidth: '600px' }}>
-        {/* Theme Selector */}
-        <div style={{ marginBottom: '2rem', position: 'relative' }} data-dropdown>
-          <button
-            type="button"
-            onClick={() => setShowPageThemeDropdown(!showPageThemeDropdown)}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: currentTheme.buttonBg,
-              color: currentTheme.buttonText,
-              border: `2px solid ${currentTheme.border}`,
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: 'bold',
-              boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
-              fontFamily: 'monospace'
-            }}
-          >
-            THEME: {pageTheme} ▼
-          </button>
-          {showPageThemeDropdown && (
-            <div style={{
-              position: 'absolute',
-              top: '100%',
-              left: 0,
-              marginTop: '4px',
-              backgroundColor: currentTheme.cardBg,
-              border: `2px solid ${currentTheme.border}`,
-              borderRadius: '4px',
-              boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
-              zIndex: 1000,
-              minWidth: '200px'
-            }}>
-              {(['TERMINAL THEME', 'OLD COMPUTER'] as const).map(themeOption => (
-                <div
-                  key={themeOption}
-                  onClick={() => { setPageTheme(themeOption); setShowPageThemeDropdown(false) }}
-                  style={{
-                    padding: '0.75rem 1rem',
-                    cursor: 'pointer',
-                    backgroundColor: pageTheme === themeOption ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : '#f3f3f3') : currentTheme.cardBg,
-                    color: currentTheme.text,
-                    borderBottom: `1px solid ${currentTheme.border}`,
-                    fontFamily: 'monospace',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  {themeOption}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        
         <h1 style={{ 
           fontSize: '3rem', 
           fontWeight: 'bold', 
@@ -1369,6 +1316,67 @@ export default function PremiumCreate() {
             </div>
           )}
         </form>
+
+        {/* Theme Selector - Bottom Center */}
+        <div style={{ 
+          marginTop: '3rem', 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          position: 'relative'
+        }} data-dropdown>
+          <button
+            type="button"
+            onClick={() => setShowPageThemeDropdown(!showPageThemeDropdown)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              backgroundColor: currentTheme.buttonBg,
+              color: currentTheme.buttonText,
+              border: `2px solid ${currentTheme.border}`,
+              cursor: 'pointer',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+              fontFamily: 'monospace',
+              borderRadius: '4px'
+            }}
+          >
+            THEME: {pageTheme} ▼
+          </button>
+          {showPageThemeDropdown && (
+            <div style={{
+              position: 'absolute',
+              bottom: '100%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              marginBottom: '8px',
+              backgroundColor: currentTheme.cardBg,
+              border: `2px solid ${currentTheme.border}`,
+              borderRadius: '4px',
+              boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+              zIndex: 1000,
+              minWidth: '200px'
+            }}>
+              {(['TERMINAL THEME', 'OLD COMPUTER'] as const).map(themeOption => (
+                <div
+                  key={themeOption}
+                  onClick={() => { setPageTheme(themeOption); setShowPageThemeDropdown(false) }}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    cursor: 'pointer',
+                    backgroundColor: pageTheme === themeOption ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : '#f3f3f3') : currentTheme.cardBg,
+                    color: currentTheme.text,
+                    borderBottom: `1px solid ${currentTheme.border}`,
+                    fontFamily: 'monospace',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  {themeOption}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   )

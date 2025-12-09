@@ -33,6 +33,7 @@ type Song = {
   color: string
   background_video?: string
   primary_color?: string
+  page_theme?: 'TERMINAL THEME' | 'OLD COMPUTER'
 }
 
 export type Stem = {
@@ -192,6 +193,44 @@ function MixerPage() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState('Initializing audio engine...')
   
+  // Page theme state
+  const [pageTheme, setPageTheme] = useState<'TERMINAL THEME' | 'OLD COMPUTER'>('OLD COMPUTER')
+  const [showPageThemeDropdown, setShowPageThemeDropdown] = useState(false)
+  
+  // Theme definitions
+  const themes = {
+    'OLD COMPUTER': {
+      background: '#FFE5E5',
+      text: '#000000',
+      border: '#000000',
+      inputBg: '#FFFFFF',
+      inputText: '#000000',
+      buttonBg: '#B8001F',
+      buttonText: '#FFFFFF',
+      cardBg: '#FFFFFF',
+      cardBorder: '#B8001F',
+      accent: '#B8001F',
+      sectionBg: '#FCFAEE',
+      glow: 'none'
+    },
+    'TERMINAL THEME': {
+      background: '#000000',
+      text: '#FFFFFF',
+      border: '#FFFFFF',
+      inputBg: '#000000',
+      inputText: '#FFFFFF',
+      buttonBg: '#000000',
+      buttonText: '#FFFFFF',
+      cardBg: '#000000',
+      cardBorder: '#FFFFFF',
+      accent: '#FFB6C1',
+      sectionBg: '#0A0A0A',
+      glow: '0 0 10px rgba(255,255,255,0.3)'
+    }
+  }
+  
+  const currentTheme = themes[pageTheme]
+  
   // Responsive breakpoints
   const isVerySmallScreen = screenSize.width > 0 && screenSize.width < 375  // iPhone SE, iPhone 12 mini
   const isSmallScreen = screenSize.width >= 375 && screenSize.width < 414  // iPhone 13, iPhone 14
@@ -221,6 +260,30 @@ function MixerPage() {
   };
 
   const primary = songData?.primary_color || '#B8001F'
+
+  // -------------------- 🎨 Handle Theme Change ====================
+  const handleThemeChange = async (newTheme: 'TERMINAL THEME' | 'OLD COMPUTER') => {
+    setPageTheme(newTheme)
+    setShowPageThemeDropdown(false)
+    
+    // Save to database if we have song data
+    if (songData?.id) {
+      try {
+        const { error } = await supabase!
+          .from('songs')
+          .update({ page_theme: newTheme })
+          .eq('id', songData.id)
+        
+        if (error) {
+          console.error('Failed to save theme:', error)
+        } else {
+          console.log('Theme saved successfully')
+        }
+      } catch (err) {
+        console.error('Error saving theme:', err)
+      }
+    }
+  }
 
   // -------------------- 📱 Device Detection --------------------
   useEffect(() => {
@@ -372,7 +435,8 @@ function MixerPage() {
       // Check if click is outside any effect dropdown
       if (!target.closest('[id^="effect-dropdown-"]') && 
           !target.closest('[id^="master-effect-dropdown"]') &&
-          !target.closest('[id^="mobile-master-effect-dropdown"]')) {
+          !target.closest('[id^="mobile-master-effect-dropdown"]') &&
+          !target.closest('[data-page-theme-dropdown]')) {
         // Close all effect dropdowns
         document.querySelectorAll('[id^="effect-dropdown-"]').forEach(dropdown => {
           dropdown.classList.add('hidden')
@@ -381,6 +445,8 @@ function MixerPage() {
         document.getElementById('master-effect-dropdown')?.classList.add('hidden')
         // Close mobile master effect dropdown
         document.getElementById('mobile-master-effect-dropdown')?.classList.add('hidden')
+        // Close page theme dropdown
+        setShowPageThemeDropdown(false)
       }
     }
 
@@ -388,6 +454,16 @@ function MixerPage() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // ==================== 🎨 Apply Page Theme ====================
+  useEffect(() => {
+    document.body.style.backgroundColor = currentTheme.background
+    document.body.style.color = currentTheme.text
+    return () => {
+      document.body.style.backgroundColor = ''
+      document.body.style.color = ''
+    }
+  }, [pageTheme, currentTheme])
 
 
   // ==================== 🔇 Silent Mode Bypass (iOS Hack) ====================
@@ -715,6 +791,10 @@ function MixerPage() {
 
       setSongData(data);
       console.log('🎥 Song data loaded - background_video:', data.background_video, 'color:', data.color);
+      // Set page theme from song data
+      if (data.page_theme && (data.page_theme === 'TERMINAL THEME' || data.page_theme === 'OLD COMPUTER')) {
+        setPageTheme(data.page_theme);
+      }
       setStems(stemObjs);
       setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])));
       setReverbs(Object.fromEntries(stemObjs.map(s => [s.label, 0])));
@@ -3419,6 +3499,75 @@ function MixerPage() {
             position={{ x: typeof window !== 'undefined' ? window.innerWidth / 2 : 400, y: typeof window !== 'undefined' ? window.innerHeight / 2 : 300 }}
             primaryColor={primary}
           />
+
+          {/* 🎨 Page Theme Selector - Bottom Center */}
+          <div 
+            style={{ 
+              position: 'fixed',
+              bottom: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }} 
+            data-page-theme-dropdown
+          >
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setShowPageThemeDropdown(!showPageThemeDropdown)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: currentTheme.buttonBg,
+                  color: currentTheme.buttonText,
+                  border: `2px solid ${currentTheme.border}`,
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 'bold',
+                  boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+                  fontFamily: 'monospace',
+                  borderRadius: '4px'
+                }}
+              >
+                THEME: {pageTheme} ▼
+              </button>
+              {showPageThemeDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  marginBottom: '8px',
+                  backgroundColor: currentTheme.cardBg,
+                  border: `2px solid ${currentTheme.border}`,
+                  borderRadius: '4px',
+                  boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
+                  zIndex: 1001,
+                  minWidth: '200px'
+                }}>
+                  {(['TERMINAL THEME', 'OLD COMPUTER'] as const).map(themeOption => (
+                    <div
+                      key={themeOption}
+                      onClick={() => handleThemeChange(themeOption)}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        cursor: 'pointer',
+                        backgroundColor: pageTheme === themeOption ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : '#f3f3f3') : currentTheme.cardBg,
+                        color: currentTheme.text,
+                        borderBottom: `1px solid ${currentTheme.border}`,
+                        fontFamily: 'monospace',
+                        fontSize: '0.9rem'
+                      }}
+                    >
+                      {themeOption}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
         </>
       )}

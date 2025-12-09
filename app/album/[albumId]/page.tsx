@@ -19,6 +19,7 @@ type Song = {
   bpm: number | null
   track_number: number
   album_title: string
+  album_id?: string
   primary_color?: string
   color: string
   demo_mp3?: string | null
@@ -41,6 +42,7 @@ export default function AlbumLandingPage() {
   const [primaryColor, setPrimaryColor] = useState('#B8001F')
   const [pageTheme, setPageTheme] = useState<'TERMINAL THEME' | 'OLD COMPUTER'>('TERMINAL THEME')
   const [selectedSong, setSelectedSong] = useState<Song | null>(null)
+  const [showPageThemeDropdown, setShowPageThemeDropdown] = useState(false)
 
   // Theme definitions
   const themes = {
@@ -1061,6 +1063,49 @@ export default function AlbumLandingPage() {
   const handleExploreStems = (song: Song) => {
     router.push(`/artist/${song.artist_slug}/${song.song_slug}`)
   }
+
+  // Update theme in database when changed
+  const handleThemeChange = async (newTheme: 'TERMINAL THEME' | 'OLD COMPUTER') => {
+    setPageTheme(newTheme)
+    setShowPageThemeDropdown(false)
+    
+    // Update all songs in the album with the new theme
+    // Try using album_id from songs first, then fall back to albumId from URL
+    const targetAlbumId = songs.length > 0 && songs[0].album_id ? songs[0].album_id : albumId
+    
+    if (targetAlbumId && songs.length > 0) {
+      try {
+        // Update by album_id if available
+        if (songs[0].album_id) {
+          const { error } = await supabase
+            .from('songs')
+            .update({ page_theme: newTheme })
+            .eq('album_id', songs[0].album_id)
+          
+          if (error) {
+            console.error('Error updating theme:', error)
+          } else {
+            console.log('Theme updated successfully')
+          }
+        } else {
+          // Fallback: update by song IDs if album_id is not available
+          const songIds = songs.map(s => s.id)
+          const { error } = await supabase
+            .from('songs')
+            .update({ page_theme: newTheme })
+            .in('id', songIds)
+          
+          if (error) {
+            console.error('Error updating theme:', error)
+          } else {
+            console.log('Theme updated successfully')
+          }
+        }
+      } catch (err) {
+        console.error('Error updating theme:', err)
+      }
+    }
+  }
   
   useEffect(() => {
     return () => {
@@ -1102,16 +1147,16 @@ export default function AlbumLandingPage() {
           repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px),
           repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px)
         ` : 'none',
-        padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '12px 10px' : '40px 20px') : (isMobile ? '12px 10px' : '20px 16px'),
+        padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '12px 10px' : '40px 20px') : (isMobile ? '12px 10px' : '40px 20px'),
         fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
         overflowY: 'auto',
         overflowX: 'hidden',
         WebkitOverflowScrolling: 'touch',
         touchAction: 'pan-y',
-        paddingTop: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '12px' : '40px'} + env(safe-area-inset-top, 0px))` : `calc(${isMobile ? '12px' : '20px'} + env(safe-area-inset-top, 0px))`,
-        paddingBottom: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '12px' : '40px'} + env(safe-area-inset-bottom, 0px))` : `calc(${isMobile ? '12px' : '20px'} + env(safe-area-inset-bottom, 0px))`,
-        paddingLeft: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-left, 0px))` : `calc(${isMobile ? '10px' : '16px'} + env(safe-area-inset-left, 0px))`,
-        paddingRight: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-right, 0px))` : `calc(${isMobile ? '10px' : '16px'} + env(safe-area-inset-right, 0px))`,
+        paddingTop: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '12px' : '40px'} + env(safe-area-inset-top, 0px))` : `calc(${isMobile ? '12px' : '40px'} + env(safe-area-inset-top, 0px))`,
+        paddingBottom: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '12px' : '40px'} + env(safe-area-inset-bottom, 0px))` : `calc(${isMobile ? '12px' : '40px'} + env(safe-area-inset-bottom, 0px))`,
+        paddingLeft: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-left, 0px))` : `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-left, 0px))`,
+        paddingRight: pageTheme === 'OLD COMPUTER' ? `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-right, 0px))` : `calc(${isMobile ? '10px' : '20px'} + env(safe-area-inset-right, 0px))`,
         color: currentTheme.text,
         fontSize: isMobile ? '12px' : '16px',
         lineHeight: '1.4',
@@ -1123,10 +1168,10 @@ export default function AlbumLandingPage() {
         <div 
           style={{
             backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.background,
-            border: pageTheme === 'OLD COMPUTER' ? '3px solid #000000' : `2px solid ${currentTheme.border}`,
+            border: pageTheme === 'OLD COMPUTER' ? '3px solid #000000' : `3px solid ${currentTheme.border}`,
             boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none'),
-            marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '14px' : '20px') : (isMobile ? '12px' : '16px'),
-            padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '6px' : '8px') : '0',
+            marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '14px' : '20px') : (isMobile ? '14px' : '20px'),
+            padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '6px' : '8px') : (isMobile ? '6px' : '8px'),
             position: 'relative',
             zIndex: 10
           }}
@@ -1137,7 +1182,7 @@ export default function AlbumLandingPage() {
               backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).windowTitleBg || '#C0C0C0' : currentTheme.background,
               border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFB6C1' : `1px solid ${currentTheme.border}`),
               boxShadow: pageTheme === 'TERMINAL THEME' ? '0 2px 8px rgba(255,182,193,0.3)' : 'none',
-              padding: pageTheme === 'OLD COMPUTER' ? '4px 8px' : (isMobile ? '6px 10px' : '8px 12px'),
+              padding: pageTheme === 'OLD COMPUTER' ? '4px 8px' : '4px 8px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -1164,8 +1209,8 @@ export default function AlbumLandingPage() {
             style={{
               backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).windowContentBg || '#FFFFFF' : currentTheme.background,
               border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : 'none',
-              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '12px' : '16px') : (isMobile ? '10px' : '10px'),
-              maxHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '45vh' : '400px') : (isMobile ? '42vh' : '350px'),
+              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '12px' : '16px') : (isMobile ? '12px' : '16px'),
+              maxHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '45vh' : '400px') : (isMobile ? '45vh' : '400px'),
               overflowY: 'auto',
               overflowX: 'hidden',
               WebkitOverflowScrolling: 'touch',
@@ -1325,9 +1370,9 @@ export default function AlbumLandingPage() {
         <div 
           style={{
             backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.background,
-            border: pageTheme === 'OLD COMPUTER' ? '3px solid #000000' : `2px solid ${currentTheme.border}`,
+            border: pageTheme === 'OLD COMPUTER' ? '3px solid #000000' : `3px solid ${currentTheme.border}`,
             boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none'),
-            padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '4px' : '8px') : '0',
+            padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '4px' : '8px') : (isMobile ? '4px' : '8px'),
             position: 'relative',
             overflow: 'visible',
             zIndex: 10
@@ -1339,7 +1384,7 @@ export default function AlbumLandingPage() {
               backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).windowTitleBg || '#C0C0C0' : currentTheme.background,
               border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFB6C1' : `1px solid ${currentTheme.border}`),
               boxShadow: pageTheme === 'TERMINAL THEME' ? '0 2px 8px rgba(255,182,193,0.3)' : 'none',
-              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '3px 6px' : '4px 8px') : (isMobile ? '4px 6px' : '8px 12px'),
+              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '3px 6px' : '4px 8px') : (isMobile ? '3px 6px' : '4px 8px'),
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -1359,16 +1404,16 @@ export default function AlbumLandingPage() {
             style={{
               backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).playerBg || '#808080' : currentTheme.background,
               border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : 'none',
-              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '10px' : '20px') : (isMobile ? '8px' : '16px'),
+              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '10px' : '20px') : (isMobile ? '10px' : '20px'),
               position: 'relative',
-              minHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '160px' : '200px') : (isMobile ? '140px' : '150px'),
+              minHeight: pageTheme === 'OLD COMPUTER' ? (isMobile ? '160px' : '200px') : (isMobile ? '160px' : '200px'),
               zIndex: 20,
               color: pageTheme === 'OLD COMPUTER' ? '#FFF' : currentTheme.text,
               fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'inherit' : 'inherit')
             }}
           >
             {/* Album Info */}
-            <div style={{ marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '16px') : (isMobile ? '8px' : '14px'), color: pageTheme === 'OLD COMPUTER' ? '#FFF' : '#FFFFFF' }}>
+            <div style={{ marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '16px') : (isMobile ? '8px' : '16px'), color: pageTheme === 'OLD COMPUTER' ? '#FFF' : '#FFFFFF' }}>
               <div style={{ fontSize: isMobile ? '10px' : '15px', fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal', marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '2px' : '4px') : (isMobile ? '2px' : '3px'), color: pageTheme === 'OLD COMPUTER' ? '#FFF' : '#FFB6C1', textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,182,193,0.6), 0 0 4px rgba(255,182,193,0.4)' : 'none' }}>
                 Mixed by {artistName.toUpperCase()}
               </div>
@@ -1387,7 +1432,7 @@ export default function AlbumLandingPage() {
                     boxShadow: pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3), inset 0 0 8px rgba(255,255,255,0.1)' : 'none',
                     color: pageTheme === 'OLD COMPUTER' ? '#FFF' : currentTheme.text,
                     padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '12px') : (isMobile ? '8px' : '12px'),
-                    marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '16px') : (isMobile ? '8px' : '14px'),
+                    marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '8px' : '16px') : (isMobile ? '8px' : '16px'),
                     fontSize: isMobile ? '10px' : '15px',
                     fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit')
                   }}
@@ -1461,7 +1506,7 @@ export default function AlbumLandingPage() {
                   onClick={() => handleExploreStems(selectedSong)}
                   style={{
                     width: '100%',
-                    padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '6px 10px' : '8px 16px') : (isMobile ? '6px 10px' : '10px 16px'),
+                    padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '6px 10px' : '8px 16px') : (isMobile ? '6px 10px' : '8px 16px'),
                     backgroundColor: pageTheme === 'OLD COMPUTER' ? '#E8D9CD' : currentTheme.background,
                     border: pageTheme === 'OLD COMPUTER' ? '2px solid #000' : `2px solid ${currentTheme.border}`,
                     boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.4)' : 'none'),
@@ -1759,6 +1804,96 @@ export default function AlbumLandingPage() {
               />
             </svg>
           </div>
+        </div>
+      </div>
+
+      {/* Theme Selector - Bottom Center - Absolute Bottom */}
+      <div style={{ 
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        paddingBottom: isMobile ? 'calc(1rem + env(safe-area-inset-bottom, 0px))' : 'calc(2rem + env(safe-area-inset-bottom, 0px))',
+        paddingTop: isMobile ? '1rem' : '2rem',
+        zIndex: 20,
+        pointerEvents: 'none'
+      }} data-dropdown>
+        <div style={{ pointerEvents: 'auto' }}>
+          <button
+            type="button"
+            onClick={() => setShowPageThemeDropdown(!showPageThemeDropdown)}
+            style={{
+              padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '6px 12px' : '8px 16px') : (isMobile ? '6px 12px' : '8px 16px'),
+              backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).buttonBg || '#D4C5B9' : currentTheme.buttonBg,
+              color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.buttonText,
+              border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme.border}`,
+              cursor: 'pointer',
+              fontSize: isMobile ? '11px' : '15px',
+              fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
+              boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : (pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
+              fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
+              textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.5)' : 'none'
+            }}
+          >
+            THEME: {pageTheme} ▼
+          </button>
+          {showPageThemeDropdown && (
+            <div style={{
+              position: 'absolute',
+              bottom: '100%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              marginBottom: '8px',
+              backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.cardBg,
+              border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme.border}`,
+              borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px',
+              boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : (pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
+              zIndex: 1000,
+              minWidth: isMobile ? '180px' : '220px'
+            }}>
+              {(['TERMINAL THEME', 'OLD COMPUTER'] as const).map(themeOption => (
+                <div
+                  key={themeOption}
+                  onClick={() => handleThemeChange(themeOption)}
+                  style={{
+                    padding: isMobile ? '8px 12px' : '10px 16px',
+                    cursor: 'pointer',
+                    backgroundColor: pageTheme === themeOption 
+                      ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : (pageTheme === 'OLD COMPUTER' ? '#E0E0E0' : '#f3f3f3'))
+                      : (pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.cardBg),
+                    color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.text,
+                    borderBottom: themeOption !== 'OLD COMPUTER' ? `1px solid ${pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.border}` : 'none',
+                    fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
+                    fontSize: isMobile ? '11px' : '15px',
+                    fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
+                    textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (pageTheme === 'OLD COMPUTER') {
+                      e.currentTarget.style.backgroundColor = '#F0F0F0'
+                    } else {
+                      e.currentTarget.style.backgroundColor = '#1A1A1A'
+                      e.currentTarget.style.textShadow = '0 0 8px rgba(255,255,255,0.5)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    const isSelected = pageTheme === themeOption
+                    if (pageTheme === 'OLD COMPUTER') {
+                      e.currentTarget.style.backgroundColor = isSelected ? '#E0E0E0' : (currentTheme as any).cardBg || '#D4C5B9'
+                    } else {
+                      e.currentTarget.style.backgroundColor = isSelected ? '#1A1A1A' : currentTheme.cardBg
+                      e.currentTarget.style.textShadow = isSelected ? '0 0 6px rgba(255,255,255,0.4)' : 'none'
+                    }
+                  }}
+                >
+                  {themeOption}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
