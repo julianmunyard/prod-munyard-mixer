@@ -31,16 +31,18 @@ return (
       {/* Viewport - Essential for responsive scaling on mobile */}
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
       
-      {/* Favicon & PWA */}
+      {/* Favicon */}
       <link rel="icon" type="image/x-icon" href="/munyard-icon.ico" />
       <link rel="shortcut icon" href="/munyard-icon.ico" />
-      <link rel="manifest" href="/manifest.json" />
+      {/* PWA manifest removed to prevent install prompts */}
+      {/* <link rel="manifest" href="/manifest.json" /> */}
       <meta name="theme-color" content="#FCFAEE" />
       
       {/* iOS Safari Status Bar - Match cream background */}
-      <meta name="apple-mobile-web-app-capable" content="yes" />
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      <meta name="mobile-web-app-capable" content="yes" />
+      {/* PWA install prompts disabled */}
+      <meta name="apple-mobile-web-app-capable" content="no" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+      <meta name="mobile-web-app-capable" content="no" />
       <meta name="format-detection" content="telephone=no" />
 
       {/* iMessage / Social Link Previews */}
@@ -53,6 +55,17 @@ return (
       {/* Prevent iOS from treating this as a web page */}
       <meta name="apple-itunes-app" content="app-id=" />
       
+      {/* Suppress PWA install prompts */}
+      <Script id="suppress-install-prompt" strategy="beforeInteractive">
+        {`
+          // Prevent PWA install prompts
+          window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+          });
+        `}
+      </Script>
     </head>
     <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
       {/* Fixed background div to cover iOS safe areas */}

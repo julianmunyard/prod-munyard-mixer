@@ -195,7 +195,6 @@ function MixerPage() {
   
   // Page theme state
   const [pageTheme, setPageTheme] = useState<'TERMINAL THEME' | 'OLD COMPUTER'>('OLD COMPUTER')
-  const [showPageThemeDropdown, setShowPageThemeDropdown] = useState(false)
   
   // Theme definitions
   const themes = {
@@ -264,7 +263,6 @@ function MixerPage() {
   // -------------------- 🎨 Handle Theme Change ====================
   const handleThemeChange = async (newTheme: 'TERMINAL THEME' | 'OLD COMPUTER') => {
     setPageTheme(newTheme)
-    setShowPageThemeDropdown(false)
     
     // Save to database if we have song data
     if (songData?.id) {
@@ -446,7 +444,6 @@ function MixerPage() {
         // Close mobile master effect dropdown
         document.getElementById('mobile-master-effect-dropdown')?.classList.add('hidden')
         // Close page theme dropdown
-        setShowPageThemeDropdown(false)
       }
     }
 
@@ -3105,10 +3102,10 @@ function MixerPage() {
                     />
                   </div>
                   
-                  {/* Mode Toggle Button - Centered below slider for desktop */}
-                  {/* ⚠️ IMPORTANT: This NATURAL/STRETCH button is the BOTTOM BOUNDARY of the page. 
-                      Nothing can be placed below this button. All content must be above this line. */}
-                  <div className="absolute left-1/2 transform -translate-x-1/2" style={{ bottom: '-11px' }}>
+                  {/* Mode Toggle Button and Theme Button - Centered below slider for desktop */}
+                  {/* ⚠️ IMPORTANT: These buttons are the BOTTOM BOUNDARY of the page. 
+                      Nothing can be placed below these buttons. All content must be above this line. */}
+                  <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2" style={{ bottom: '-11px' }}>
                     <button
                       onClick={() => {
                         const newMode = !isNaturalVarispeed;
@@ -3129,6 +3126,24 @@ function MixerPage() {
                       title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
                     >
                       {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newTheme = pageTheme === 'TERMINAL THEME' ? 'OLD COMPUTER' : 'TERMINAL THEME';
+                        handleThemeChange(newTheme);
+                      }}
+                      className="pressable px-4 py-2 font-mono tracking-wide"
+                      style={{ 
+                        backgroundColor: '#FCFAEE',
+                        color: primary,
+                        border: `1px solid ${primary}`,
+                        pointerEvents: 'auto',
+                        fontSize: isVerySmallScreen ? '10px' : '12px',
+                        padding: isVerySmallScreen ? '4px 8px' : '6px 12px'
+                      }}
+                      title="Toggle theme"
+                    >
+                      THEME
                     </button>
                   </div>
                 </div>
@@ -3419,10 +3434,10 @@ function MixerPage() {
                     />
                   </div>
                   
-                  {/* Mode Toggle Button - Centered below slider for mobile */}
-                  {/* ⚠️ IMPORTANT: This NATURAL/STRETCH button is the BOTTOM BOUNDARY of the page. 
+                  {/* Mode Toggle Button and Theme Button - Centered below slider for mobile */}
+                  {/* ⚠️ IMPORTANT: These buttons are the BOTTOM BOUNDARY of the page. 
                       Positioned with safe spacing from container bottom to avoid browser chrome overlap. */}
-                  <div className="absolute left-1/2 transform -translate-x-1/2" style={{ 
+                  <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2" style={{ 
                     bottom: isVerySmallScreen ? '4px' : isSmallScreen ? '6px' : '4px' // Safe spacing from container bottom
                   }}>
                     <button
@@ -3445,6 +3460,24 @@ function MixerPage() {
                       title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
                     >
                       {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newTheme = pageTheme === 'TERMINAL THEME' ? 'OLD COMPUTER' : 'TERMINAL THEME';
+                        handleThemeChange(newTheme);
+                      }}
+                      className="pressable px-4 py-2 font-mono tracking-wide"
+                      style={{ 
+                        backgroundColor: '#FCFAEE',
+                        color: primary,
+                        border: `1px solid ${primary}`,
+                        pointerEvents: 'auto',
+                        fontSize: isVerySmallScreen ? '10px' : '12px',
+                        padding: isVerySmallScreen ? '3px 6px' : '5px 10px'
+                      }}
+                      title="Toggle theme"
+                    >
+                      THEME
                     </button>
                   </div>
                 </div>
@@ -3500,74 +3533,6 @@ function MixerPage() {
             primaryColor={primary}
           />
 
-          {/* 🎨 Page Theme Selector - Bottom Center */}
-          <div 
-            style={{ 
-              position: 'fixed',
-              bottom: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 1000,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }} 
-            data-page-theme-dropdown
-          >
-            <div style={{ position: 'relative' }}>
-              <button
-                type="button"
-                onClick={() => setShowPageThemeDropdown(!showPageThemeDropdown)}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: currentTheme.buttonBg,
-                  color: currentTheme.buttonText,
-                  border: `2px solid ${currentTheme.border}`,
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
-                  fontFamily: 'monospace',
-                  borderRadius: '4px'
-                }}
-              >
-                THEME: {pageTheme} ▼
-              </button>
-              {showPageThemeDropdown && (
-                <div style={{
-                  position: 'absolute',
-                  bottom: '100%',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  marginBottom: '8px',
-                  backgroundColor: currentTheme.cardBg,
-                  border: `2px solid ${currentTheme.border}`,
-                  borderRadius: '4px',
-                  boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
-                  zIndex: 1001,
-                  minWidth: '200px'
-                }}>
-                  {(['TERMINAL THEME', 'OLD COMPUTER'] as const).map(themeOption => (
-                    <div
-                      key={themeOption}
-                      onClick={() => handleThemeChange(themeOption)}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        cursor: 'pointer',
-                        backgroundColor: pageTheme === themeOption ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : '#f3f3f3') : currentTheme.cardBg,
-                        color: currentTheme.text,
-                        borderBottom: `1px solid ${currentTheme.border}`,
-                        fontFamily: 'monospace',
-                        fontSize: '0.9rem'
-                      }}
-                    >
-                      {themeOption}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
 
         </>
       )}
