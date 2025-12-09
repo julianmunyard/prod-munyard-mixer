@@ -1,30 +1,50 @@
 // FFmpeg is browser-only, so we dynamically import it only on the client
 let ffmpegInstance: any = null;
-let ffmpegLoading: Promise<any> | null = null;
+let fetchFileFn: any = null;
+let ffmpegLoading: Promise<{ ffmpegInstance: any; fetchFile: any }> | null = null;
 
-async function getFFmpeg() {
+async function getFFmpeg(): Promise<{ ffmpegInstance: any; fetchFile: any }> {
   // Only run on client side
   if (typeof window === 'undefined') {
     throw new Error('FFmpeg can only be used in the browser');
   }
 
-  if (ffmpegInstance) {
-    return ffmpegInstance;
+  // Check for SharedArrayBuffer support (required for FFmpeg.wasm)
+  if (typeof SharedArrayBuffer === 'undefined') {
+    const errorMsg = 'SharedArrayBuffer is not available. This is required for audio conversion. ' +
+      'Please ensure you are accessing the site with the proper security headers. ' +
+      'If you are the site owner, verify that Cross-Origin-Opener-Policy and Cross-Origin-Embedder-Policy headers are set correctly.';
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
 
+  // If both are already loaded, return them immediately
+  if (ffmpegInstance && fetchFileFn) {
+    return { ffmpegInstance, fetchFile: fetchFileFn };
+  }
+
+  // If loading is in progress, wait for it
   if (ffmpegLoading) {
     return ffmpegLoading;
   }
 
+  // Start loading FFmpeg
   ffmpegLoading = (async () => {
-    const { createFFmpeg, fetchFile } = await import('@ffmpeg/ffmpeg');
-    
-    ffmpegInstance = createFFmpeg({
-      log: true,
-      corePath: `${window.location.origin}/ffmpeg/ffmpeg-core.js`,
-    });
+    try {
+      const { createFFmpeg, fetchFile } = await import('@ffmpeg/ffmpeg');
+      
+      ffmpegInstance = createFFmpeg({
+        log: true,
+        corePath: `${window.location.origin}/ffmpeg/ffmpeg-core.js`,
+      });
+      
+      fetchFileFn = fetchFile;
 
-    return { ffmpegInstance, fetchFile };
+      return { ffmpegInstance, fetchFile };
+    } catch (error) {
+      console.error('Failed to load FFmpeg:', error);
+      throw new Error(`Failed to load FFmpeg: ${error instanceof Error ? error.message : String(error)}`);
+    }
   })();
 
   return ffmpegLoading;
@@ -88,7 +108,17 @@ export async function convertToMp3(file: File): Promise<File> {
 
   } catch (err) {
     console.error('MP3 conversion failed:', err);
-    alert(`MP3 conversion failed: ${err instanceof Error ? err.message : String(err)}`);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    
+    // Provide user-friendly error message
+    if (errorMessage.includes('SharedArrayBuffer')) {
+      const friendlyMsg = 'Audio conversion is not available. This feature requires special browser security settings. ' +
+        'Please try refreshing the page. If the issue persists, the site may need to be configured with proper security headers.';
+      alert(friendlyMsg);
+      throw new Error(friendlyMsg);
+    }
+    
+    alert(`MP3 conversion failed: ${errorMessage}`);
     throw err;
   }
 }

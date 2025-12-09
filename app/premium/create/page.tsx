@@ -459,7 +459,8 @@ export default function PremiumCreate() {
             try {
               processedFile = await convertToMp3(file)
             } catch (err) {
-              alert(`Failed to convert WAV for Song ${i + 1}.`)
+              const errorMsg = err instanceof Error ? err.message : String(err);
+              alert(`Failed to convert WAV for Song ${i + 1}: ${errorMsg}\n\nPlease try refreshing the page. If the issue persists, contact support.`);
               setIsSubmitting(false)
               return
             }
