@@ -29,7 +29,8 @@ return (
   <html lang="en">
     <head>
       {/* Viewport - Essential for responsive scaling on mobile */}
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+      {/* Updated for Chrome Android compatibility - removed maximum-scale to prevent zoom issues */}
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, viewport-fit=cover" />
       
       {/* Favicon */}
       <link rel="icon" type="image/x-icon" href="/munyard-icon.ico" />
@@ -66,10 +67,61 @@ return (
           });
         `}
       </Script>
+      
+      {/* Fix Chrome Android viewport zoom issue */}
+      <Script id="chrome-android-viewport-fix" strategy="beforeInteractive">
+        {`
+          (function() {
+            // Detect Chrome on Android
+            const isChromeAndroid = /Android/.test(navigator.userAgent) && /Chrome/.test(navigator.userAgent) && !/Edge/.test(navigator.userAgent);
+            
+            if (isChromeAndroid) {
+              // Force correct viewport scale on Chrome Android
+              const setViewportScale = function() {
+                const viewport = document.querySelector('meta[name="viewport"]');
+                if (viewport) {
+                  const screenWidth = window.screen.width || window.innerWidth;
+                  const devicePixelRatio = window.devicePixelRatio || 1;
+                  const idealWidth = screenWidth / devicePixelRatio;
+                  
+                  // Set viewport to match actual device width
+                  viewport.setAttribute('content', 
+                    'width=' + idealWidth + ', initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
+                  );
+                }
+              };
+              
+              // Run immediately
+              setViewportScale();
+              
+              // Run after DOM is ready
+              if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', setViewportScale);
+              }
+              
+              // Run after page load
+              window.addEventListener('load', setViewportScale);
+              
+              // Run on orientation change
+              window.addEventListener('orientationchange', function() {
+                setTimeout(setViewportScale, 100);
+              });
+              
+              // Run on resize (with debounce)
+              let resizeTimeout;
+              window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(setViewportScale, 100);
+              });
+            }
+          })();
+        `}
+      </Script>
     </head>
     <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-      {/* Fixed background div to cover iOS safe areas */}
+      {/* Fixed background div to cover iOS safe areas - color will be updated dynamically by theme */}
       <div
+        id="theme-background-overlay"
         style={{
           position: 'fixed',
           top: 0,

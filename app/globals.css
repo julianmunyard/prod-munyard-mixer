@@ -9,7 +9,7 @@ html {
   width: 100%;
   max-width: none;
   font-size: 100%; /* ✅ prevent root font shrinking */
-  background-color: #FCFAEE !important; /* Cream background for iOS status bar area */
+  background-color: #FCFAEE; /* Cream background for iOS status bar area - default, can be overridden by theme */
   /* Extend background into safe areas (notch/camera area on iOS) */
   margin: 0;
   padding: 0;
@@ -18,8 +18,8 @@ html {
 body {
   width: 100%;
   max-width: none;
-  background-color: #FCFAEE !important; /* Cream background - default */
-  background: #FCFAEE !important; /* Override any other background */
+  background-color: #FCFAEE; /* Cream background - default, can be overridden by theme */
+  background: #FCFAEE; /* Override any other background - default, can be overridden by theme */
   margin: 0;
   padding: 0;
   /* Extend background into safe areas (notch/camera area on iOS) */
@@ -553,4 +553,50 @@ input, select, textarea {
   border-radius: 4px !important;
   width: 100% !important;
   border: none !important;
+}
+
+/* ✅ CHROME ANDROID VIEWPORT FIX */
+/* Fix for Chrome on Android zooming out issue */
+@supports (-webkit-appearance: none) {
+  /* Target Chrome specifically */
+  html {
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+  
+  body {
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+    /* Ensure body doesn't shrink on Chrome Android */
+    min-width: 100vw !important;
+    width: 100% !important;
+  }
+  
+  /* Prevent Chrome from auto-scaling content */
+  * {
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+}
+
+/* Additional fix for Chrome Android viewport issues */
+@media screen and (max-width: 768px) {
+  html {
+    font-size: 16px !important; /* Prevent Chrome from scaling font */
+  }
+  
+  body {
+    font-size: 16px !important; /* Prevent Chrome from scaling font */
+    /* Force correct width calculation */
+    width: 100vw !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+  
+  /* Ensure main content uses full viewport */
+  main {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-width: 100vw !important;
+  }
 }
