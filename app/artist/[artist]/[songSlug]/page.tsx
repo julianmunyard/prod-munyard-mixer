@@ -2040,37 +2040,33 @@ function MixerPage() {
             }
             @media screen and (max-width: 767px) and (orientation: landscape) {
               .mixer-module {
-                min-height: clamp(280px, 40vh, 320px) !important;
+                min-height: clamp(380px, 58dvh, 460px) !important;
               }
             }
             @media screen and (max-width: 374px) {
               /* Very small screens (iPhone SE, iPhone 12 mini) */
               .mixer-module {
-                min-height: 360px !important;
-                max-height: 400px !important;
+                min-height: clamp(400px, 70dvh, 480px) !important;
+                max-height: none !important;
               }
             }
             @media screen and (min-width: 375px) and (max-width: 413px) {
               /* Small screens (iPhone 13, iPhone 14) */
               .mixer-module {
-                min-height: 380px !important;
-                max-height: 440px !important;
+                min-height: clamp(420px, 72dvh, 500px) !important;
+                max-height: none !important;
               }
             }
             @media screen and (max-width: 767px) {
               /* All mobile screens */
-              /* Lock vertical scrolling but allow horizontal scrolling for modules */
-              body {
+              /* Allow vertical scrolling so tall modules never get clipped */
+              body, html {
                 overflow-x: hidden !important;
-                overflow-y: hidden !important;
-                position: fixed !important;
+                overflow-y: auto !important;
+                position: relative !important;
+                min-height: 100% !important;
+                height: auto !important;
                 width: 100% !important;
-                height: 100% !important;
-              }
-              html {
-                overflow-x: hidden !important;
-                overflow-y: hidden !important;
-                height: 100% !important;
               }
               .stems-container::-webkit-scrollbar {
                 display: none;
@@ -2079,11 +2075,12 @@ function MixerPage() {
                 -ms-overflow-style: none;
                 scrollbar-width: none;
                 overflow-x: auto !important;
-                overflow-y: hidden !important;
+                overflow-y: visible !important;
                 touch-action: pan-x !important;
               }
               .mixer-module {
-                min-height: clamp(360px, 50vh, 480px) !important;
+                min-height: clamp(430px, 75dvh, 520px) !important;
+                max-height: none !important;
               }
               .mixer-module .track-label {
                 min-height: clamp(32px, 5vh, 40px) !important;
@@ -2758,19 +2755,9 @@ function MixerPage() {
                 // Use dvh (dynamic viewport height) for better iOS Safari support
                 // Responsive heights: Properly scaled modules with visible bottom border
                 minHeight: isMobile 
-                  ? (isVerySmallScreen 
-                      ? 'clamp(300px, 38dvh, 350px)'  // iPhone SE, iPhone 12 mini - PROPERLY SCALED
-                      : isSmallScreen 
-                        ? 'clamp(320px, 40dvh, 370px)'  // iPhone 13, iPhone 14 - PROPERLY SCALED
-                        : 'clamp(350px, 43dvh, 420px)')  // iPhone 16 Pro Max - PROPERLY SCALED
+                  ? 'clamp(430px, 75dvh, 520px)'  // Taller to avoid clip on small screens
                   : 'auto',
-                maxHeight: isMobile 
-                  ? (isVerySmallScreen 
-                      ? '350px' 
-                      : isSmallScreen 
-                        ? '370px' 
-                        : '420px')  // PROPERLY SCALED
-                  : 'none',
+                maxHeight: isMobile ? 'none' : 'none',
                 marginTop: isMobile ? '4px' : '-20px',
                 marginBottom: isMobile ? (isVerySmallScreen ? '16px' : isSmallScreen ? '18px' : '20px') : '0px', // Increased to ensure bottom border visible on iPhone 13
                 paddingBottom: isMobile ? (isVerySmallScreen ? '16px' : isSmallScreen ? '18px' : '20px') : '0px', // Increased padding to show bottom border clearly
@@ -2848,27 +2835,9 @@ function MixerPage() {
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      height: isMobile 
-                        ? (isVerySmallScreen 
-                            ? 'calc(100% - 4px)'  // Leave space for bottom border
-                            : isSmallScreen 
-                              ? 'calc(100% - 4px)' 
-                              : 'calc(100% - 4px)')  // Leave space for bottom border
-                        : undefined,
-                      maxHeight: isMobile 
-                        ? (isVerySmallScreen 
-                            ? '340px'  // PROPERLY SCALED - shows bottom border
-                            : isSmallScreen 
-                              ? '360px'  // PROPERLY SCALED - shows bottom border
-                              : '410px')  // PROPERLY SCALED - shows bottom border on iPhone 16
-                        : undefined,
-                      minHeight: isMobile 
-                        ? (isVerySmallScreen 
-                            ? '300px'  // PROPERLY SCALED
-                            : isSmallScreen 
-                              ? '320px'  // PROPERLY SCALED
-                              : '350px')  // PROPERLY SCALED
-                        : undefined,
+                      height: isMobile ? 'auto' : undefined,
+                      maxHeight: isMobile ? 'none' : undefined,
+                      minHeight: isMobile ? '430px' : undefined,
                       justifyContent: 'flex-start',
                       flexShrink: 0,
                       boxSizing: 'border-box', // Ensure border is included in height

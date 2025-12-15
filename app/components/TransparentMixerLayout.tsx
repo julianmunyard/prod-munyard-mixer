@@ -143,7 +143,9 @@ export default function TransparentMixerLayout({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    height: isMobile ? '450px' : undefined, // <<<< this matches main
+    height: isMobile ? 'auto' : undefined,
+    minHeight: isMobile ? '430px' : undefined,
+    maxHeight: isMobile ? 'none' : undefined,
     justifyContent: 'flex-start',
   }}
 >
