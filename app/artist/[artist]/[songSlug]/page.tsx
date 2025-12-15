@@ -3959,8 +3959,10 @@ function MixerPage() {
                         color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '#000000' : primary,
                         borderColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '#000000' : primary,
                         borderWidth: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '2px' : '1px',
-                        backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') 
+                        backgroundColor: pageTheme === 'OLD COMPUTER'
                           ? '#D4C5B9'
+                          : pageTheme === 'MUNY'
+                          ? '#FFFFFF'
                           : (isNaturalVarispeed ? primary + '20' : 'transparent'),
                         pointerEvents: 'auto',
                         height: '26px',
