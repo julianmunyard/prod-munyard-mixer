@@ -16,7 +16,7 @@ type Props = {
   stemCount?: number
   varispeedMode?: 'timeStretch' | 'natural'
   onVarispeedModeChange?: (mode: 'timeStretch' | 'natural') => void
-  pageTheme?: 'CLASSIC' | 'TERMINAL THEME' | 'OLD COMPUTER'
+  pageTheme?: 'CLASSIC' | 'TERMINAL THEME' | 'OLD COMPUTER' | 'MUNY'
 }
 
 export default function VarispeedSlider({
@@ -108,10 +108,10 @@ const tickLabels = shouldFlipLabels
     )
   }
 
-  const sliderColor = pageTheme === 'OLD COMPUTER' ? '#000000' : primaryColor
-  const sliderBg = pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : 'transparent'
-  const sliderBorder = pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `1px solid ${primaryColor}`
-  const thumbColor = pageTheme === 'OLD COMPUTER' ? '#000000' : primaryColor
+  const sliderColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '#000000' : primaryColor
+  const sliderBg = pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent')
+  const sliderBorder = (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '2px solid #000000' : `1px solid ${primaryColor}`
+  const thumbColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '#000000' : primaryColor
 
   return (
     <div
@@ -123,8 +123,8 @@ const tickLabels = shouldFlipLabels
         paddingBottom: '8px',
         border: sliderBorder,
         backgroundColor: sliderBg,
-        borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px',
-        boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '0' : '4px',
+        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
         '--varispeed-primary-color': thumbColor,
       } as React.CSSProperties & { '--varispeed-primary-color': string }}
     >
@@ -140,8 +140,8 @@ const tickLabels = shouldFlipLabels
         {tickLabels.map((label, i) => (
           <span key={i} className="text-[10px] font-mono text-right w-6" style={{ 
             color: sliderColor,
-            fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit',
-            fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal'
+            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'monospace' : 'inherit',
+            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'bold' : 'normal'
           }}>
             {label}
           </span>
@@ -153,15 +153,15 @@ const tickLabels = shouldFlipLabels
         <div className="absolute -top-10 flex flex-col items-center">
           <span className="text-[13px] font-mono" style={{ 
             color: sliderColor,
-            fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit',
-            fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal'
+            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'monospace' : 'inherit',
+            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'bold' : 'normal'
           }}>
             {Math.round(bpm * (isIOS ? value : 2 - value))} BPM
           </span>
           <span className="text-[12px] font-mono tracking-wider mt-1" style={{ 
             color: sliderColor,
-            fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit',
-            fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal'
+            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'monospace' : 'inherit',
+            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'bold' : 'normal'
           }}>
             VARISPEED
           </span>
@@ -174,16 +174,16 @@ const tickLabels = shouldFlipLabels
               }}
               className="mt-2 px-2 py-1 text-[10px] font-mono rounded border"
               style={{ 
-                color: pageTheme === 'OLD COMPUTER' ? '#000000' : primaryColor,
-                borderColor: pageTheme === 'OLD COMPUTER' ? '#000000' : primaryColor,
-                borderWidth: pageTheme === 'OLD COMPUTER' ? '2px' : '1px',
+                color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '#000000' : primaryColor,
+                borderColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '#000000' : primaryColor,
+                borderWidth: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '2px' : '1px',
                 backgroundColor: pageTheme === 'OLD COMPUTER' 
                   ? '#D4C5B9'
-                  : (varispeedMode === 'natural' ? primaryColor + '20' : 'transparent'),
-                borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px',
-                fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
-                boxShadow: pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                fontFamily: pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'
+                  : (pageTheme === 'MUNY' ? '#FFFFFF' : (varispeedMode === 'natural' ? primaryColor + '20' : 'transparent')),
+                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? '0' : '4px',
+                fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'bold' : 'normal',
+                boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'monospace' : 'inherit'
               }}
               title={`Switch to ${varispeedMode === 'timeStretch' ? 'Natural' : 'Time-stretch'} mode`}
             >
