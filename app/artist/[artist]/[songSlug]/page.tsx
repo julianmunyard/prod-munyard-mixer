@@ -3158,10 +3158,10 @@ function MixerPage() {
                   position: 'relative',
                   overflow: 'visible',
                   zIndex: 10,
-                  marginTop: isMobile ? (isSmallScreen ? '12px' : '-22px') : '20px',
+                  marginTop: isMobile ? (isSmallScreen || isMediumScreen ? '12px' : '-22px') : '20px',
                   marginLeft: 'auto',
                   marginRight: 'auto',
-                  marginBottom: isMobile ? (isVerySmallScreen ? '16px' : isSmallScreen ? '18px' : '20px') : '0px',
+                  marginBottom: isMobile ? (isVerySmallScreen ? '16px' : (isSmallScreen || isMediumScreen) ? '18px' : '20px') : '0px',
                   width: isMobile ? 'calc(100% - 20px)' : '100%',
                   maxWidth: '896px',
                 }}
@@ -3228,10 +3228,10 @@ function MixerPage() {
                   margin: '0 auto',
                   paddingTop: '0px',
                   paddingLeft: isMobile 
-                    ? (isVerySmallScreen ? '4px' : isSmallScreen ? '6px' : '8px')
+                    ? (isVerySmallScreen ? '4px' : (isSmallScreen || isMediumScreen) ? '6px' : '8px')
                     : '8px',
                   paddingRight: isMobile 
-                    ? (isVerySmallScreen ? '4px' : isSmallScreen ? '6px' : '8px')
+                    ? (isVerySmallScreen ? '4px' : (isSmallScreen || isMediumScreen) ? '6px' : '8px')
                     : '8px',
                   paddingBottom: isMobile ? '4px' : '0px', // Extra padding to ensure bottom border visible
                   scrollBehavior: 'smooth',
@@ -3241,7 +3241,7 @@ function MixerPage() {
                   alignItems: 'flex-start', // flex-start to show bottom border
                   gap: isVerySmallScreen 
                     ? '4px' 
-                    : isSmallScreen 
+                    : (isSmallScreen || isMediumScreen)
                       ? '6px' 
                       : isMobile 
                         ? '8px' 
@@ -3258,7 +3258,7 @@ function MixerPage() {
                     style={{
                       width: isVerySmallScreen 
                         ? '70px' 
-                        : isSmallScreen 
+                        : (isSmallScreen || isMediumScreen)
                           ? '75px' 
                           : isMobile 
                             ? '80px' 
@@ -3286,7 +3286,7 @@ function MixerPage() {
                       borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '10px',
                       padding: isVerySmallScreen 
                         ? '6px' 
-                        : isSmallScreen 
+                        : (isSmallScreen || isMediumScreen)
                           ? '8px' 
                           : isMobile 
                             ? '10px' 
@@ -3303,7 +3303,7 @@ function MixerPage() {
                       boxSizing: 'border-box', // Ensure border is included in height
                       minWidth: isVerySmallScreen 
                         ? '70px' 
-                        : isSmallScreen 
+                        : (isSmallScreen || isMediumScreen)
                           ? '75px' 
                           : isMobile 
                             ? '80px' 
@@ -3314,14 +3314,14 @@ function MixerPage() {
                       width: '16px', 
                       height: isVerySmallScreen 
                         ? '12px'  // Reduced top spacer
-                        : isSmallScreen 
+                        : (isSmallScreen || isMediumScreen)
                           ? '14px'  // Reduced top spacer
                           : isMobile 
                             ? '16px'  // Reduced top spacer
                             : '40px', 
                       marginBottom: isVerySmallScreen 
                         ? '6px'  // Reduced spacing
-                        : isSmallScreen 
+                        : (isSmallScreen || isMediumScreen)
                           ? '8px'  // Reduced spacing
                           : isMobile 
                             ? '10px'  // Reduced spacing
@@ -3335,7 +3335,7 @@ function MixerPage() {
                         alignItems: 'center',
                         fontSize: isVerySmallScreen 
                           ? '9px' 
-                          : isSmallScreen 
+                          : (isSmallScreen || isMediumScreen)
                             ? '9.5px' 
                             : isMobile 
                               ? '10px' 
@@ -3348,17 +3348,17 @@ function MixerPage() {
                         justifyContent: 'center',
                         marginBottom: isVerySmallScreen 
                           ? '10px' 
-                          : isSmallScreen 
+                          : (isSmallScreen || isMediumScreen)
                             ? '12px' 
                             : isMobile 
                               ? '14px' 
                               : '30px',
                         paddingTop: isVerySmallScreen 
                           ? '25px'  // Add space above for LEVEL and extended slider
-                          : isSmallScreen 
+                          : (isSmallScreen || isMediumScreen)
                             ? '28px'
                             : isMobile 
-                              ? (isMediumScreen ? '35px' : '30px')
+                              ? '30px'
                               : '40px', // Desktop: add space
                         overflow: 'visible', // Allow slider to extend upward
                         position: 'relative', // For absolute positioning of LEVEL
@@ -3368,10 +3368,10 @@ function MixerPage() {
                         position: 'absolute',
                         top: isVerySmallScreen 
                           ? '-8px'  // Position just above slider
-                          : isSmallScreen 
+                          : (isSmallScreen || isMediumScreen)
                             ? '-10px'
                             : isMobile 
-                              ? (isMediumScreen ? '-15px' : '-12px')
+                              ? '-12px'
                               : '-20px', // Desktop: position just above
                         left: '50%',
                         transform: 'translateX(-50%)',
@@ -3398,18 +3398,18 @@ function MixerPage() {
                             width: '20px', // Wide enough to fit 18px thumb
                             height: isVerySmallScreen 
                               ? '100px'  // Extended by 25% (80px * 1.25)
-                              : isSmallScreen 
+                              : (isSmallScreen || isMediumScreen)
                                 ? '113px'  // Extended by 25% (90px * 1.25)
                                 : isMobile 
-                                  ? (isMediumScreen ? '150px' : '125px')  // Extended by 25% (120px/100px * 1.25)
+                                  ? '125px'  // Extended by 25% (120px/100px * 1.25)
                                   : '175px', // Extended by 25% (140px * 1.25)
                             background: 'transparent',
                             marginTop: isVerySmallScreen 
                               ? '-20px'  // Pull slider up into padding space
-                              : isSmallScreen 
+                              : (isSmallScreen || isMediumScreen)
                                 ? '-23px'
                                 : isMobile 
-                                  ? (isMediumScreen ? '-30px' : '-25px')
+                                  ? '-25px'
                                   : '-35px', // Desktop: pull up
                             zIndex: 1, // Lower than LEVEL
                           }}
@@ -3956,10 +3956,10 @@ function MixerPage() {
                                 : '30px',
                           paddingTop: isVerySmallScreen 
                             ? '25px'  // Add space above for LEVEL and extended slider
-                            : isSmallScreen 
+                            : (isSmallScreen || isMediumScreen)
                               ? '28px'
                               : isMobile 
-                                ? (isMediumScreen ? '35px' : '30px')
+                                ? '30px'
                                 : '40px', // Desktop: add space
                           overflow: 'visible', // Allow slider to extend upward
                           position: 'relative', // For absolute positioning of LEVEL
@@ -3969,10 +3969,10 @@ function MixerPage() {
                           position: 'absolute',
                           top: isVerySmallScreen 
                             ? '-8px'  // Position just above slider
-                            : isSmallScreen 
+                            : (isSmallScreen || isMediumScreen)
                               ? '-10px'
                               : isMobile 
-                                ? (isMediumScreen ? '-15px' : '-12px')
+                                ? '-12px'
                                 : '-20px', // Desktop: position just above
                           left: '50%',
                           transform: 'translateX(-50%)',
@@ -3999,18 +3999,18 @@ function MixerPage() {
                               width: '20px', // Wide enough to fit 18px thumb
                               height: isVerySmallScreen 
                                 ? '100px'  // Extended by 25% (80px * 1.25)
-                                : isSmallScreen 
+                                : (isSmallScreen || isMediumScreen)
                                   ? '113px'  // Extended by 25% (90px * 1.25)
                                   : isMobile 
-                                    ? (isMediumScreen ? '150px' : '125px')  // Extended by 25% (120px/100px * 1.25)
+                                    ? '125px'  // Extended by 25% (120px/100px * 1.25)
                                     : '175px', // Extended by 25% (140px * 1.25)
                               background: 'transparent',
                               marginTop: isVerySmallScreen 
                                 ? '-20px'  // Pull slider up into padding space
-                                : isSmallScreen 
+                                : (isSmallScreen || isMediumScreen)
                                   ? '-23px'
                                   : isMobile 
-                                    ? (isMediumScreen ? '-30px' : '-25px')
+                                    ? '-25px'
                                     : '-35px', // Desktop: pull up
                               zIndex: 1, // Lower than LEVEL
                             }}
@@ -4019,7 +4019,7 @@ function MixerPage() {
                       </div>
 
                       {/* Effect Dropdown & Knob */}
-                      <div style={{ marginBottom: isMobile ? (isVerySmallScreen ? '10px' : isSmallScreen ? '12px' : '14px') : '32px', textAlign: 'center' }}>
+                      <div style={{ marginBottom: isMobile ? (isVerySmallScreen ? '10px' : (isSmallScreen || isMediumScreen) ? '12px' : '14px') : '32px', textAlign: 'center' }}>
                         <div className="flex flex-col items-center text-xs select-none knob-container" style={{ 
                           color: pageTheme === 'CLASSIC' 
                             ? (isTransparent ? primary : 'white')
@@ -5070,10 +5070,10 @@ function MixerPage() {
                     position: 'relative',
                     overflow: 'visible',
                     zIndex: 10,
-                    marginTop: isSmallScreen ? '12px' : '-22px',
+                    marginTop: (isSmallScreen || isMediumScreen) ? '12px' : '-22px',
                     marginLeft: 'auto',
                     marginRight: 'auto',
-                    marginBottom: isSmallScreen ? '12px' : '20px',
+                    marginBottom: (isSmallScreen || isMediumScreen) ? '12px' : '20px',
                     width: 'calc(100% - 20px)',
                     maxWidth: '896px',
                   }}
@@ -5434,8 +5434,8 @@ function MixerPage() {
                     marginTop: '0px',
                     marginBottom: '0px', // Removed - spacing handled by parent
                     paddingBottom: isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '8px', // Padding for NATURAL button clearance
-                    width: isVerySmallScreen ? '320px' : isSmallScreen ? '340px' : (isMediumScreen ? '360px' : '350px'),
-                    height: isVerySmallScreen ? '120px' : isSmallScreen ? '130px' : (isMediumScreen ? '150px' : '140px'),
+                    width: isVerySmallScreen ? '320px' : (isSmallScreen || isMediumScreen) ? '340px' : '350px',
+                    height: isVerySmallScreen ? '120px' : (isSmallScreen || isMediumScreen) ? '130px' : '140px',
                   }}
                 >
                   <div
