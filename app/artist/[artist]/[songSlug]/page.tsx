@@ -39,6 +39,7 @@ type Song = {
   primary_color?: string
   artwork_url?: string
   page_theme?: 'CLASSIC' | 'TERMINAL THEME' | 'OLD COMPUTER' | 'MUNY' | 'OLD INTERNET'
+  album_id?: string
 }
 
 export type Stem = {
@@ -975,21 +976,50 @@ function MixerPage() {
         setPageTheme(data.page_theme);
       }
       
-      // Check if artist has an album
+      // Check if artist has an album - try multiple methods
       try {
-        const { data: albumData, error: albumError } = await supabase!
-          .from('albums')
-          .select('id')
-          .eq('artist_slug', artist)
-          .limit(1)
-          .maybeSingle()
+        let foundAlbum = false
         
-        if (!albumError && albumData) {
-          setHasAlbum(true)
+        // Method 1: Check if song has album_id
+        if (data.album_id) {
+          console.log('✅ Song has album_id:', data.album_id)
+          foundAlbum = true
         } else {
-          setHasAlbum(false)
+          // Method 2: Check if artist has an album by artist_slug
+          const { data: albumData, error: albumError } = await supabase!
+            .from('albums')
+            .select('id')
+            .eq('artist_slug', artist)
+            .limit(1)
+            .maybeSingle()
+          
+          if (albumError) {
+            console.log('⚠️ Album check error:', albumError.message)
+          }
+          
+          if (!albumError && albumData) {
+            console.log('✅ Found album for artist:', artist)
+            foundAlbum = true
+          } else {
+            // Method 3: Check if there are multiple songs by this artist (indicates album page exists)
+            const { data: songsData, error: songsError } = await supabase!
+              .from('songs')
+              .select('id')
+              .eq('artist_slug', artist)
+              .limit(2)
+            
+            if (!songsError && songsData && songsData.length > 1) {
+              console.log('✅ Multiple songs found for artist (album page likely exists):', artist)
+              foundAlbum = true
+            } else {
+              console.log('❌ No album found for artist:', artist)
+            }
+          }
         }
+        
+        setHasAlbum(foundAlbum)
       } catch (err) {
+        console.error('❌ Error checking for album:', err)
         // If albums table doesn't exist or other error, assume no album
         setHasAlbum(false)
       }
