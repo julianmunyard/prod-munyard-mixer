@@ -2356,66 +2356,6 @@ function MixerPage() {
                     : '60px',
             }}
           >
-            {/* 🎨 MUNYARD MIXER Title Banner with Decorative Lines */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                // Align banner vertically with back arrow on mobile
-                marginTop: isMobile ? '20px' : '40px',
-                marginBottom: isMobile ? '12px' : '20px',
-                padding: isMobile ? '0 12px' : '0',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  border: '2px solid #000000',
-                  backgroundColor: '#FFE5E5', // Thin pink background bar
-                  padding: isMobile ? '4px 6px' : '6px 12px',
-                  position: 'relative',
-                  width: 'fit-content',
-                  maxWidth: isMobile ? 'calc(100% - 100px)' : '90%', // Shorter on mobile to fit with back arrow
-                }}
-              >
-                {/* Left side lines - slight taper to triangle shape at end */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-end', marginRight: isMobile ? '6px' : '14px' }}>
-                  <div style={{ width: isMobile ? '18px' : '64px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '20px' : '72px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '22px' : '80px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '20px' : '72px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '18px' : '64px', height: '1px', backgroundColor: '#000000' }} />
-                </div>
-                
-                {/* Title Text */}
-                <h1
-                  style={{
-                    fontFamily: 'pixChicago, monospace',
-                    fontSize: isMobile ? '12px' : '16px',
-                    fontWeight: 'normal',
-                    color: '#000000',
-                    letterSpacing: '0.05em',
-                    whiteSpace: 'nowrap',
-                    margin: 0,
-                    padding: `0 ${isMobile ? '4px' : '8px'}`,
-                  }}
-                >
-                  MUNYARD MIXER
-                </h1>
-                
-                {/* Right side lines - slight taper to triangle shape at end */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-start', marginLeft: isMobile ? '6px' : '14px' }}>
-                  <div style={{ width: isMobile ? '18px' : '64px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '20px' : '72px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '22px' : '80px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '20px' : '72px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '18px' : '64px', height: '1px', backgroundColor: '#000000' }} />
-                </div>
-              </div>
-            </div>
-            
             {/* ⬅️ Back Button - Top Left (only shows if artist has album) */}
             {hasAlbum && albumId && (
               <button
