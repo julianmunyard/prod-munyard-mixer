@@ -2380,18 +2380,13 @@ function MixerPage() {
                   maxWidth: isMobile ? 'calc(100% - 100px)' : '90%', // Shorter on mobile to fit with back arrow
                 }}
               >
-                {/* Left side lines - 5 evenly spaced horizontal lines */}
+                {/* Left side lines - 5 lines tapering to triangle shape */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-end', marginRight: isMobile ? '6px' : '14px' }}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div
-                      key={i}
-                      style={{
-                        width: isMobile ? '24px' : '80px',
-                        height: '1px',
-                        backgroundColor: '#000000',
-                      }}
-                    />
-                  ))}
+                  <div style={{ width: isMobile ? '12px' : '40px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '18px' : '60px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '24px' : '80px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '18px' : '60px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '12px' : '40px', height: '1px', backgroundColor: '#000000' }} />
                 </div>
                 
                 {/* Title Text */}
@@ -2410,18 +2405,13 @@ function MixerPage() {
                   MUNYARD MIXER
                 </h1>
                 
-                {/* Right side lines - 5 evenly spaced horizontal lines */}
+                {/* Right side lines - 5 lines tapering to triangle shape */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-start', marginLeft: isMobile ? '6px' : '14px' }}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div
-                      key={i}
-                      style={{
-                        width: isMobile ? '24px' : '80px',
-                        height: '1px',
-                        backgroundColor: '#000000',
-                      }}
-                    />
-                  ))}
+                  <div style={{ width: isMobile ? '12px' : '40px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '18px' : '60px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '24px' : '80px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '18px' : '60px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '12px' : '40px', height: '1px', backgroundColor: '#000000' }} />
                 </div>
               </div>
             </div>
