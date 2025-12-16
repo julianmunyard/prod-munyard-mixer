@@ -207,9 +207,10 @@ function MixerPage() {
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState('Initializing audio engine...')
   
-  // Page theme state - CLASSIC = original (primary color), others = themed
-  const [pageTheme, setPageTheme] = useState<'CLASSIC' | 'TERMINAL THEME' | 'OLD COMPUTER' | 'MUNY' | 'OLD INTERNET'>('CLASSIC')
-  const [showThemeDropdown, setShowThemeDropdown] = useState(false)
+  // Page theme state - CLASSIC = original (primary color), others = themed.
+  // NOTE: Theme selection is temporarily locked to OLD COMPUTER; UI dropdown is disabled below.
+  const [pageTheme, setPageTheme] = useState<'CLASSIC' | 'TERMINAL THEME' | 'OLD COMPUTER' | 'MUNY' | 'OLD INTERNET'>('OLD COMPUTER')
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false) // kept for future use
   
   // Get primary color
   const primary = songData?.primary_color || '#B8001F'
@@ -330,7 +331,9 @@ function MixerPage() {
 
   // -------------------- 🎨 Handle Theme Change ====================
   const handleThemeChange = async (newTheme: 'CLASSIC' | 'TERMINAL THEME' | 'OLD COMPUTER' | 'MUNY' | 'OLD INTERNET') => {
-    setPageTheme(newTheme)
+    // Temporarily force all theme changes to OLD COMPUTER only.
+    const forcedTheme: 'OLD COMPUTER' = 'OLD COMPUTER'
+    setPageTheme(forcedTheme)
     setShowThemeDropdown(false)
     
     // Save to database if we have song data
@@ -338,7 +341,7 @@ function MixerPage() {
       try {
         const { error } = await supabase!
           .from('songs')
-          .update({ page_theme: newTheme })
+          .update({ page_theme: forcedTheme })
           .eq('id', songData.id)
         
         if (error) {
@@ -354,8 +357,9 @@ function MixerPage() {
   
   // Load theme from database on mount
   useEffect(() => {
-    if (songData?.page_theme && (songData.page_theme === 'CLASSIC' || songData.page_theme === 'TERMINAL THEME' || songData.page_theme === 'OLD COMPUTER' || songData.page_theme === 'MUNY' || songData.page_theme === 'OLD INTERNET')) {
-      setPageTheme(songData.page_theme)
+    // TEMP: Always force OLD COMPUTER theme for now, regardless of saved page_theme.
+    if (songData?.page_theme) {
+      setPageTheme('OLD COMPUTER')
     }
   }, [songData?.page_theme])
   
@@ -5099,7 +5103,7 @@ function MixerPage() {
                       />
                     </div>
 
-                    {/* NATURAL/STRETCH toggle + THEMES button (desktop OLD COMPUTER) */}
+                    {/* NATURAL/STRETCH toggle (desktop OLD COMPUTER) – THEMES button temporarily disabled */}
                     <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2" style={{ bottom: '-6px', zIndex: 100, pointerEvents: 'auto' }}>
                       <button
                         onClick={() => {
@@ -5131,6 +5135,7 @@ function MixerPage() {
                         {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
                       </button>
 
+                      {/*
                       <div className="relative" data-theme-dropdown>
                         <button
                           onClick={() => setShowThemeDropdown(!showThemeDropdown)}
@@ -5211,6 +5216,7 @@ function MixerPage() {
                           </div>
                         )}
                       </div>
+                      */}
                     </div>
                   </div>
                 </div>
@@ -5275,8 +5281,8 @@ function MixerPage() {
                     />
                   </div>
                   
-                  {/* Mode Toggle Button and Theme Button - Centered below slider for desktop */}
-                  {/* ⚠️ IMPORTANT: These buttons are the BOTTOM BOUNDARY of the page. 
+                  {/* Mode Toggle Button (desktop) – Theme button temporarily disabled.
+                      ⚠️ IMPORTANT: This row is the BOTTOM BOUNDARY of the page. 
                       Nothing can be placed below these buttons. All content must be above this line. */}
                   <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2" style={{ bottom: '-11px' }}>
                     <button
@@ -5312,6 +5318,7 @@ function MixerPage() {
                     >
                       {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
                     </button>
+                    {/*
                     <div className="relative" data-theme-dropdown>
                       <button
                         onClick={() => setShowThemeDropdown(!showThemeDropdown)}
@@ -5387,6 +5394,7 @@ function MixerPage() {
                         </div>
                       )}
                     </div>
+                    */}
                   </div>
                 </div>
               </div>

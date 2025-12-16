@@ -163,7 +163,7 @@ export default function Dashboard() {
       <main
         style={{
           height: '100vh',
-          backgroundColor: '#FCFAEE',
+          backgroundColor: '#FFE5E5', // OLD COMPUTER page background
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -171,12 +171,13 @@ export default function Dashboard() {
       >
         <div
           style={{
-            border: '4px solid #B8001F',
+            border: '4px solid #000000',
             borderTop: '4px solid transparent',
             borderRadius: '50%',
             width: '36px',
             height: '36px',
             animation: 'spin 1s linear infinite',
+            boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
           }}
         />
         <style>{`
@@ -193,9 +194,9 @@ export default function Dashboard() {
     <main
       style={{
         minHeight: '100vh',
-        backgroundColor: '#FCFAEE',
+        backgroundColor: '#FFE5E5', // OLD COMPUTER pink background
         padding: '3rem 1.5rem',
-        fontFamily: 'Geist Mono, monospace',
+        fontFamily: 'monospace',
         textAlign: 'center',
         overflowY: 'auto',
         display: 'flex',
@@ -203,28 +204,84 @@ export default function Dashboard() {
         alignItems: 'center',
       }}
     >
-      <div style={{ width: '100%', maxWidth: '500px' }}>
-        <h1 style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '2rem' }}>
-          Dashboard
-        </h1>
+      {/* Outer "window" frame to match OLD COMPUTER mixer/album aesthetic */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '720px',
+          border: '3px solid #000000',
+          backgroundColor: '#D4C5B9',
+          boxShadow: 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
+        }}
+      >
+        {/* Title bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.6rem 0.9rem',
+            borderBottom: '3px solid #000000',
+            backgroundColor: '#C0C0C0',
+            fontWeight: 'bold',
+            fontSize: '0.9rem',
+          }}
+        >
+          <span>DASHBOARD.EXE</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+          </div>
+        </div>
 
-        {userEmail && (
-          <p style={{ fontSize: '1rem', marginBottom: '2rem' }}>
-            Welcome, {userEmail.split('@')[0].split('.')[0].charAt(0).toUpperCase() + userEmail.split('@')[0].split('.')[0].slice(1)}
-          </p>
-        )}
+        {/* Content area */}
+        <div
+          style={{
+            padding: '1.5rem',
+            backgroundColor: '#FFFFFF',
+            borderTop: '2px solid #000000',
+          }}
+        >
+          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1.5rem', textAlign: 'left' }}>
+            Your mixes
+          </h1>
 
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', justifyContent: 'center' }}>
+          {userEmail && (
+            <p style={{ fontSize: '0.95rem', marginBottom: '1.5rem', textAlign: 'left' }}>
+              Logged in as{' '}
+              <span style={{ fontWeight: 'bold' }}>
+                {userEmail
+                  .split('@')[0]
+                  .split('.')[0]
+                  .charAt(0)
+                  .toUpperCase() + userEmail.split('@')[0].split('.')[0].slice(1)}
+              </span>
+            </p>
+          )}
+
+          {/* Tabs */}
+          <div
+            style={{
+              display: 'inline-flex',
+              gap: '0',
+              marginBottom: '1.5rem',
+              border: '2px solid #000000',
+              backgroundColor: '#D4C5B9',
+            }}
+          >
           <button
             onClick={() => setActiveTab('songs')}
             style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: activeTab === 'songs' ? '#B8001F' : 'transparent',
-              color: activeTab === 'songs' ? 'white' : '#B8001F',
-              border: '2px solid #B8001F',
+              padding: '0.5rem 1.25rem',
+              backgroundColor: activeTab === 'songs' ? '#FFFFFF' : '#D4C5B9',
+              color: '#000000',
+              border: 'none',
+              borderRight: '2px solid #000000',
               cursor: 'pointer',
-              fontSize: '1rem',
+              fontSize: '0.9rem',
               fontWeight: 'bold',
+              fontFamily: 'monospace',
             }}
           >
             Songs
@@ -232,31 +289,32 @@ export default function Dashboard() {
           <button
             onClick={() => setActiveTab('albums')}
             style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: activeTab === 'albums' ? '#B8001F' : 'transparent',
-              color: activeTab === 'albums' ? 'white' : '#B8001F',
-              border: '2px solid #B8001F',
+              padding: '0.5rem 1.25rem',
+              backgroundColor: activeTab === 'albums' ? '#FFFFFF' : '#D4C5B9',
+              color: '#000000',
+              border: 'none',
               cursor: 'pointer',
-              fontSize: '1rem',
+              fontSize: '0.9rem',
               fontWeight: 'bold',
+              fontFamily: 'monospace',
             }}
           >
             Albums
           </button>
-        </div>
+          </div>
 
         {activeTab === 'songs' ? (
           <>
             {projects.length === 0 ? (
-              <div style={{ marginBottom: '2rem' }}>
-                <p style={{ fontSize: '1.25rem' }}>You don't have any songs yet.</p>
+              <div style={{ marginBottom: '1.5rem', padding: '0.75rem 1rem', border: '2px solid #000000', backgroundColor: '#FCFAEE', fontSize: '0.95rem' }}>
+                You don't have any songs yet.
               </div>
             ) : (
               <div style={{ textAlign: 'left', marginBottom: '2rem' }}>
-                <p style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Your Songs:</p>
+                <p style={{ fontSize: '1rem', marginBottom: '0.75rem', fontWeight: 'bold' }}>Your Songs</p>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                   {projects.map((song) => (
-                    <li key={song.id} style={{ marginBottom: '1rem' }}>
+                    <li key={song.id} style={{ marginBottom: '0.75rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                         <div
                           onClick={() => {
@@ -266,16 +324,16 @@ export default function Dashboard() {
                           }}
                           style={{
                             flexGrow: 1,
-                            padding: '1rem',
-                            border: '1px solid #ccc',
-                            borderRadius: '6px',
-                            backgroundColor: '#f5f5f5',
+                            padding: '0.75rem 0.9rem',
+                            border: '2px solid #000000',
+                            backgroundColor: '#FFFFFF',
                             cursor: 'pointer',
-                            color: 'black'
+                            color: '#000000',
+                            boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
                           }}
                         >
                           <strong>{song.title}</strong><br />
-                          <span>{song.artist_name}</span>
+                          <span style={{ fontSize: '0.85rem' }}>{song.artist_name}</span>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                           <form onSubmit={(e) => e.preventDefault()}>
@@ -283,13 +341,14 @@ export default function Dashboard() {
                               type="button"
                               onClick={() => handleDelete(song.id, song.stems)}
                               style={{
-                                backgroundColor: '#B8001F',
-                                color: 'black',
-                                border: 'none',
-                                padding: '0.5rem 1rem',
+                                backgroundColor: '#D4C5B9',
+                                color: '#000000',
+                                border: '2px solid #000000',
+                                padding: '0.4rem 0.9rem',
                                 cursor: 'pointer',
-                                borderRadius: '4px',
-                                fontSize: '0.9rem',
+                                fontSize: '0.8rem',
+                                fontFamily: 'monospace',
+                                boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
                               }}
                             >
                               Delete
@@ -298,16 +357,17 @@ export default function Dashboard() {
                           <Link
                             href={`/artist/${song.artist_slug}/${song.song_slug}/edit`}
                             style={{
-                              backgroundColor: '#B8001F',
-                              color: 'white',
-                              border: 'none',
-                              padding: '0.5rem 1rem',
+                              backgroundColor: '#D4C5B9',
+                              color: '#000000',
+                              border: '2px solid #000000',
+                              padding: '0.4rem 0.9rem',
                               cursor: 'pointer',
-                              borderRadius: '4px',
-                              fontSize: '0.9rem',
+                              fontSize: '0.8rem',
                               textDecoration: 'none',
                               display: 'inline-block',
                               textAlign: 'center',
+                              fontFamily: 'monospace',
+                              boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
                             }}
                           >
                             Edit
@@ -323,50 +383,51 @@ export default function Dashboard() {
         ) : (
           <>
             {albums.length === 0 ? (
-              <div style={{ marginBottom: '2rem' }}>
-                <p style={{ fontSize: '1.25rem' }}>You don't have any albums yet.</p>
+              <div style={{ marginBottom: '1.5rem', padding: '0.75rem 1rem', border: '2px solid #000000', backgroundColor: '#FCFAEE', fontSize: '0.95rem' }}>
+                You don't have any albums yet.
               </div>
             ) : (
               <div style={{ textAlign: 'left', marginBottom: '2rem' }}>
-                <p style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Your Albums:</p>
+                <p style={{ fontSize: '1rem', marginBottom: '0.75rem', fontWeight: 'bold' }}>Your Albums</p>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                   {albums.map((album) => {
                     const songIds = album.songs.map(s => s.id).join(',')
                     const albumUrl = `/album/${album.album_id}?songs=${songIds}`
                     
                     return (
-                      <li key={album.album_id} style={{ marginBottom: '1rem' }}>
+                      <li key={album.album_id} style={{ marginBottom: '0.75rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
                           <div
                             onClick={() => router.push(albumUrl)}
                             style={{
                               flexGrow: 1,
-                              padding: '1rem',
-                              border: '1px solid #ccc',
-                              borderRadius: '6px',
-                              backgroundColor: '#f5f5f5',
+                              padding: '0.75rem 0.9rem',
+                              border: '2px solid #000000',
+                              backgroundColor: '#FFFFFF',
                               cursor: 'pointer',
-                              color: 'black'
+                              color: '#000000',
+                              boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
                             }}
                           >
                             <strong>{album.album_title}</strong><br />
-                            <span style={{ fontSize: '0.9rem', color: '#666' }}>
+                            <span style={{ fontSize: '0.85rem', color: '#444' }}>
                               {album.artist_name} • {album.songs.length} {album.songs.length === 1 ? 'song' : 'songs'}
                             </span>
                           </div>
                           <Link
                             href={`/premium/edit/${album.album_id}`}
                             style={{
-                              backgroundColor: '#B8001F',
-                              color: 'white',
-                              border: 'none',
-                              padding: '0.5rem 1rem',
+                              backgroundColor: '#D4C5B9',
+                              color: '#000000',
+                              border: '2px solid #000000',
+                              padding: '0.4rem 0.9rem',
                               cursor: 'pointer',
-                              borderRadius: '4px',
-                              fontSize: '0.9rem',
+                              fontSize: '0.8rem',
                               textDecoration: 'none',
                               display: 'inline-block',
                               textAlign: 'center',
+                              fontFamily: 'monospace',
+                              boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
                             }}
                           >
                             Edit
@@ -381,16 +442,19 @@ export default function Dashboard() {
           </>
         )}
 
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button
+          {/* Bottom actions */}
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-start', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+            <button
             onClick={() => router.push('/create')}
             style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: '#B8001F',
-              color: 'white',
-              fontSize: '1.25rem',
-              border: 'none',
-              cursor: 'pointer'
+              padding: '0.45rem 1.1rem',
+              backgroundColor: '#D4C5B9',
+              color: '#000000',
+              fontSize: '0.9rem',
+              border: '2px solid #000000',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
             }}
           >
             Create New Song
@@ -398,16 +462,19 @@ export default function Dashboard() {
           <button
             onClick={() => router.push('/premium/create')}
             style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: '#B8001F',
-              color: 'white',
-              fontSize: '1.25rem',
-              border: 'none',
-              cursor: 'pointer'
+              padding: '0.45rem 1.1rem',
+              backgroundColor: '#D4C5B9',
+              color: '#000000',
+              fontSize: '0.9rem',
+              border: '2px solid #000000',
+              cursor: 'pointer',
+              fontFamily: 'monospace',
+              boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
             }}
           >
             Create Album
           </button>
+          </div>
         </div>
       </div>
     </main>

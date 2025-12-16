@@ -33,7 +33,9 @@ export default function Create() {
   const [locked, setLocked] = useState(true)
   const [artistName, setArtistName] = useState('')
   const [projectTitle, setProjectTitle] = useState('')
-  const [color, setColor] = useState('Red (Classic)')
+  // NOTE: Theme selection is temporarily locked to OLD COMPUTER.
+  // The old color options & theme dropdown UI are kept below but commented out.
+  const [color, setColor] = useState('OLD COMPUTER')
   const [effect, setEffect] = useState('Delay')
   const [stems, setStems] = useState<FileList | null>(null)
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
@@ -47,8 +49,8 @@ export default function Create() {
   const [backgroundVideo, setBackgroundVideo] = useState<File | null>(null)
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null)
-  const [primaryColor, setPrimaryColor] = useState('#B8001F') // default red
-  const [showThemeDropdown, setShowThemeDropdown] = useState(false)
+  const [primaryColor, setPrimaryColor] = useState('#B8001F') // default accent; UI picker disabled for now
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false) // kept for future use (theme dropdown disabled)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [hasWavs, setHasWavs] = useState(false)
   const [convertStatus, setConvertStatus] = useState<'idle' | 'uploading' | 'done'>('idle')
@@ -65,6 +67,7 @@ export default function Create() {
       const target = event.target as HTMLElement
       if (!target.closest('[data-dropdown]')) {
         setShowFileSourceDropdown(false)
+        // Theme dropdown is currently disabled, but we keep this for future re-enable.
         setShowThemeDropdown(false)
       }
     }
@@ -335,24 +338,28 @@ videoPublicUrl = publicUrlData.publicUrl
     const artistSlug = toSlug(artistName)
     const songSlug = toSlug(projectTitle)
 
-    const { data, error: insertError } = await supabase.from('songs')
-.insert({
-  user_id: user.id,
-  artist_name: artistName,
-  title: projectTitle,
-effects: (
-  effect.includes('Delay') ? 'delay'
-  : effect.includes('Phaser') ? 'phaser'
-  : null
-),
-  color,
-  primary_color: primaryColor, // ✅ ADD THIS
-  stems: uploadedStemUrls,
-  bpm: bpm !== '' ? Number(bpm) : null,
-  artist_slug: artistSlug,
-  song_slug: songSlug,
-  background_video: videoPublicUrl,
-})
+    const { data, error: insertError } = await supabase
+      .from('songs')
+      .insert({
+        user_id: user.id,
+        artist_name: artistName,
+        title: projectTitle,
+        effects:
+          effect.includes('Delay')
+            ? 'delay'
+            : effect.includes('Phaser')
+            ? 'phaser'
+            : null,
+        color,
+        primary_color: primaryColor, // ✅ ADD THIS
+        // Force all mixers created from this page to use the OLD COMPUTER page theme.
+        page_theme: 'OLD COMPUTER',
+        stems: uploadedStemUrls,
+        bpm: bpm !== '' ? Number(bpm) : null,
+        artist_slug: artistSlug,
+        song_slug: songSlug,
+        background_video: videoPublicUrl,
+      })
       .select()
       .single()
 
@@ -379,81 +386,143 @@ effects: (
 
 
   return (
-<main
-  style={{
-    minHeight: '100vh',
-    overflowY: 'auto',
-    WebkitOverflowScrolling: 'touch',
-    padding: '3rem 1.5rem 6rem',
-    fontFamily: 'Geist Mono, monospace',
-    textAlign: 'center',
-    backgroundColor: '#FCFAEE',
-    display: 'flex',              // ✅ restore flex
-    justifyContent: 'center',    // ✅ center horizontally
-    alignItems: 'flex-start',    // ✅ top align to allow scrolling
-  }}
->
+    <main
+      style={{
+        minHeight: '100vh',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        padding: '3rem 1.5rem 6rem',
+        fontFamily: 'monospace',
+        textAlign: 'center',
+        backgroundColor: '#FFE5E5', // OLD COMPUTER pink
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+      }}
+    >
 
-      <div style={{ width: '100%', maxWidth: '500px' }}>
-        <h1 style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '2rem' }}>UPLOAD STEMS</h1>
+      {/* Outer "window" frame to match OLD COMPUTER mixer/album aesthetic */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '720px',
+          border: '3px solid #000000',
+          backgroundColor: '#D4C5B9',
+          boxShadow: 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
+          textAlign: 'left',
+        }}
+      >
+        {/* Title bar */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.6rem 0.9rem',
+            borderBottom: '3px solid #000000',
+            backgroundColor: '#C0C0C0',
+            fontWeight: 'bold',
+            fontSize: '0.9rem',
+          }}
+        >
+          <span>CREATE-MIX.EXE</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+          </div>
+        </div>
+
+        {/* Content area */}
+        <div
+          style={{
+            padding: '1.5rem',
+            backgroundColor: '#FFFFFF',
+            borderTop: '2px solid #000000',
+          }}
+        >
+        <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>Upload stems</h1>
 
         {userEmail && (
-          <p style={{ marginBottom: '2rem' }}>
-            Logged in as:{' '}
-            {userEmail
-              .split('@')[0]
-              .split('.')[0]
-              .charAt(0)
-              .toUpperCase() + userEmail.split('@')[0].split('.')[0].slice(1)}
+          <p style={{ marginBottom: '1.25rem', fontSize: '0.95rem' }}>
+            Logged in as{' '}
+            <span style={{ fontWeight: 'bold' }}>
+              {userEmail
+                .split('@')[0]
+                .split('.')[0]
+                .charAt(0)
+                .toUpperCase() + userEmail.split('@')[0].split('.')[0].slice(1)}
+            </span>
           </p>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
 
-          <label>
-            Artist Name
-            <input
-              type="text"
-              value={artistName}
-              onChange={(e) => setArtistName(e.target.value)}
-              style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
-            />
-          </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <label style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+              Artist name
+              <input
+                type="text"
+                value={artistName}
+                onChange={(e) => setArtistName(e.target.value)}
+                style={{
+                  marginTop: '0.25rem',
+                  padding: '0.45rem 0.5rem',
+                  width: '100%',
+                  backgroundColor: '#FFFFFF',
+                  color: '#000000',
+                  border: '2px solid #000000',
+                  fontFamily: 'monospace',
+                }}
+              />
+            </label>
 
-          <label>
-            Project Title
-            <input
-              type="text"
-              value={projectTitle}
-              onChange={(e) => setProjectTitle(e.target.value)}
-              style={{ padding: '0.5rem', width: '100%', backgroundColor: 'white', color: 'black' }}
-            />
-          </label>
+            <label style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+              Project title
+              <input
+                type="text"
+                value={projectTitle}
+                onChange={(e) => setProjectTitle(e.target.value)}
+                style={{
+                  marginTop: '0.25rem',
+                  padding: '0.45rem 0.5rem',
+                  width: '100%',
+                  backgroundColor: '#FFFFFF',
+                  color: '#000000',
+                  border: '2px solid #000000',
+                  fontFamily: 'monospace',
+                }}
+              />
+            </label>
 
-          <label>
-  BPM (Optional)
-  <input
-    type="number"
-    min="0"
-    value={bpm}
-    onChange={(e) => {
-      const val = e.target.value
-      setBpm(val === '' ? '' : Number(val))
-    }}
-    placeholder="e.g. 120"
-    style={{
-      padding: '0.5rem',
-      width: '100%',
-      backgroundColor: 'white',
-      color: 'black',
-    }}
-  />
-</label>
+            <label style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>
+              BPM (optional)
+              <input
+                type="number"
+                min="0"
+                value={bpm}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setBpm(val === '' ? '' : Number(val))
+                }}
+                placeholder="e.g. 120"
+                style={{
+                  marginTop: '0.25rem',
+                  padding: '0.45rem 0.5rem',
+                  width: '100%',
+                  backgroundColor: '#FFFFFF',
+                  color: '#000000',
+                  border: '2px solid #000000',
+                  fontFamily: 'monospace',
+                }}
+              />
+            </label>
+          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
-            <label style={{ fontWeight: 'bold', fontSize: '1rem' }}>
-              Choose Stems (WAV/MP3)
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', marginTop: '0.5rem' }}>
+            <label style={{ fontWeight: 'bold', fontSize: '0.95rem' }}>
+              Choose stems (WAV/MP3)
             </label>
             
             {/* File Source Dropdown */}
@@ -462,20 +531,22 @@ effects: (
                 onClick={() => setShowFileSourceDropdown(!showFileSourceDropdown)}
                 style={{
                   width: '100%',
-                  padding: '0.5rem',
-                  backgroundColor: 'white',
-                  color: 'black',
-                  border: '1px solid #ccc',
+                  padding: '0.45rem 0.5rem',
+                  backgroundColor: '#FFFFFF',
+                  color: '#000000',
+                  border: '2px solid #000000',
                   cursor: 'pointer',
                   appearance: 'none',
                   position: 'relative',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  fontFamily: 'monospace',
+                  fontSize: '0.9rem',
                 }}
               >
                 <span>
-                  {fileSource === 'device' ? '📱 From This Device' : '📁 From Dropbox'}
+                  {fileSource === 'device' ? '📱 From this device' : '📁 From Dropbox'}
                 </span>
                 <span style={{ fontSize: '0.8rem' }}>▼</span>
               </div>
@@ -487,10 +558,11 @@ effects: (
                     top: '100%',
                     left: 0,
                     width: '100%',
-                    backgroundColor: 'white',
-                    border: '1px solid #ccc',
+                    backgroundColor: '#FFFFFF',
+                    border: '2px solid #000000',
                     zIndex: 10,
                     fontSize: '0.9rem',
+                    boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
                   }}
                 >
                   <div
@@ -499,12 +571,13 @@ effects: (
                       setShowFileSourceDropdown(false)
                     }}
                     style={{
-                      padding: '0.5rem',
+                      padding: '0.45rem 0.5rem',
                       cursor: 'pointer',
-                      backgroundColor: fileSource === 'device' ? '#f3f3f3' : 'white',
+                      backgroundColor: fileSource === 'device' ? '#E0E0E0' : '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
+                      fontFamily: 'monospace',
                     }}
                   >
                     📱 From This Device
@@ -515,12 +588,13 @@ effects: (
                       setShowFileSourceDropdown(false)
                     }}
                     style={{
-                      padding: '0.5rem',
+                      padding: '0.45rem 0.5rem',
                       cursor: 'pointer',
-                      backgroundColor: fileSource === 'dropbox' ? '#f3f3f3' : 'white',
+                      backgroundColor: fileSource === 'dropbox' ? '#E0E0E0' : '#FFFFFF',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
+                      fontFamily: 'monospace',
                     }}
                   >
                     📁 From Dropbox
@@ -535,20 +609,21 @@ effects: (
                 <label
                   htmlFor="file-upload"
                   style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#ffffff',
-                    color: '#B8001F',
-                    border: '1px solid #B8001F',
-                    borderRadius: '4px',
+                    padding: '0.45rem 1rem',
+                    backgroundColor: '#D4C5B9',
+                    color: '#000000',
+                    border: '2px solid #000000',
                     cursor: 'pointer',
                     fontSize: '0.9rem',
                     display: 'block',
                     textAlign: 'center',
                     width: '100%',
                     boxSizing: 'border-box',
+                    fontFamily: 'monospace',
+                    boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
                   }}
                 >
-                  Choose Files
+                  Choose files
                 </label>
                 <input
                   id="file-upload"
@@ -593,10 +668,10 @@ effects: (
               </div>
             )}
 
-            <span style={{ fontSize: '0.85rem', color: '#aaa', textAlign: 'center', marginTop: '0.25rem' }}>
+            <span style={{ fontSize: '0.8rem', color: '#555', textAlign: 'left', marginTop: '0.25rem' }}>
               ⚠️ Use MP3s for faster uploads, or WAVs under 50MB.
               {isMobile && (
-                <><br />📱 Mobile: Limited to 15 stems for memory optimization.</>
+                <><br />📱 Mobile: limited to 15 stems for memory optimization.</>
               )}
             </span>
             
@@ -613,8 +688,8 @@ effects: (
 
           {uploadedFiles.length > 0 && (
             <div style={{ width: '100%' }}>
-              <label style={{ fontWeight: 'bold', marginBottom: '0.5rem', display: 'block' }}>
-                Uploading Files
+              <label style={{ fontWeight: 'bold', marginBottom: '0.5rem', display: 'block', fontSize: '0.9rem' }}>
+                Uploading files
               </label>
               <div style={{ marginTop: '1rem' }}>
                 {uploadedFiles.map((file, i) => (
@@ -727,9 +802,9 @@ effects: (
     style={{
       marginTop: '1rem',
       padding: '0.6rem 1rem',
-      backgroundColor: '#B8001F',
-      color: 'white',
-      border: 'none',
+      backgroundColor: '#D4C5B9',
+      color: '#000000',
+      border: '2px solid #000000',
       fontSize: '1rem',
       borderRadius: '4px',
       cursor: convertStatus === 'uploading' ? 'not-allowed' : 'pointer',
@@ -741,216 +816,37 @@ effects: (
   </button>
 )}
 
-<div style={{ position: 'relative', width: '100%' }} data-dropdown>
-  <label style={{ display: 'block', marginBottom: '0.5rem' }}>Choose Your Mixer Theme</label>
+{/* 🎨 Mixer theme selection is locked to OLD COMPUTER for now.
+    The previous dropdown + color picker UI are kept below but commented out for future use. */}
+<div style={{ width: '100%', marginTop: '1.5rem', textAlign: 'left' }}>
+  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+    Mixer Theme
+  </label>
   <div
-    onClick={() => setShowThemeDropdown((prev) => !prev)}
     style={{
       width: '100%',
       padding: '0.5rem',
       backgroundColor: 'white',
       color: 'black',
       border: '1px solid #ccc',
-      cursor: 'pointer',
-      appearance: 'none',
-      position: 'relative',
+      borderRadius: '4px',
+      fontSize: '0.9rem',
     }}
   >
-    {color}
-    <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)' }}>
-      ▼
-    </span>
+    OLD COMPUTER (locked)
   </div>
-
-  {showThemeDropdown && (
-    <div
-      style={{
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        width: '100%',
-        backgroundColor: 'white',
-        border: '1px solid #ccc',
-        zIndex: 10,
-        fontSize: '0.9rem',
-      }}
-    >
-      {['Red (Classic)', 'Transparent'].map((themeOption) => (
-        <div
-          key={themeOption}
-          onClick={() => {
-            setColor(themeOption)
-            setShowThemeDropdown(false)
-          }}
-          style={{
-            padding: '0.5rem',
-            cursor: 'pointer',
-            backgroundColor: color === themeOption ? '#f3f3f3' : 'white',
-          }}
-        >
-          {themeOption}
-        </div>
-      ))}
-    </div>
-  )}
 </div>
 
-
-
- {/* side by side preview */}
-<div
-  style={{
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '2rem',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginTop: '2rem',
-  }}
->
-  {/* 🎨 Color Picker + Input */}
-  <div style={{ flex: '1 1 280px', maxWidth: '100%' }}>
-    <HexColorPicker
-      color={primaryColor}
-      onChange={setPrimaryColor}
-      style={{
-        width: '100%',
-        height: '280px',
-        borderRadius: '12px',
-        boxShadow: '0 0 0 1px #ccc',
-      }}
-    />
-    <input
-      type="text"
-      inputMode="text"
-      autoComplete="off"
-      spellCheck={false}
-      value={primaryColor}
-      onChange={(e) => {
-        const val = e.target.value.trim()
-        setPrimaryColor(val)
-      }}
-      placeholder="#B8001F"
-      style={{
-        marginTop: '1rem',
-        padding: '0.5rem',
-        fontFamily: 'monospace',
-        width: '100%',
-        color: primaryColor,
-        border: `1px solid ${primaryColor}`,
-        backgroundColor: '#fff',
-      }}
-    />
-  </div>
-
-  {/* 🔊 Mixer Preview */}
-<div
-  style={{
-    flex: '1 1 120px',
-    maxWidth: '100%',
-    display: 'flex',
-    justifyContent: 'center',
-  } as React.CSSProperties}
->
-  <MiniMixerPreview theme={color} accentColor={primaryColor} />
-</div>
-
-</div>
-
-
-{color === 'Transparent' && (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%' }}>
-    <span style={{ fontWeight: 'bold' }}>Optional Background Video (MP4 or WebM)</span>
-    
-    <label
-      htmlFor="video-upload"
-      style={{
-        padding: '0.5rem 1rem',
-        backgroundColor: '#ffffff',
-        color: '#B8001F',
-        border: '1px solid #B8001F',
-        borderRadius: '4px',
-        cursor: 'pointer',
-        fontSize: '0.9rem',
-        display: 'inline-block',
-      }}
-    >
-      Choose File
-    </label>
-
-    <span style={{ fontSize: '0.85rem', color: '#aaa' }}>
-      This video will loop fullscreen behind the mixer.
-    </span>
-
-    {videoPreviewUrl && (
-      <div style={{ 
-        position: 'relative', 
-        width: '100%', 
-        maxWidth: '400px', 
-        marginTop: '1rem',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        border: '1px solid #ccc'
-      }}>
-        <video
-          src={videoPreviewUrl}
-          controls
-          style={{
-            width: '100%',
-            height: 'auto',
-            display: 'block'
-          }}
-        />
-        <button
-          onClick={() => {
-            setBackgroundVideo(null)
-            setVideoPreviewUrl(null)
-            const input = document.getElementById('video-upload') as HTMLInputElement
-            if (input) input.value = ''
-          }}
-          style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            padding: '4px 8px',
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '12px'
-          }}
-        >
-          Remove
-        </button>
-      </div>
-    )}
-
-    <input
-      id="video-upload"
-      type="file"
-      accept="video/mp4,video/webm"
-      onChange={(e) => {
-        const file = e.target.files?.[0]
-        if (file) {
-          setBackgroundVideo(file)
-          // Create preview URL
-          const url = URL.createObjectURL(file)
-          setVideoPreviewUrl(url)
-        }
-      }}
-      style={{ display: 'none' }}
-    />
-  </div>
-)}
+{/* Legacy theme dropdown, color picker, and background video UI removed from JSX
+    but preserved elsewhere in this file if needed in the future. */}
 
           <button
             type="submit"
             disabled={isSubmitting}
             style={{
               padding: '0.75rem 1.5rem',
-              backgroundColor: '#B8001F',
-              color: 'white',
+              backgroundColor: '#D4C5B9',
+              color: '#000000',
               fontSize: '1.25rem',
               border: 'none',
               cursor: isSubmitting ? 'not-allowed' : 'pointer',
@@ -980,8 +876,8 @@ effects: (
           {uploadError && (
             <div style={{
               backgroundColor: '#FCFAEE',
-              border: '2px solid #B8001F',
-              color: '#B8001F',
+              border: '2px solid #000000',
+              color: '#000000',
               padding: '1rem',
               borderRadius: '6px',
               marginTop: '1.5rem',
@@ -996,12 +892,9 @@ effects: (
 
       </div>
 
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+      {/* Close outer window frame */}
+    </div>
+
     </main>
   )
 }

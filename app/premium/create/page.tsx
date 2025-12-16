@@ -35,7 +35,7 @@ export default function PremiumCreate() {
   const router = useRouter()
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [locked, setLocked] = useState(true)
-  const [projectType, setProjectType] = useState<'single' | 'album'>('single')
+  const [projectType, setProjectType] = useState<'single' | 'album'>('album')
   const [artistName, setArtistName] = useState('')
   const [projectTitle, setProjectTitle] = useState('')
   const [albumTitle, setAlbumTitle] = useState('')
@@ -58,11 +58,11 @@ export default function PremiumCreate() {
       border: '#000000',
       inputBg: '#FFFFFF',
       inputText: '#000000',
-      buttonBg: '#B8001F',
-      buttonText: '#FFFFFF',
+      buttonBg: '#D4C5B9',
+      buttonText: '#000000',
       cardBg: '#FFFFFF',
-      cardBorder: '#B8001F',
-      accent: '#B8001F',
+      cardBorder: '#000000',
+      accent: '#000000',
       sectionBg: '#FCFAEE',
       glow: 'none'
     },
@@ -642,40 +642,24 @@ export default function PremiumCreate() {
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Project Type Selection */}
+          {/* Project Type Selection - visually shows ALBUM only (single flow hidden) */}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Project Type</label>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
               <button
                 type="button"
-                onClick={() => setProjectType('single')}
+                disabled
                 style={{
                   padding: '0.75rem 2rem',
-                  backgroundColor: projectType === 'single' ? currentTheme.buttonBg : currentTheme.cardBg,
-                  color: projectType === 'single' ? currentTheme.buttonText : currentTheme.text,
+                  backgroundColor: currentTheme.buttonBg,
+                  color: currentTheme.buttonText,
                   border: `2px solid ${currentTheme.border}`,
-                  boxShadow: pageTheme === 'TERMINAL THEME' ? (projectType === 'single' ? currentTheme.glow : 'none') : 'none',
+                  boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
                   fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
-                  cursor: 'pointer',
                   fontSize: '1rem',
                   fontWeight: 'bold',
-                }}
-              >
-                SINGLE
-              </button>
-              <button
-                type="button"
-                onClick={() => setProjectType('album')}
-                style={{
-                  padding: '0.75rem 2rem',
-                  backgroundColor: projectType === 'album' ? currentTheme.buttonBg : currentTheme.cardBg,
-                  color: projectType === 'album' ? currentTheme.buttonText : currentTheme.text,
-                  border: `2px solid ${currentTheme.border}`,
-                  boxShadow: pageTheme === 'TERMINAL THEME' ? (projectType === 'album' ? currentTheme.glow : 'none') : 'none',
-                  fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
+                  cursor: 'default',
+                  opacity: 0.9,
                 }}
               >
                 ALBUM
@@ -693,154 +677,7 @@ export default function PremiumCreate() {
             />
           </label>
 
-          {projectType === 'single' ? (
-            <>
-              <label>
-                Project Title
-                <input
-                  type="text"
-                  value={projectTitle}
-                  onChange={(e) => setProjectTitle(e.target.value)}
-                  style={{ padding: '0.5rem', width: '100%', backgroundColor: currentTheme.inputBg, color: currentTheme.inputText, marginTop: '0.5rem', border: `1px solid ${currentTheme.border}`, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}
-                />
-              </label>
-
-              <label>
-                BPM (Optional)
-                <input
-                  type="number"
-                  min="0"
-                  value={bpm}
-                  onChange={(e) => setBpm(e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="e.g. 120"
-                  style={{ padding: '0.5rem', width: '100%', backgroundColor: currentTheme.inputBg, color: currentTheme.inputText, marginTop: '0.5rem', border: `1px solid ${currentTheme.border}`, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}
-                />
-              </label>
-
-              {/* Single song file upload (same as regular create) */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                <label style={{ fontWeight: 'bold', fontSize: '1rem' }}>Choose Stems (WAV/MP3)</label>
-                
-                <div style={{ position: 'relative', width: '100%' }} data-dropdown>
-                  <div
-                    onClick={() => setShowFileSourceDropdown(!showFileSourceDropdown)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem',
-                      backgroundColor: currentTheme.cardBg,
-                      color: currentTheme.text,
-                      border: `1px solid ${currentTheme.border}`,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
-                    }}
-                  >
-                    <span>{fileSource === 'device' ? '📱 From This Device' : '📁 From Dropbox'}</span>
-                    <span style={{ fontSize: '0.8rem' }}>▼</span>
-                  </div>
-
-                  {showFileSourceDropdown && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      width: '100%',
-                      backgroundColor: currentTheme.cardBg,
-                      border: `1px solid ${currentTheme.border}`,
-                      boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
-                      zIndex: 10,
-                    }}>
-                      <div onClick={() => { setFileSource('device'); setShowFileSourceDropdown(false); }} style={{ padding: '0.5rem', cursor: 'pointer', backgroundColor: fileSource === 'device' ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : '#f3f3f3') : currentTheme.cardBg, color: currentTheme.text, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}>
-                        📱 From This Device
-                      </div>
-                      <div onClick={() => { setFileSource('dropbox'); setShowFileSourceDropdown(false); }} style={{ padding: '0.5rem', cursor: 'pointer', backgroundColor: fileSource === 'dropbox' ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : '#f3f3f3') : currentTheme.cardBg, color: currentTheme.text, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}>
-                        📁 From Dropbox
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {fileSource === 'device' ? (
-                  <div style={{ width: '100%' }}>
-                    <label
-                      htmlFor="file-upload"
-                      style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: currentTheme.cardBg,
-                        color: currentTheme.accent,
-                        border: `2px solid ${currentTheme.border}`,
-                        boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none',
-                        fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        display: 'block',
-                        textAlign: 'center',
-                        width: '100%',
-                      }}
-                    >
-                      Choose Files
-                    </label>
-                    <input
-                      id="file-upload"
-                      type="file"
-                      accept=".mp3,.wav,audio/*"
-                      multiple
-                      onChange={(e) => {
-                        if (e.target.files) {
-                          const maxStemsForMobile = 15
-                          let processedFiles = e.target.files
-                          if (isMobile && e.target.files.length > maxStemsForMobile) {
-                            const limitedFiles = Array.from(e.target.files).slice(0, maxStemsForMobile)
-                            const newFileList = new DataTransfer()
-                            limitedFiles.forEach(file => newFileList.items.add(file))
-                            processedFiles = newFileList.files
-                            alert(`📱 Mobile: Limited to ${maxStemsForMobile} stems.`)
-                          }
-                          setStems(processedFiles)
-                          setUploadedFiles(Array.from(processedFiles).map(f => f.name))
-                          const wavDetected = Array.from(processedFiles).some(f => f.name.toLowerCase().endsWith('.wav') || f.type === 'audio/wav')
-                          setHasWavs(wavDetected)
-                        }
-                      }}
-                      style={{ display: 'none' }}
-                    />
-                  </div>
-                ) : (
-                  <DropboxFilePicker onFilesSelected={handleDropboxFiles} isMobile={isMobile} />
-                )}
-
-                {stems && <p style={{ marginTop: '0.25rem', fontSize: '0.85rem' }}>{stems.length} file{stems.length > 1 ? 's' : ''} selected</p>}
-              </div>
-
-              {/* Stem names editing for single */}
-              {uploadedFiles.length > 0 && (
-                <div style={{ width: '100%' }}>
-                  <label style={{ fontWeight: 'bold', marginBottom: '0.5rem', display: 'block' }}>Stem Names</label>
-                  {uploadedFiles.map((file, i) => (
-                    <div key={i} style={{ marginBottom: '0.5rem' }}>
-                      {editingIndex === i ? (
-                        <input
-                          autoFocus
-                          type="text"
-                          value={stemNames[i] || ''}
-                          onChange={(e) => setStemNames(prev => ({ ...prev, [i]: e.target.value }))}
-                          onBlur={() => setEditingIndex(null)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') setEditingIndex(null) }}
-                          style={{ width: '100%', padding: '0.4rem', backgroundColor: currentTheme.inputBg, color: currentTheme.inputText, border: `1px solid ${currentTheme.border}`, fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit' }}
-                        />
-                      ) : (
-                        <div onClick={() => setEditingIndex(i)} style={{ cursor: 'pointer', padding: '0.4rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                          {stemNames[i]?.trim() || file} (tap to rename)
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
+          {projectType === 'album' && (
             <>
               <label>
                 Album Title
@@ -1146,7 +983,7 @@ export default function PremiumCreate() {
             </>
           )}
 
-          {/* Theme and color picker (same for both) */}
+          {/* Theme selector (used for both), but color picker + preview only for single projects */}
           <div style={{ position: 'relative', width: '100%' }} data-dropdown>
             <label style={{ display: 'block', marginBottom: '0.5rem' }}>Choose Your Mixer Theme</label>
             <div
@@ -1194,34 +1031,6 @@ export default function PremiumCreate() {
                 ))}
               </div>
             )}
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', justifyContent: 'center', marginTop: '2rem' }}>
-            <div style={{ flex: '1 1 280px', maxWidth: '100%' }}>
-              <HexColorPicker
-                color={primaryColor}
-                onChange={setPrimaryColor}
-                style={{ width: '100%', height: '280px', borderRadius: '12px' }}
-              />
-              <input
-                type="text"
-                value={primaryColor}
-                onChange={(e) => setPrimaryColor(e.target.value.trim())}
-                placeholder="#B8001F"
-                style={{
-                  marginTop: '1rem',
-                  padding: '0.5rem',
-                  fontFamily: 'monospace',
-                  width: '100%',
-                  color: primaryColor,
-                  border: `1px solid ${primaryColor}`,
-                  backgroundColor: currentTheme.cardBg,
-                }}
-              />
-            </div>
-            <div style={{ flex: '1 1 120px', maxWidth: '100%', display: 'flex', justifyContent: 'center' }}>
-              <MiniMixerPreview theme={color} accentColor={primaryColor} />
-            </div>
           </div>
 
           {color === 'Transparent' && (

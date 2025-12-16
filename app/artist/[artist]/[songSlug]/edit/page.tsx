@@ -529,7 +529,7 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
                         <div
                           style={{
                             width: `${uploadProgress[file] || 0}%`,
-                            backgroundColor: '#B8001F',
+                            backgroundColor: '#D4C5B9',
                             height: '8px',
                             borderRadius: '4px',
                             transition: 'width 0.3s ease-in-out',
@@ -556,7 +556,7 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: '#B8001F',
+                        color: '#000000',
                         fontWeight: 'bold',
                         fontSize: '1.1rem',
                         cursor: 'pointer',
@@ -831,8 +831,8 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
             disabled={isSubmitting}
             style={{
               padding: '0.75rem 1.5rem',
-              backgroundColor: '#B8001F',
-              color: 'white',
+              backgroundColor: '#D4C5B9',
+              color: '#000000',
               fontSize: '1.25rem',
               border: 'none',
               cursor: isSubmitting ? 'not-allowed' : 'pointer',
@@ -862,8 +862,8 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
           {uploadError && (
             <div style={{
               backgroundColor: '#FCFAEE',
-              border: '2px solid #B8001F',
-              color: '#B8001F',
+              border: '2px solid #000000',
+              color: '#000000',
               padding: '1rem',
               borderRadius: '6px',
               marginTop: '1.5rem',
