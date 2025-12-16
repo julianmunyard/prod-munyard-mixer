@@ -78,10 +78,10 @@ export default function Create() {
 
 
 
-// ✅ Force cream background + body data attribute
+// ✅ Force pink background + body data attribute
 useEffect(() => {
   document.body.setAttribute('data-page', 'create')
-  document.body.style.backgroundColor = '#FCFAEE'
+  document.body.style.backgroundColor = '#FFE5E5'
   document.body.style.color = '#171717'
 
   return () => {

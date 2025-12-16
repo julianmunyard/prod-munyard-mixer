@@ -9,7 +9,7 @@ html {
   width: 100%;
   max-width: none;
   font-size: 100%; /* ✅ prevent root font shrinking */
-  background-color: #FCFAEE; /* Cream background for iOS status bar area - default, can be overridden by theme */
+  background-color: #FFE5E5; /* Pink background for iOS status bar area - default, can be overridden by theme */
   /* Extend background into safe areas (notch/camera area on iOS) */
   margin: 0;
   padding: 0;
@@ -18,8 +18,8 @@ html {
 body {
   width: 100%;
   max-width: none;
-  background-color: #FCFAEE; /* Cream background - default, can be overridden by theme */
-  background: #FCFAEE; /* Override any other background - default, can be overridden by theme */
+  background-color: #FFE5E5; /* Pink background - default, can be overridden by theme */
+  background: #FFE5E5; /* Override any other background - default, can be overridden by theme */
   margin: 0;
   padding: 0;
   /* Extend background into safe areas (notch/camera area on iOS) */
@@ -64,7 +64,7 @@ a {
 
 /* THEME + BACKGROUND */
 :root {
-  --background: #FCFAEE;
+  --background: #FFE5E5;
   --foreground: #171717;
 }
 

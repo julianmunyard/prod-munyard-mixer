@@ -374,7 +374,7 @@ function MixerPage() {
     }
     
     // Set color based on theme
-    let backgroundColor = '#FCFAEE' // Default cream for CLASSIC
+    let backgroundColor = '#FFE5E5' // Default pink for CLASSIC
     if (pageTheme === 'OLD COMPUTER') {
       backgroundColor = '#FFE5E5' // Pink
     } else if (pageTheme === 'MUNY') {
@@ -436,16 +436,16 @@ function MixerPage() {
       }
     `
     
-    // Cleanup: restore cream color when component unmounts
+    // Cleanup: restore pink color when component unmounts
     return () => {
       if (themeColorMeta) {
-        themeColorMeta.content = '#FCFAEE' // Restore cream
+        themeColorMeta.content = '#FFE5E5' // Restore pink
       }
       if (themeStyle) {
         themeStyle.textContent = `
-          html { background-color: #FCFAEE !important; }
-          body { background-color: #FCFAEE !important; background: #FCFAEE !important; }
-          #theme-background-overlay { background-color: #FCFAEE !important; }
+          html { background-color: #FFE5E5 !important; }
+          body { background-color: #FFE5E5 !important; background: #FFE5E5 !important; }
+          #theme-background-overlay { background-color: #FFE5E5 !important; }
         `
       }
     }
@@ -638,7 +638,7 @@ function MixerPage() {
   useEffect(() => {
     // CLASSIC = original (primary color), others = themed
     if (pageTheme === 'CLASSIC') {
-      document.body.style.backgroundColor = '#FCFAEE'
+      document.body.style.backgroundColor = '#FFE5E5'
       document.body.style.color = primary
     } else if (currentTheme) {
       document.body.style.backgroundColor = currentTheme.background
