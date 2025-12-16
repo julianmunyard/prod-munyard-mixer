@@ -2356,6 +2356,55 @@ function MixerPage() {
                     : '60px',
             }}
           >
+            {/* 🎨 MUNYARD MIXER Title with Decorative Lines */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: isMobile ? '12px' : '20px',
+                marginTop: isMobile ? (hasAlbum && albumId ? '56px' : '20px') : '40px',
+                marginBottom: isMobile ? '20px' : '30px',
+                padding: isMobile ? '0 16px' : '0',
+              }}
+            >
+              {/* Left side lines - 7 lines, 4th is longest */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end' }}>
+                <div style={{ width: '8px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '16px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '24px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '40px' : '60px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '24px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '16px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '8px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+              </div>
+              
+              {/* Title Text */}
+              <h1
+                style={{
+                  fontFamily: "'pixChicago', monospace",
+                  fontSize: isMobile ? '24px' : '36px',
+                  fontWeight: 'normal',
+                  color: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)),
+                  letterSpacing: '0.05em',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                MUNYARD MIXER
+              </h1>
+              
+              {/* Right side lines - 7 lines, 4th is longest */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
+                <div style={{ width: '8px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '16px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '24px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '40px' : '60px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '24px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '16px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: '8px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+              </div>
+            </div>
+            
             {/* ⬅️ Back Button - Top Left (only shows if artist has album) */}
             {hasAlbum && albumId && (
               <button
@@ -6004,6 +6053,16 @@ function MixerPage() {
         </>
       )}
 
+      {/* PixChicago Font */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @font-face {
+          font-family: 'pixChicago';
+          src: url('/fonts/pixChicago.ttf') format('truetype');
+          font-weight: normal;
+          font-style: normal;
+        }
+      `}} />
+      
       {/* CD Spinner CSS Animations */}
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes cdRotate {
