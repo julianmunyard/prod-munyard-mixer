@@ -2410,6 +2410,9 @@ function MixerPage() {
                   marginBottom: '0',
                   width: isMobile ? 'calc(100% - 20px)' : '100%',
                   maxWidth: '896px',
+                  display: 'block',
+                  marginLeft: isMobile ? 'auto' : 'auto',
+                  marginRight: isMobile ? 'auto' : 'auto',
                 }}
               >
                 {/* Title Bar */}
@@ -3175,11 +3178,12 @@ function MixerPage() {
                   overflow: 'visible',
                   zIndex: 10,
                   marginTop: isMobile ? (isSmallScreen || isMediumScreen ? '12px' : '-22px') : '20px',
-                  marginLeft: 'auto',
-                  marginRight: 'auto',
+                  marginLeft: isMobile ? 'auto' : 'auto',
+                  marginRight: isMobile ? 'auto' : 'auto',
                   marginBottom: isMobile ? (isVerySmallScreen ? '16px' : (isSmallScreen || isMediumScreen) ? '18px' : '20px') : '0px',
                   width: isMobile ? 'calc(100% - 20px)' : '100%',
                   maxWidth: '896px',
+                  display: 'block',
                 }}
               >
                 {/* Title Bar */}
