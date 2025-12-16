@@ -123,6 +123,15 @@ a {
   color: inherit;
 }
 
+/* PIXCHICAGO FONT */
+@font-face {
+  font-family: 'pixChicago';
+  src: url('/fonts/pixChicago.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Ensure font loads on mobile */
+}
+
 /* UNIVERSAL SLIDER STYLING - Exclude volume-slider class (they have custom styling) */
 input[type="range"]:not(.volume-slider):not(.transparent-volume-slider):not(.varispeed-slider) {
   -webkit-appearance: slider-vertical;

@@ -2363,8 +2363,8 @@ function MixerPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginTop: isMobile ? (hasAlbum && albumId ? '56px' : '20px') : '40px',
-                marginBottom: isMobile ? '20px' : '30px',
-                padding: isMobile ? '0 16px' : '0',
+                marginBottom: isMobile ? '12px' : '20px',
+                padding: isMobile ? '0 12px' : '0',
               }}
             >
               <div
@@ -2372,71 +2372,20 @@ function MixerPage() {
                   display: 'flex',
                   alignItems: 'center',
                   border: '2px solid #000000',
-                  backgroundColor: pageTheme === 'OLD COMPUTER' ? '#FFFFFF' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#FFFFFF' : '#FFFFFF')),
-                  padding: isMobile ? '8px 12px' : '12px 20px',
+                  backgroundColor: '#FFE5E5', // Thin pink background bar
+                  padding: isMobile ? '4px 8px' : '6px 12px',
                   position: 'relative',
                   width: 'fit-content',
                   maxWidth: isMobile ? 'calc(100% - 32px)' : '90%',
                 }}
               >
-                {/* Left Connector */}
-                <div style={{ position: 'relative', marginRight: isMobile ? '12px' : '16px' }}>
-                  <div
-                    style={{
-                      width: isMobile ? '16px' : '20px',
-                      height: isMobile ? '16px' : '20px',
-                      border: '2px solid #000000',
-                      backgroundColor: '#FFFFFF',
-                      position: 'relative',
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: isMobile ? '8px' : '10px',
-                        height: isMobile ? '8px' : '10px',
-                        border: '1px solid #000000',
-                        backgroundColor: '#FFFFFF',
-                      }}
-                    />
-                  </div>
-                  {/* Dots above and below */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: isMobile ? '-6px' : '-8px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '2px',
-                      height: '2px',
-                      backgroundColor: '#000000',
-                      borderRadius: '50%',
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: isMobile ? '-6px' : '-8px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '2px',
-                      height: '2px',
-                      backgroundColor: '#000000',
-                      borderRadius: '50%',
-                    }}
-                  />
-                </div>
-
                 {/* Left side lines - 5 evenly spaced horizontal lines */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '3px' : '4px', alignItems: 'flex-end', marginRight: isMobile ? '12px' : '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-end', marginRight: isMobile ? '10px' : '14px' }}>
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div
                       key={i}
                       style={{
-                        width: isMobile ? '40px' : '60px',
+                        width: isMobile ? '56px' : '80px',
                         height: '1px',
                         backgroundColor: '#000000',
                       }}
@@ -2447,41 +2396,40 @@ function MixerPage() {
                 {/* Title Text */}
                 <h1
                   style={{
-                    fontFamily: "'pixChicago', monospace",
-                    fontSize: isMobile ? '16px' : '24px',
+                    fontFamily: 'pixChicago, monospace',
+                    fontSize: isMobile ? '12px' : '16px',
                     fontWeight: 'normal',
                     color: '#000000',
                     letterSpacing: '0.05em',
                     whiteSpace: 'nowrap',
                     margin: 0,
-                    padding: `0 ${isMobile ? '8px' : '12px'}`,
+                    padding: `0 ${isMobile ? '6px' : '8px'}`,
                   }}
                 >
                   MUNYARD MIXER
                 </h1>
                 
                 {/* Right side lines - 5 evenly spaced horizontal lines */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '3px' : '4px', alignItems: 'flex-start', marginLeft: isMobile ? '12px' : '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-start', marginLeft: isMobile ? '10px' : '14px' }}>
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div
                       key={i}
                       style={{
-                        width: isMobile ? '40px' : '60px',
+                        width: isMobile ? '56px' : '80px',
                         height: '1px',
                         backgroundColor: '#000000',
                       }}
                     />
                   ))}
                 </div>
-
                 {/* Right Connector */}
-                <div style={{ position: 'relative', marginLeft: isMobile ? '12px' : '16px' }}>
+                <div style={{ position: 'relative', marginLeft: isMobile ? '10px' : '14px' }}>
                   <div
                     style={{
-                      width: isMobile ? '16px' : '20px',
-                      height: isMobile ? '16px' : '20px',
+                      width: isMobile ? '12px' : '14px',
+                      height: isMobile ? '12px' : '14px',
                       border: '2px solid #000000',
-                      backgroundColor: '#FFFFFF',
+                      backgroundColor: '#FFE5E5',
                       position: 'relative',
                     }}
                   >
@@ -2491,10 +2439,10 @@ function MixerPage() {
                         top: '50%',
                         left: '50%',
                         transform: 'translate(-50%, -50%)',
-                        width: isMobile ? '8px' : '10px',
-                        height: isMobile ? '8px' : '10px',
+                        width: isMobile ? '6px' : '8px',
+                        height: isMobile ? '6px' : '8px',
                         border: '1px solid #000000',
-                        backgroundColor: '#FFFFFF',
+                        backgroundColor: '#FFE5E5',
                       }}
                     >
                       {/* L-shaped graphic in bottom-left */}
@@ -2503,8 +2451,8 @@ function MixerPage() {
                           position: 'absolute',
                           bottom: '1px',
                           left: '1px',
-                          width: isMobile ? '3px' : '4px',
-                          height: isMobile ? '3px' : '4px',
+                          width: isMobile ? '2px' : '3px',
+                          height: isMobile ? '2px' : '3px',
                           backgroundColor: '#000000',
                         }}
                       />
@@ -2513,8 +2461,8 @@ function MixerPage() {
                           position: 'absolute',
                           bottom: '1px',
                           left: '1px',
-                          width: isMobile ? '1px' : '1px',
-                          height: isMobile ? '5px' : '6px',
+                          width: 1,
+                          height: isMobile ? '4px' : '5px',
                           backgroundColor: '#000000',
                         }}
                       />
@@ -2524,7 +2472,7 @@ function MixerPage() {
                   <div
                     style={{
                       position: 'absolute',
-                      top: isMobile ? '-6px' : '-8px',
+                      top: isMobile ? '-4px' : '-6px',
                       left: '50%',
                       transform: 'translateX(-50%)',
                       width: '2px',
@@ -2536,7 +2484,7 @@ function MixerPage() {
                   <div
                     style={{
                       position: 'absolute',
-                      bottom: isMobile ? '-6px' : '-8px',
+                      bottom: isMobile ? '-4px' : '-6px',
                       left: '50%',
                       transform: 'translateX(-50%)',
                       width: '2px',
