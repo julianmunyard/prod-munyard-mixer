@@ -99,6 +99,7 @@ function MixerPage() {
   // -------------------- 🔧 State --------------------
   const [songData, setSongData] = useState<Song | null>(null)
   const [hasAlbum, setHasAlbum] = useState(false)
+  const [albumId, setAlbumId] = useState<string | null>(null)
   const [stems, setStems] = useState<Stem[]>([])
   const [volumes, setVolumes] = useState<Record<string, number>>({})
   const [reverbs, setReverbs] = useState<Record<string, any>>({})
@@ -976,16 +977,16 @@ function MixerPage() {
         setPageTheme(data.page_theme);
       }
       
-      // Check if artist has an album - try multiple methods
+      // Check if song has an album and get album_id
       try {
-        let foundAlbum = false
+        let foundAlbumId: string | null = null
         
-        // Method 1: Check if song has album_id
+        // Method 1: Check if song has album_id directly
         if (data.album_id) {
           console.log('✅ Song has album_id:', data.album_id)
-          foundAlbum = true
+          foundAlbumId = data.album_id
         } else {
-          // Method 2: Check if artist has an album by artist_slug
+          // Method 2: Check if artist has an album by artist_slug and get its id
           const { data: albumData, error: albumError } = await supabase!
             .from('albums')
             .select('id')
@@ -997,31 +998,24 @@ function MixerPage() {
             console.log('⚠️ Album check error:', albumError.message)
           }
           
-          if (!albumError && albumData) {
-            console.log('✅ Found album for artist:', artist)
-            foundAlbum = true
-          } else {
-            // Method 3: Check if there are multiple songs by this artist (indicates album page exists)
-            const { data: songsData, error: songsError } = await supabase!
-              .from('songs')
-              .select('id')
-              .eq('artist_slug', artist)
-              .limit(2)
-            
-            if (!songsError && songsData && songsData.length > 1) {
-              console.log('✅ Multiple songs found for artist (album page likely exists):', artist)
-              foundAlbum = true
-            } else {
-              console.log('❌ No album found for artist:', artist)
-            }
+          if (!albumError && albumData && albumData.id) {
+            console.log('✅ Found album for artist:', artist, 'album_id:', albumData.id)
+            foundAlbumId = albumData.id
           }
         }
         
-        setHasAlbum(foundAlbum)
+        if (foundAlbumId) {
+          setHasAlbum(true)
+          setAlbumId(foundAlbumId)
+        } else {
+          setHasAlbum(false)
+          setAlbumId(null)
+        }
       } catch (err) {
         console.error('❌ Error checking for album:', err)
         // If albums table doesn't exist or other error, assume no album
         setHasAlbum(false)
+        setAlbumId(null)
       }
       setStems(stemObjs);
       setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])));
@@ -2363,9 +2357,9 @@ function MixerPage() {
             }}
           >
             {/* ⬅️ Back Button - Top Left (only shows if artist has album) */}
-            {hasAlbum && (
+            {hasAlbum && albumId && (
               <button
-                onClick={() => router.push(`/artist/${artist}`)}
+                onClick={() => router.push(`/album/${albumId}`)}
                 aria-label="Back to album page"
                 className="pressable flex items-center justify-center"
                 style={{
