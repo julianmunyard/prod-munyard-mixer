@@ -194,8 +194,13 @@ function MixerPage() {
   
   // CD Spinner / Listening Mode state
   const [isListeningMode, setIsListeningMode] = useState(false); // false = mixing mode (modules), true = listening mode (CD spinner)
-  const cdSpinDuration = 5; // Constant speed - always spins at 5 seconds per rotation
   const cdElementRef = useRef<HTMLDivElement | null>(null);
+  
+  // Calculate CD spin duration based on varispeed
+  // When varispeed = 1.0 (normal), duration = 5s
+  // When varispeed = 0.5 (half speed), duration = 10s (slower)
+  // When varispeed = 2.0 (double speed), duration = 2.5s (faster)
+  const cdSpinDuration = 5 / varispeed;
   const [memoryUsage, setMemoryUsage] = useState<{heap: number, total: number}>({heap: 0, total: 0});
   
   // Loading screen state
@@ -3248,7 +3253,7 @@ function MixerPage() {
                       ref={cdElementRef}
                       className="cd-spin-accelerating"
                       style={{
-                        animationDuration: '5s', // Constant speed - always 5 seconds per rotation
+                        animationDuration: `${cdSpinDuration}s`, // Speed matches varispeed: 5s / varispeed
                         width: isMobile ? '200px' : '300px',
                         height: isMobile ? '200px' : '300px',
                         borderRadius: '50%',
