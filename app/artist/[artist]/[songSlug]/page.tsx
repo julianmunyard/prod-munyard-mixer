@@ -2374,19 +2374,19 @@ function MixerPage() {
                   alignItems: 'center',
                   border: '2px solid #000000',
                   backgroundColor: '#FFE5E5', // Thin pink background bar
-                  padding: isMobile ? '4px 8px' : '6px 12px',
+                  padding: isMobile ? '4px 6px' : '6px 12px',
                   position: 'relative',
                   width: 'fit-content',
-                  maxWidth: isMobile ? 'calc(100% - 32px)' : '90%',
+                  maxWidth: isMobile ? 'calc(100% - 100px)' : '90%', // Shorter on mobile to fit with back arrow
                 }}
               >
                 {/* Left side lines - 5 evenly spaced horizontal lines */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-end', marginRight: isMobile ? '10px' : '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-end', marginRight: isMobile ? '6px' : '14px' }}>
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div
                       key={i}
                       style={{
-                        width: isMobile ? '56px' : '80px',
+                        width: isMobile ? '24px' : '80px',
                         height: '1px',
                         backgroundColor: '#000000',
                       }}
@@ -2404,19 +2404,19 @@ function MixerPage() {
                     letterSpacing: '0.05em',
                     whiteSpace: 'nowrap',
                     margin: 0,
-                    padding: `0 ${isMobile ? '6px' : '8px'}`,
+                    padding: `0 ${isMobile ? '4px' : '8px'}`,
                   }}
                 >
                   MUNYARD MIXER
                 </h1>
                 
                 {/* Right side lines - 5 evenly spaced horizontal lines */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-start', marginLeft: isMobile ? '10px' : '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-start', marginLeft: isMobile ? '6px' : '14px' }}>
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div
                       key={i}
                       style={{
-                        width: isMobile ? '56px' : '80px',
+                        width: isMobile ? '24px' : '80px',
                         height: '1px',
                         backgroundColor: '#000000',
                       }}
