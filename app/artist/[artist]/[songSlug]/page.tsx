@@ -2362,28 +2362,28 @@ function MixerPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: isMobile ? '12px' : '20px',
+                gap: isMobile ? '16px' : '24px',
                 marginTop: isMobile ? (hasAlbum && albumId ? '56px' : '20px') : '40px',
                 marginBottom: isMobile ? '20px' : '30px',
                 padding: isMobile ? '0 16px' : '0',
               }}
             >
-              {/* Left side lines - 7 lines, 4th is longest */}
+              {/* Left side lines - 7 lines, gradual triangle shape */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end' }}>
-                <div style={{ width: '8px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '16px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '24px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: isMobile ? '40px' : '60px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '24px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '16px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '8px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '20px' : '30px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '32px' : '48px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '44px' : '66px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '56px' : '84px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '44px' : '66px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '32px' : '48px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '20px' : '30px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
               </div>
               
               {/* Title Text */}
               <h1
                 style={{
                   fontFamily: "'pixChicago', monospace",
-                  fontSize: isMobile ? '24px' : '36px',
+                  fontSize: isMobile ? '18px' : '28px',
                   fontWeight: 'normal',
                   color: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)),
                   letterSpacing: '0.05em',
@@ -2393,15 +2393,15 @@ function MixerPage() {
                 MUNYARD MIXER
               </h1>
               
-              {/* Right side lines - 7 lines, 4th is longest */}
+              {/* Right side lines - 7 lines, gradual triangle shape */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-start' }}>
-                <div style={{ width: '8px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '16px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '24px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: isMobile ? '40px' : '60px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '24px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '16px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
-                <div style={{ width: '8px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '20px' : '30px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '32px' : '48px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '44px' : '66px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '56px' : '84px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '44px' : '66px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '32px' : '48px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
+                <div style={{ width: isMobile ? '20px' : '30px', height: '1px', backgroundColor: pageTheme === 'OLD COMPUTER' ? '#000000' : (pageTheme === 'MUNY' ? '#000000' : (pageTheme === 'OLD INTERNET' ? '#000000' : primary)) }} />
               </div>
             </div>
             
