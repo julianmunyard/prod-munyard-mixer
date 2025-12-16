@@ -2497,7 +2497,7 @@ function MixerPage() {
                   overflow: 'visible',
                   zIndex: 10,
                   margin: isMobile ? '0 auto' : '0 auto',
-                  marginTop: isMobile ? '0' : '40px',
+                  marginTop: isMobile ? (hasAlbum && albumId ? '56px' : '0') : '40px', // Add space for back button on mobile
                   marginBottom: '0',
                   width: isMobile ? 'calc(100% - 20px)' : '100%',
                   maxWidth: '896px',
