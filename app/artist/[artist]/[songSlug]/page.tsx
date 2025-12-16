@@ -19,6 +19,10 @@ import PoolsuiteLoadingScreen from '../../../components/PoolsuiteLoadingScreen'
 import { useParams } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import RealTimelineMixerEngine from '../../../../audio/engine/realTimelineMixerEngine'
+import Image from 'next/image'
+
+// Check if we're in development mode
+const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost'
 
 // ==================== 🧾 Types ====================
 type Song = {
@@ -33,6 +37,7 @@ type Song = {
   color: string
   background_video?: string
   primary_color?: string
+  artwork_url?: string
   page_theme?: 'CLASSIC' | 'TERMINAL THEME' | 'OLD COMPUTER' | 'MUNY' | 'OLD INTERNET'
 }
 
@@ -186,6 +191,16 @@ function MixerPage() {
   const [loadedStemsCount, setLoadedStemsCount] = useState(0)
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  
+  // CD Spinner / Listening Mode state
+  const [isListeningMode, setIsListeningMode] = useState(false); // false = mixing mode (modules), true = listening mode (CD spinner)
+  const [cdSpinDuration, setCdSpinDuration] = useState(5);
+  const [cdStopping, setCdStopping] = useState(false);
+  const [cdFinalRotation, setCdFinalRotation] = useState<number | null>(null);
+  const [cdJustStarted, setCdJustStarted] = useState(false);
+  const cdElementRef = useRef<HTMLDivElement | null>(null);
+  const cdAccelerationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cdDecelerationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [memoryUsage, setMemoryUsage] = useState<{heap: number, total: number}>({heap: 0, total: 0});
   
   // Loading screen state
@@ -955,7 +970,7 @@ function MixerPage() {
       });
 
       setSongData(data);
-      console.log('🎥 Song data loaded - background_video:', data.background_video, 'color:', data.color);
+      console.log('🎥 Song data loaded - background_video:', data.background_video, 'color:', data.color, 'artwork_url:', data.artwork_url);
       // Set page theme from song data
       if (data.page_theme && (data.page_theme === 'TERMINAL THEME' || data.page_theme === 'OLD COMPUTER' || data.page_theme === 'MUNY')) {
         setPageTheme(data.page_theme);
@@ -1468,6 +1483,8 @@ function MixerPage() {
       }
       addDebugLog('▶️ Playback started');
       
+      // CD spinner speed is handled by the useEffect hook
+      
       // Backup: Verify playback started and retry if needed
       setTimeout(() => {
         try {
@@ -1510,6 +1527,8 @@ function MixerPage() {
       mixerEngineRef.current.pause();
       setIsPlaying(false);
       addDebugLog('⏸️ Playback paused');
+      
+      // CD spinner speed is handled by the useEffect hook - it will slow to idle speed
       
       // On iOS: Keep silent audio playing to maintain media channel access
       // (like unmute.js - keeps the channel open for when playback resumes)
@@ -1588,6 +1607,108 @@ function MixerPage() {
 
     return () => clearInterval(wakeUpInterval);
   }, [isPlaying]);
+
+  // ==================== 🎵 CD Spinner Sync with Playback ====================
+  // Initialize CD spinner when entering listening mode
+  useEffect(() => {
+    if (isListeningMode && cdSpinDuration === 5 && !isPlaying) {
+      // Ensure it's spinning at idle speed when first entering listening mode
+      setCdStopping(false);
+      setCdFinalRotation(null);
+    }
+  }, [isListeningMode]);
+
+  useEffect(() => {
+    if (!isListeningMode) return;
+
+    // Always ensure CD is spinning - slow idle speed
+    const idleSpeed = 5; // Slow idle speed
+    
+    if (isPlaying) {
+      // Speed up when playing
+      setCdStopping(false);
+      setCdFinalRotation(null);
+      
+      // Clear any existing intervals
+      if (cdAccelerationIntervalRef.current) {
+        clearInterval(cdAccelerationIntervalRef.current);
+        cdAccelerationIntervalRef.current = null;
+      }
+      if (cdDecelerationIntervalRef.current) {
+        clearInterval(cdDecelerationIntervalRef.current);
+        cdDecelerationIntervalRef.current = null;
+      }
+      
+      // Start from current speed and accelerate to fast
+      const currentSpeed = cdSpinDuration;
+      let elapsed = 0;
+      const duration = 3000;
+      const interval = 16;
+      const endSpeed = 0.3; // Fast speed when playing
+      
+      cdAccelerationIntervalRef.current = setInterval(() => {
+        elapsed += interval;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const newSpeed = currentSpeed + (endSpeed - currentSpeed) * eased;
+        setCdSpinDuration(newSpeed);
+        
+        if (progress >= 1) {
+          if (cdAccelerationIntervalRef.current) {
+            clearInterval(cdAccelerationIntervalRef.current);
+            cdAccelerationIntervalRef.current = null;
+          }
+          setCdSpinDuration(endSpeed);
+        }
+      }, interval);
+    } else {
+      // Slow down to idle when paused (but keep spinning)
+      setCdStopping(false);
+      setCdFinalRotation(null);
+      
+      if (cdAccelerationIntervalRef.current) {
+        clearInterval(cdAccelerationIntervalRef.current);
+        cdAccelerationIntervalRef.current = null;
+      }
+      if (cdDecelerationIntervalRef.current) {
+        clearInterval(cdDecelerationIntervalRef.current);
+        cdDecelerationIntervalRef.current = null;
+      }
+      
+      // Decelerate to idle speed
+      const currentSpeed = cdSpinDuration;
+      let elapsed = 0;
+      const duration = 3000;
+      const interval = 16;
+      
+      cdDecelerationIntervalRef.current = setInterval(() => {
+        elapsed += interval;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const newSpeed = currentSpeed + (idleSpeed - currentSpeed) * eased;
+        setCdSpinDuration(newSpeed);
+        
+        if (progress >= 1) {
+          if (cdDecelerationIntervalRef.current) {
+            clearInterval(cdDecelerationIntervalRef.current);
+            cdDecelerationIntervalRef.current = null;
+          }
+          setCdSpinDuration(idleSpeed);
+        }
+      }, interval);
+    }
+
+    return () => {
+      if (cdAccelerationIntervalRef.current) {
+        clearInterval(cdAccelerationIntervalRef.current);
+        cdAccelerationIntervalRef.current = null;
+      }
+      if (cdDecelerationIntervalRef.current) {
+        clearInterval(cdDecelerationIntervalRef.current);
+        cdDecelerationIntervalRef.current = null;
+      }
+    };
+  }, [isListeningMode, isPlaying]);
 
   const stopAll = () => {
     if (!mixerEngineRef.current) return;
@@ -3183,9 +3304,31 @@ function MixerPage() {
                   }}
                 >
                   <span>MIXER</span>
+                  <button
+                    onClick={() => setIsListeningMode(!isListeningMode)}
+                    style={{
+                      padding: isMobile ? '2px 6px' : '3px 8px',
+                      fontSize: isMobile ? '9px' : '11px',
+                      backgroundColor: '#D4C5B9',
+                      border: '1px solid #000',
+                      cursor: 'pointer',
+                      fontFamily: 'monospace',
+                      fontWeight: 'bold',
+                      color: '#000000',
+                      boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#E8D9CD';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#D4C5B9';
+                    }}
+                  >
+                    {isListeningMode ? 'MIX' : 'LISTEN'}
+                  </button>
                 </div>
 
-                {/* Content Area with Scrollable Modules */}
+                {/* Content Area with Scrollable Modules or CD Spinner */}
                 <div 
                   style={{
                     backgroundColor: '#808080',
@@ -3196,16 +3339,163 @@ function MixerPage() {
                     zIndex: 20,
                     color: '#FFF',
                     fontFamily: 'monospace',
-                    overflowX: 'auto',
-                    overflowY: 'visible',
+                    overflowX: isListeningMode ? 'hidden' : 'auto',
+                    overflowY: isListeningMode ? 'hidden' : 'visible',
                     touchAction: isMobile ? 'pan-x' : 'auto',
                     WebkitOverflowScrolling: 'touch',
                     scrollBehavior: 'smooth',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  <div
-                    id="stems-container"
-                    className="stems-container"
+                  {isListeningMode ? (
+                    /* CD Spinner - Listening Mode */
+                    <div
+                      ref={cdElementRef}
+                      className="cd-spin-accelerating"
+                      style={{
+                        animationDuration: `${cdSpinDuration}s`,
+                        width: isMobile ? '200px' : '300px',
+                        height: isMobile ? '200px' : '300px',
+                        borderRadius: '50%',
+                        background: songData?.artwork_url && songData.artwork_url.trim()
+                          ? 'transparent'
+                          : '#FFF8E7', // Cream color when no artwork
+                        border: '2px solid #000000',
+                        boxShadow: 'none',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {/* Artwork Image - only shows on outer ring, not center */}
+                      {songData && songData.artwork_url && songData.artwork_url.trim() && (
+                        <Image
+                          src={songData.artwork_url}
+                          alt={songData.title}
+                          fill
+                          sizes="(max-width: 768px) 200px, 300px"
+                          unoptimized={isDev}
+                          style={{
+                            objectFit: 'cover',
+                            borderRadius: '50%',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            zIndex: 0,
+                            maskImage: 'radial-gradient(circle, transparent 20%, black 22%)',
+                            WebkitMaskImage: 'radial-gradient(circle, transparent 20%, black 22%)'
+                          }}
+                          className="rounded-full"
+                          quality={85}
+                          loading="lazy"
+                          onError={(e) => {
+                            console.warn('⚠️ Artwork failed to load for', songData.title, 'URL:', songData.artwork_url)
+                            const target = e.currentTarget as HTMLImageElement
+                            target.style.display = 'none'
+                          }}
+                          onLoad={() => {
+                            console.log('✅ Artwork loaded:', songData.title)
+                          }}
+                        />
+                      )}
+                      
+                      {/* CD Center Hole */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          width: isMobile ? '16px' : '24px',
+                          height: isMobile ? '16px' : '24px',
+                          borderRadius: '50%',
+                          backgroundColor: '#000000',
+                          border: 'none',
+                          boxShadow: 'inset 0 0 10px rgba(0,0,0,0.8)',
+                          zIndex: 3
+                        }}
+                      />
+                      
+                      {/* Vinyl/CD Label SVG */}
+                      <svg
+                        width="100%"
+                        height="100%"
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          zIndex: 2,
+                          pointerEvents: 'none',
+                          overflow: 'visible'
+                        }}
+                        viewBox="0 0 180 180"
+                        preserveAspectRatio="xMidYMid meet"
+                      >
+                        <defs>
+                          <pattern id="halftoneDots" x="0" y="0" width="1.67" height="1.67" patternUnits="userSpaceOnUse">
+                            <circle cx="0.835" cy="0.835" r="0.35" fill="#000000" stroke="#000000" strokeWidth="0.1"/>
+                          </pattern>
+                          <mask id="halftoneMask">
+                            <circle cx="90" cy="90" r="34.5" fill="white"/>
+                            <circle cx="90" cy="90" r="12" fill="black"/>
+                          </mask>
+                        </defs>
+                        
+                        <circle
+                          cx="90"
+                          cy="90"
+                          r="36"
+                          fill="#FFF8E7"
+                          opacity="1"
+                        />
+                        
+                        {/* Halftone dots overlay - always show in center label area */}
+                        <circle
+                          cx="90"
+                          cy="90"
+                          r="36"
+                          fill="url(#halftoneDots)"
+                          mask="url(#halftoneMask)"
+                        />
+                        
+                        <circle
+                          cx="90"
+                          cy="90"
+                          r="34.5"
+                          fill="none"
+                          stroke="#000000"
+                          strokeWidth="0.5"
+                          opacity="1"
+                        />
+                        
+                        <circle
+                          cx="90"
+                          cy="90"
+                          r="36"
+                          fill="none"
+                          stroke="#000000"
+                          strokeWidth="0.8"
+                          opacity="1"
+                        />
+                        
+                        <circle
+                          cx="90"
+                          cy="90"
+                          r="12"
+                          fill="none"
+                          stroke="#000000"
+                          strokeWidth="0.8"
+                          opacity="1"
+                        />
+                      </svg>
+                    </div>
+                  ) : (
+                    /* Modules - Mixing Mode */
+                    <div
+                      id="stems-container"
+                      className="stems-container"
                     style={{
                       width: '100%',
                       minHeight: isMobile 
@@ -3799,9 +4089,10 @@ function MixerPage() {
                   )
                 })}
                   </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
             ) : (
               /* Original structure for other themes */
               <div
@@ -5722,6 +6013,19 @@ function MixerPage() {
 
         </>
       )}
+
+      {/* CD Spinner CSS Animations */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes cdRotate {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
+        .cd-spin-accelerating {
+          animation: cdRotate linear infinite;
+          animation-play-state: running;
+        }
+      `}} />
 
     </>
   )
