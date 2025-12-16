@@ -2362,7 +2362,8 @@ function MixerPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginTop: isMobile ? (hasAlbum && albumId ? '56px' : '20px') : '40px',
+                // Align banner vertically with back arrow on mobile
+                marginTop: isMobile ? '20px' : '40px',
                 marginBottom: isMobile ? '12px' : '20px',
                 padding: isMobile ? '0 12px' : '0',
               }}
@@ -2421,78 +2422,6 @@ function MixerPage() {
                       }}
                     />
                   ))}
-                </div>
-                {/* Right Connector */}
-                <div style={{ position: 'relative', marginLeft: isMobile ? '10px' : '14px' }}>
-                  <div
-                    style={{
-                      width: isMobile ? '12px' : '14px',
-                      height: isMobile ? '12px' : '14px',
-                      border: '2px solid #000000',
-                      backgroundColor: '#FFE5E5',
-                      position: 'relative',
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: isMobile ? '6px' : '8px',
-                        height: isMobile ? '6px' : '8px',
-                        border: '1px solid #000000',
-                        backgroundColor: '#FFE5E5',
-                      }}
-                    >
-                      {/* L-shaped graphic in bottom-left */}
-                      <div
-                        style={{
-                          position: 'absolute',
-                          bottom: '1px',
-                          left: '1px',
-                          width: isMobile ? '2px' : '3px',
-                          height: isMobile ? '2px' : '3px',
-                          backgroundColor: '#000000',
-                        }}
-                      />
-                      <div
-                        style={{
-                          position: 'absolute',
-                          bottom: '1px',
-                          left: '1px',
-                          width: 1,
-                          height: isMobile ? '4px' : '5px',
-                          backgroundColor: '#000000',
-                        }}
-                      />
-                    </div>
-                  </div>
-                  {/* Dots above and below */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: isMobile ? '-4px' : '-6px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '2px',
-                      height: '2px',
-                      backgroundColor: '#000000',
-                      borderRadius: '50%',
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: 'absolute',
-                      bottom: isMobile ? '-4px' : '-6px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '2px',
-                      height: '2px',
-                      backgroundColor: '#000000',
-                      borderRadius: '50%',
-                    }}
-                  />
                 </div>
               </div>
             </div>
