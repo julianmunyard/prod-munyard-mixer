@@ -3532,15 +3532,15 @@ function MixerPage() {
                             style={{ 
                               fontSize: '10px',
                               backgroundColor: pageTheme === 'OLD COMPUTER' 
-                                ? '#D4C5B9' 
+                                ? 'transparent' 
                                 : (pageTheme === 'MUNY' ? '#FFFFFF' : (isTransparent ? 'rgba(255,255,255,0.1)' : primary)),
                               color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
                                 ? '#000000' 
                                 : (isTransparent ? primary : '#FCFAEE'),
-                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : `1px solid ${primary}`,
+                              border: pageTheme === 'OLD COMPUTER' ? 'none' : ((pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : `1px solid ${primary}`),
                               borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '4px',
                               fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal',
-                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY') ? 'inset -1px -1px 0 #000' : (pageTheme === 'OLD INTERNET' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
+                              boxShadow: pageTheme === 'OLD COMPUTER' ? 'none' : ((pageTheme === 'MUNY') ? 'inset -1px -1px 0 #000' : (pageTheme === 'OLD INTERNET' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none')),
                               fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
                               outline: 'none',
                               width: 'fit-content',
@@ -3549,7 +3549,11 @@ function MixerPage() {
                               margin: '0 auto'
                             }}
                             onMouseEnter={(e) => {
-                              // Darken the color on hover (only for non-transparent)
+                              // Darken the color on hover (only for non-transparent and not OLD COMPUTER)
+                              if (pageTheme === 'OLD COMPUTER') {
+                                // No background change for OLD COMPUTER theme
+                                return;
+                              }
                               if (!isTransparent) {
                                 const rgb = primary.match(/\d+/g);
                                 if (rgb) {
@@ -3564,7 +3568,7 @@ function MixerPage() {
                             }}
                             onMouseLeave={(e) => {
                               e.currentTarget.style.backgroundColor = pageTheme === 'OLD COMPUTER' 
-                                ? '#D4C5B9' 
+                                ? 'transparent' 
                                 : (pageTheme === 'MUNY' ? '#FFFFFF' : (isTransparent ? 'rgba(255,255,255,0.1)' : primary));
                             }}
                             onClick={(e) => {
