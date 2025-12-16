@@ -4403,13 +4403,21 @@ function MixerPage() {
               </div>
             )}
 
-            {/* Desktop Controls Box for OLD COMPUTER theme - Below Mixer Box */}
-            {!isMobile && pageTheme === 'OLD COMPUTER' && (
+            {/* Desktop Controls Box - Below Mixer Box */}
+            {!isMobile && (
               <div 
                 style={{
-                  backgroundColor: '#D4C5B9',
-                  border: '3px solid #000000',
-                  boxShadow: 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
+                  backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                    ? '#D4C5B9' 
+                    : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary)),
+                  border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                    ? '3px solid #000000' 
+                    : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
+                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                    ? 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff' 
+                    : (isTransparent ? '0 0 6px rgba(255,255,255,0.2)' : 'inset 0 2px 4px rgba(0, 0, 0, 0.25)'),
+                  borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '10px',
+                  backdropFilter: isTransparent ? 'blur(2px)' : 'none',
                   padding: '8px',
                   position: 'relative',
                   overflow: 'visible',
@@ -4425,8 +4433,12 @@ function MixerPage() {
                 {/* Title Bar */}
                 <div 
                   style={{
-                    backgroundColor: '#C0C0C0',
-                    border: '2px solid #000',
+                    backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '#C0C0C0' 
+                      : (isTransparent ? 'rgba(255,255,255,0.1)' : primary),
+                    border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '2px solid #000' 
+                      : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
                     padding: '4px 8px',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -4434,8 +4446,10 @@ function MixerPage() {
                     marginBottom: '4px',
                     fontSize: '15px',
                     fontWeight: 'bold',
-                    color: '#000000',
-                    fontFamily: 'monospace',
+                    color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '#000000' 
+                      : (isTransparent ? primary : '#FCFAEE'),
+                    fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
                   }}
                 >
                   <span>CONTROLS</span>
@@ -4444,8 +4458,12 @@ function MixerPage() {
                 {/* Content Area */}
                 <div 
                   style={{
-                    backgroundColor: '#FFFFFF',
-                    border: '2px solid #000',
+                    backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '#FFFFFF' 
+                      : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary)),
+                    border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '2px solid #000' 
+                      : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
                     padding: '20px',
                     position: 'relative',
                     display: 'flex',
@@ -4462,17 +4480,26 @@ function MixerPage() {
                       <div 
                         className="pressable font-mono tracking-wide cursor-pointer"
                         style={{ 
-                          backgroundColor: '#D4C5B9',
-                          color: '#000000',
-                          border: '2px solid #000000',
+                          backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                            ? '#D4C5B9' 
+                            : (pageTheme === 'MUNY' ? '#FFFFFF' : primary),
+                          color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                            ? '#000000' 
+                            : '#FCFAEE',
+                          border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                            ? '2px solid #000000' 
+                            : `1px solid ${primary}`,
                           padding: '8px 12px',
                           fontSize: '12px',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '4px',
-                          fontWeight: 'bold',
-                          boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                          fontFamily: 'monospace',
+                          fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal',
+                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                            ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' 
+                            : 'none',
+                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
+                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '4px',
                           outline: 'none'
                         }}
                         onClick={(e) => {
@@ -5063,53 +5090,70 @@ function MixerPage() {
             {/* Mobile Effect Controls - Above VARISPEED */}
             {/* Optimized for iPhone 13/14 (390x844 viewport) - ONLY move down for small screens */}
             {isMobilePortrait && stems.length >= 1 && (
-              pageTheme === 'OLD COMPUTER' ? (
-                /* Mobile Controls Box for OLD COMPUTER theme */
+              /* Mobile Controls Box for all themes */
+              <div 
+                style={{
+                  backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                    ? '#D4C5B9' 
+                    : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary)),
+                  border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                    ? '3px solid #000000' 
+                    : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
+                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                    ? 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff' 
+                    : (isTransparent ? '0 0 6px rgba(255,255,255,0.2)' : 'inset 0 2px 4px rgba(0, 0, 0, 0.25)'),
+                  borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '10px',
+                  backdropFilter: isTransparent ? 'blur(2px)' : 'none',
+                  padding: '4px',
+                  position: 'relative',
+                  overflow: 'visible',
+                  zIndex: 10,
+                  marginTop: (isSmallScreen || isMediumScreen) ? '12px' : '-22px',
+                  marginLeft: 'auto',
+                  marginRight: 'auto',
+                  marginBottom: (isSmallScreen || isMediumScreen) ? '12px' : '20px',
+                  width: 'calc(100% - 20px)',
+                  maxWidth: '896px',
+                }}
+              >
+                {/* Title Bar */}
                 <div 
                   style={{
-                    backgroundColor: '#D4C5B9',
-                    border: '3px solid #000000',
-                    boxShadow: 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
-                    padding: '4px',
-                    position: 'relative',
-                    overflow: 'visible',
-                    zIndex: 10,
-                    marginTop: (isSmallScreen || isMediumScreen) ? '12px' : '-22px',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                    marginBottom: (isSmallScreen || isMediumScreen) ? '12px' : '20px',
-                    width: 'calc(100% - 20px)',
-                    maxWidth: '896px',
+                    backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '#C0C0C0' 
+                      : (isTransparent ? 'rgba(255,255,255,0.1)' : primary),
+                    border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '2px solid #000' 
+                      : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
+                    padding: '3px 6px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '2px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '#000000' 
+                      : (isTransparent ? primary : '#FCFAEE'),
+                    fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
                   }}
                 >
-                  {/* Title Bar */}
-                  <div 
-                    style={{
-                      backgroundColor: '#C0C0C0',
-                      border: '2px solid #000',
-                      padding: '3px 6px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '2px',
-                      fontSize: '11px',
-                      fontWeight: 'bold',
-                      color: '#000000',
-                      fontFamily: 'monospace',
-                    }}
-                  >
-                    <span>CONTROLS</span>
-                  </div>
+                  <span>CONTROLS</span>
+                </div>
 
-                  {/* Content Area */}
-                  <div 
-                    style={{
-                      backgroundColor: '#FFFFFF',
-                      border: '2px solid #000',
-                      padding: '12px',
-                      position: 'relative',
-                    }}
-                  >
+                {/* Content Area */}
+                <div 
+                  style={{
+                    backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '#FFFFFF' 
+                      : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary)),
+                    border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
+                      ? '2px solid #000' 
+                      : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
+                    padding: '12px',
+                    position: 'relative',
+                  }}
+                >
                     {/* Mobile Effect Controls */}
                     <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ 
                       marginTop: '0',
@@ -5570,7 +5614,7 @@ function MixerPage() {
                             boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 2px 8px rgba(0,0,0,0.15)'
                           }}
                         >
-                          {(['CLASSIC', 'OLD COMPUTER', 'MUNY', 'TERMINAL THEME'] as const).map(themeOption => (
+                          {(['CLASSIC', 'OLD COMPUTER', 'MUNY', 'TERMINAL THEME', 'OLD INTERNET'] as const).map(themeOption => (
                             <div
                               key={themeOption}
                               onClick={() => handleThemeChange(themeOption)}
@@ -5624,340 +5668,6 @@ function MixerPage() {
                     </div>
                   </div>
                 </div>
-              ) : (
-                /* Original mobile controls without box for other themes */
-                <>
-                  <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ 
-                    marginTop: isSmallScreen ? '12px' : '-22px',
-                    marginLeft: '2px', 
-                    marginBottom: isSmallScreen ? '12px' : '20px' 
-                  }}>
-                    <div className="flex justify-center gap-4">
-                      {/* Master Effect Dropdown */}
-                      <div className="relative">
-                        <div 
-                          className="pressable font-mono tracking-wide cursor-pointer"
-                          style={{ 
-                            backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE')),
-                            color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primary,
-                            border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : `1px solid ${primary}`,
-                            padding: '4px 8px',
-                            fontSize: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal',
-                            boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
-                            outline: 'none'
-                          }}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            const dropdown = document.getElementById('mobile-master-effect-dropdown')
-                            if (dropdown) {
-                              dropdown.classList.toggle('hidden')
-                            }
-                          }}
-                        >
-                          <span>EFFECT</span>
-                          <span style={{ fontSize: '8px' }}>▼</span>
-                        </div>
-                        
-                        {/* Custom Dropdown Menu */}
-                        <div 
-                          id="mobile-master-effect-dropdown"
-                          className="absolute rounded shadow-lg hidden"
-                          style={{ 
-                            top: '100%',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            zIndex: 10, 
-                            marginTop: '4px',
-                            minWidth: 'fit-content',
-                            whiteSpace: 'nowrap',
-                            border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : `1px solid ${primary}`,
-                            backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
-                              ? '#FFFFFF' 
-                              : (isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC'),
-                            backdropFilter: isTransparent ? 'blur(4px)' : 'none',
-                            borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '4px',
-                            boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                          }}
-                        >
-                          <div 
-                            className="px-2 py-1 cursor-pointer hover:text-[#FCFAEE] font-mono transition-colors"
-                            style={{ 
-                              fontSize: '10px',
-                              color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primary,
-                              backgroundColor: pageTheme === 'OLD COMPUTER' ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
-                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
-                              fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal'
-                            }}
-                            onClick={() => {
-                              setSelectedMasterEffect('flanger')
-                              document.getElementById('mobile-master-effect-dropdown')?.classList.add('hidden')
-                            }}
-                          >
-                            FLANGER
-                          </div>
-                          <div 
-                            className="px-2 py-1 cursor-pointer hover:text-[#FCFAEE] font-mono transition-colors"
-                            style={{ 
-                              fontSize: '10px',
-                              color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primary,
-                              backgroundColor: pageTheme === 'OLD COMPUTER' ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
-                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
-                              fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal'
-                            }}
-                            onClick={() => {
-                              setSelectedMasterEffect('compressor')
-                              document.getElementById('mobile-master-effect-dropdown')?.classList.add('hidden')
-                            }}
-                          >
-                            COMPRESSOR
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Master Effect Buttons */}
-                      {selectedMasterEffect === 'flanger' ? (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              handleFlangerConfigOpen()
-                            }}
-                            className="pressable px-3 py-1 text-sm font-mono tracking-wide"
-                            style={{ 
-                              backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                              color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
-                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
-                              fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : undefined,
-                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
-                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
-                            }}
-                          >
-                            FLANGE
-                          </button>
-                          
-                          {/* Toggle Switch */}
-                          <div 
-                            className="flex items-center cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const currentEnabled = globalFlanger?.enabled || false
-                              const newWet = currentEnabled ? 0 : 0.5
-                              
-                              const newConfig = {
-                                ...(globalFlanger || defaultFlangerConfig),
-                                wet: newWet,
-                                enabled: !currentEnabled
-                              }
-                              setGlobalFlanger(newConfig)
-                              
-                              if (mixerEngineRef.current?.audioEngine) {
-                                mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                                  type: "command",
-                                  data: { 
-                                    command: "setFlangerConfig", 
-                                    config: newConfig
-                                  }
-                                });
-                              }
-                            }}
-                            style={{ marginLeft: '6px' }}
-                          >
-                            <div 
-                              className={(pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? "relative transition-all duration-200 ease-in-out overflow-visible" : (pageTheme === 'TERMINAL THEME' ? "relative rounded-full border transition-all duration-200 ease-in-out" : "relative rounded-full border transition-all duration-200 ease-in-out")}
-                              style={{ 
-                                width: '36px',
-                                height: '20px',
-                                backgroundColor: (globalFlanger?.enabled || false) 
-                              ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
-                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                                border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
-                                borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
-                                borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
-                                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '9999px',
-                                boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
-                              }}
-                            >
-                              <div 
-                                className={(pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? "absolute transition-all duration-200 ease-in-out" : (pageTheme === 'TERMINAL THEME' ? "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm" : "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm")}
-                                style={{ 
-                                  width: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '16px' : '14px',
-                                  height: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '24px' : '14px',
-                                  top: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '50%' : undefined,
-                                  left: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
-                                    ? ((globalFlanger?.enabled || false) ? '22px' : '-2px')
-                                    : undefined,
-                                  transform: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
-                                    ? 'translateY(-50%)' 
-                                    : ((globalFlanger?.enabled || false) ? 'translateX(16px)' : 'translateX(2px)'),
-                                  backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#E0E0E0' : '#ffffff',
-                                  border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : 'none',
-                                  borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '9999px',
-                                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
-                                  zIndex: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 10 : undefined
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => {
-                              handleCompressorConfigOpen()
-                            }}
-                            className="pressable px-3 py-1 text-sm font-mono tracking-wide"
-                            style={{ 
-                              backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                              color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
-                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
-                              fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : undefined,
-                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
-                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
-                            }}
-                          >
-                            COMPRESS
-                          </button>
-                          
-                          {/* Toggle Switch */}
-                          <div 
-                            className="flex items-center cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const currentEnabled = globalCompressor?.enabled || false
-                              const newWet = currentEnabled ? 0 : 1.0
-                              
-                              const newConfig = {
-                                ...(globalCompressor || defaultCompressorConfig),
-                                wet: newWet,
-                                enabled: !currentEnabled
-                              }
-                              setGlobalCompressor(newConfig)
-                              
-                              if (mixerEngineRef.current?.audioEngine) {
-                                mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                                  type: "command",
-                                  data: { 
-                                    command: "setCompressorConfig", 
-                                    config: newConfig
-                                  }
-                                });
-                              }
-                            }}
-                            style={{ marginLeft: '6px' }}
-                          >
-                            <div 
-                              className={(pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? "relative transition-all duration-200 ease-in-out overflow-visible" : (pageTheme === 'TERMINAL THEME' ? "relative rounded-full border transition-all duration-200 ease-in-out" : "relative rounded-full border transition-all duration-200 ease-in-out")}
-                              style={{ 
-                                width: '36px',
-                                height: '20px',
-                                backgroundColor: (globalCompressor?.enabled || false) 
-                              ? (pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
-                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                                border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
-                                borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
-                                borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
-                                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '9999px',
-                                boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
-                              }}
-                            >
-                              <div 
-                                className={(pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? "absolute transition-all duration-200 ease-in-out" : (pageTheme === 'TERMINAL THEME' ? "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm" : "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm")}
-                                style={{ 
-                                  width: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '16px' : '14px',
-                                  height: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '24px' : '14px',
-                                  top: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '50%' : undefined,
-                                  left: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
-                                    ? ((globalCompressor?.enabled || false) ? '22px' : '-2px')
-                                    : undefined,
-                                  transform: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') 
-                                    ? 'translateY(-50%)' 
-                                    : ((globalCompressor?.enabled || false) ? 'translateX(16px)' : 'translateX(2px)'),
-                                  backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#E0E0E0' : '#ffffff',
-                                  border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : 'none',
-                                  borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '9999px',
-                                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
-                                  zIndex: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 10 : undefined
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Mobile Portrait Varispeed */}
-                  {stems.length >= 1 && (
-                    <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ 
-                      marginTop: isSmallScreen ? '8px' : '12px',
-                      marginLeft: '0',
-                      marginBottom: '0'
-                    }}>
-                      <div
-                        className="relative"
-                        style={{
-                          marginTop: '0px',
-                          marginBottom: '0px',
-                          paddingBottom: isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '8px',
-                          width: isVerySmallScreen ? '320px' : isSmallScreen ? '340px' : (isMediumScreen ? '360px' : '350px'),
-                          height: isVerySmallScreen ? '120px' : isSmallScreen ? '130px' : (isMediumScreen ? '150px' : '140px'),
-                        }}
-                      >
-                        <div
-                          className="absolute top-0 left-0 w-full flex flex-col items-center"
-                          style={{
-                            pointerEvents: 'none',
-                            marginTop: '0px',
-                          }}
-                        >
-                          {bpm !== null && (
-                            <div className="text-xs font-mono mb-1" style={{ 
-                              color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primary,
-                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
-                              fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal'
-                            }}>
-                              {Math.round(bpm * varispeed)} BPM
-                            </div>
-                          )}
-                          <div className="text-sm tracking-wider" style={{ 
-                            color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primary,
-                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
-                            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal'
-                          }}>
-                            VARISPEED
-                          </div>
-                        </div>
-
-                        <div
-                          className="absolute left-1/2"
-                          style={{
-                            transform: 'translateX(-50%) rotate(-90deg)',
-                            top: '-118px',
-                          }}
-                        >
-                          <VarispeedSlider
-                            value={isIOS ? varispeed : 2 - varispeed}
-                            onChange={val => {
-                              const newVarispeed = isIOS ? val : 2 - val;
-                              setVarispeed(newVarispeed);
-                              setVarispeedControl(newVarispeed, isNaturalVarispeed);
-                            }}
-                            isIOS={isIOS}
-                            primaryColor={primary}
-                            stemCount={stems.length}
-                            pageTheme={pageTheme}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )
             )}
 
 
