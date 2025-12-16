@@ -2217,6 +2217,12 @@ function MixerPage() {
                 height: auto !important;
                 width: 100% !important;
               }
+              /* Ensure main container allows full scrolling */
+              main {
+                min-height: 100dvh !important;
+                height: auto !important;
+                overflow: visible !important;
+              }
               .stems-container::-webkit-scrollbar {
                 display: none;
               }
@@ -2322,6 +2328,7 @@ function MixerPage() {
             }`}
             style={{
               minHeight: '100dvh',
+              height: isMobile ? 'auto' : undefined, // Allow content to extend naturally on mobile
               color: pageTheme === 'CLASSIC' ? primary : (currentTheme?.text || primary),
               zIndex: 1,
               position: 'relative',
@@ -2348,11 +2355,11 @@ function MixerPage() {
               backgroundSize: (pageTheme === 'MUNY' ? '18px 18px' : undefined),
               fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : 'inherit'),
               paddingBottom: isVerySmallScreen 
-                ? 'clamp(120px, 18vh, 140px)' 
+                ? 'clamp(180px, 25vh, 200px)' 
                 : isSmallScreen 
-                  ? 'clamp(130px, 18vh, 145px)'  // Reduced for iPhone 13 to show modules bottom border
+                  ? 'clamp(180px, 25vh, 200px)'  // Increased padding to ensure bottom content is accessible
                   : isMobile 
-                    ? 'clamp(150px, 19vh, 170px)' 
+                    ? 'clamp(200px, 25vh, 220px)' 
                     : '60px',
             }}
           >
