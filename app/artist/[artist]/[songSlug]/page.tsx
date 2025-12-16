@@ -3224,7 +3224,7 @@ function MixerPage() {
                 {/* Content Area with Scrollable Modules or CD Spinner */}
                 <div 
                   style={{
-                    backgroundColor: '#808080',
+                    backgroundColor: isListeningMode ? '#FFF8E7' : '#808080', // Cream when in listening mode, grey otherwise
                     border: '2px solid #000',
                     padding: isMobile ? '10px' : '20px',
                     position: 'relative',
