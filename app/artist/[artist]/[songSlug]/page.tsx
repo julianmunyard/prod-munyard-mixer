@@ -531,7 +531,9 @@ function MixerPage() {
   const isIOS = typeof navigator !== 'undefined' && /iP(hone|od|ad)/.test(navigator.userAgent)
   // CRITICAL FIX: Case-insensitive check for "Transparent" to handle any database inconsistencies
   // Also ensure it's not a hex color (which would indicate a bug where color was overwritten)
-  const isTransparent = songData?.color && 
+  // IMPORTANT: OLD COMPUTER theme should NEVER use transparency, regardless of color setting
+  const isTransparent = pageTheme !== 'OLD COMPUTER' && 
+    songData?.color && 
     typeof songData.color === 'string' && 
     songData.color.toLowerCase() === 'transparent' &&
     !songData.color.startsWith('#') // Ensure it's not accidentally a hex color
