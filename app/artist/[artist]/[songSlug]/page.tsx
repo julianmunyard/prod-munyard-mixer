@@ -194,13 +194,8 @@ function MixerPage() {
   
   // CD Spinner / Listening Mode state
   const [isListeningMode, setIsListeningMode] = useState(false); // false = mixing mode (modules), true = listening mode (CD spinner)
-  const [cdSpinDuration, setCdSpinDuration] = useState(5);
-  const [cdStopping, setCdStopping] = useState(false);
-  const [cdFinalRotation, setCdFinalRotation] = useState<number | null>(null);
-  const [cdJustStarted, setCdJustStarted] = useState(false);
+  const cdSpinDuration = 5; // Constant speed - always spins at 5 seconds per rotation
   const cdElementRef = useRef<HTMLDivElement | null>(null);
-  const cdAccelerationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const cdDecelerationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [memoryUsage, setMemoryUsage] = useState<{heap: number, total: number}>({heap: 0, total: 0});
   
   // Loading screen state
@@ -1483,8 +1478,6 @@ function MixerPage() {
       }
       addDebugLog('▶️ Playback started');
       
-      // CD spinner speed is handled by the useEffect hook
-      
       // Backup: Verify playback started and retry if needed
       setTimeout(() => {
         try {
@@ -1608,107 +1601,7 @@ function MixerPage() {
     return () => clearInterval(wakeUpInterval);
   }, [isPlaying]);
 
-  // ==================== 🎵 CD Spinner Sync with Playback ====================
-  // Initialize CD spinner when entering listening mode
-  useEffect(() => {
-    if (isListeningMode && cdSpinDuration === 5 && !isPlaying) {
-      // Ensure it's spinning at idle speed when first entering listening mode
-      setCdStopping(false);
-      setCdFinalRotation(null);
-    }
-  }, [isListeningMode]);
-
-  useEffect(() => {
-    if (!isListeningMode) return;
-
-    // Always ensure CD is spinning - slow idle speed
-    const idleSpeed = 5; // Slow idle speed
-    
-    if (isPlaying) {
-      // Speed up when playing
-      setCdStopping(false);
-      setCdFinalRotation(null);
-      
-      // Clear any existing intervals
-      if (cdAccelerationIntervalRef.current) {
-        clearInterval(cdAccelerationIntervalRef.current);
-        cdAccelerationIntervalRef.current = null;
-      }
-      if (cdDecelerationIntervalRef.current) {
-        clearInterval(cdDecelerationIntervalRef.current);
-        cdDecelerationIntervalRef.current = null;
-      }
-      
-      // Start from current speed and accelerate to fast
-      const currentSpeed = cdSpinDuration;
-      let elapsed = 0;
-      const duration = 3000;
-      const interval = 16;
-      const endSpeed = 0.3; // Fast speed when playing
-      
-      cdAccelerationIntervalRef.current = setInterval(() => {
-        elapsed += interval;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const newSpeed = currentSpeed + (endSpeed - currentSpeed) * eased;
-        setCdSpinDuration(newSpeed);
-        
-        if (progress >= 1) {
-          if (cdAccelerationIntervalRef.current) {
-            clearInterval(cdAccelerationIntervalRef.current);
-            cdAccelerationIntervalRef.current = null;
-          }
-          setCdSpinDuration(endSpeed);
-        }
-      }, interval);
-    } else {
-      // Slow down to idle when paused (but keep spinning)
-      setCdStopping(false);
-      setCdFinalRotation(null);
-      
-      if (cdAccelerationIntervalRef.current) {
-        clearInterval(cdAccelerationIntervalRef.current);
-        cdAccelerationIntervalRef.current = null;
-      }
-      if (cdDecelerationIntervalRef.current) {
-        clearInterval(cdDecelerationIntervalRef.current);
-        cdDecelerationIntervalRef.current = null;
-      }
-      
-      // Decelerate to idle speed
-      const currentSpeed = cdSpinDuration;
-      let elapsed = 0;
-      const duration = 3000;
-      const interval = 16;
-      
-      cdDecelerationIntervalRef.current = setInterval(() => {
-        elapsed += interval;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const newSpeed = currentSpeed + (idleSpeed - currentSpeed) * eased;
-        setCdSpinDuration(newSpeed);
-        
-        if (progress >= 1) {
-          if (cdDecelerationIntervalRef.current) {
-            clearInterval(cdDecelerationIntervalRef.current);
-            cdDecelerationIntervalRef.current = null;
-          }
-          setCdSpinDuration(idleSpeed);
-        }
-      }, interval);
-    }
-
-    return () => {
-      if (cdAccelerationIntervalRef.current) {
-        clearInterval(cdAccelerationIntervalRef.current);
-        cdAccelerationIntervalRef.current = null;
-      }
-      if (cdDecelerationIntervalRef.current) {
-        clearInterval(cdDecelerationIntervalRef.current);
-        cdDecelerationIntervalRef.current = null;
-      }
-    };
-  }, [isListeningMode, isPlaying]);
+  // CD spinner always spins at constant speed - no speed changes
 
   const stopAll = () => {
     if (!mixerEngineRef.current) return;
@@ -3355,7 +3248,7 @@ function MixerPage() {
                       ref={cdElementRef}
                       className="cd-spin-accelerating"
                       style={{
-                        animationDuration: `${cdSpinDuration}s`,
+                        animationDuration: '5s', // Constant speed - always 5 seconds per rotation
                         width: isMobile ? '200px' : '300px',
                         height: isMobile ? '200px' : '300px',
                         borderRadius: '50%',
