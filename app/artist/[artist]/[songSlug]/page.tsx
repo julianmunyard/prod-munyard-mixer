@@ -196,11 +196,24 @@ function MixerPage() {
   const [isListeningMode, setIsListeningMode] = useState(false); // false = mixing mode (modules), true = listening mode (CD spinner)
   const cdElementRef = useRef<HTMLDivElement | null>(null);
   const cdAnimationRef = useRef<number | null>(null);
-  const currentCdDurationRef = useRef<number>(5); // Track current duration for smooth interpolation
+  const currentCdDurationRef = useRef<number | null>(null); // Track current duration for smooth interpolation (null = not initialized)
   
-  // Smoothly update CD spin duration when varispeed changes
+  // Initialize CD spinner speed when entering listening mode
   useEffect(() => {
-    if (!isListeningMode || !cdElementRef.current) return;
+    if (isListeningMode && cdElementRef.current && currentCdDurationRef.current === null) {
+      // First time entering listening mode - set initial speed based on current varispeed
+      const initialDuration = 5 / varispeed;
+      cdElementRef.current.style.animationDuration = `${initialDuration}s`;
+      currentCdDurationRef.current = initialDuration;
+    } else if (!isListeningMode) {
+      // Reset ref when leaving listening mode so it reinitializes next time
+      currentCdDurationRef.current = null;
+    }
+  }, [isListeningMode, varispeed]);
+  
+  // Smoothly update CD spin duration when varispeed changes (only when in listening mode)
+  useEffect(() => {
+    if (!isListeningMode || !cdElementRef.current || currentCdDurationRef.current === null) return;
     
     // Calculate target duration: 5s / varispeed
     const targetDuration = 5 / varispeed;
@@ -211,11 +224,11 @@ function MixerPage() {
       cdAnimationRef.current = null;
     }
     
-    // Get current duration from ref (or use current computed value if available)
+    // Get current duration from ref
     const startDuration = currentCdDurationRef.current;
     const durationDiff = targetDuration - startDuration;
     
-    // If the difference is very small, update immediately
+    // If the difference is very small, update immediately and stay at that speed
     if (Math.abs(durationDiff) < 0.01) {
       if (cdElementRef.current) {
         cdElementRef.current.style.animationDuration = `${targetDuration}s`;
@@ -243,7 +256,7 @@ function MixerPage() {
       if (progress < 1) {
         cdAnimationRef.current = requestAnimationFrame(animate);
       } else {
-        // Ensure we end exactly at target
+        // Ensure we end exactly at target and STAY at that speed
         if (cdElementRef.current) {
           cdElementRef.current.style.animationDuration = `${targetDuration}s`;
           currentCdDurationRef.current = targetDuration;
