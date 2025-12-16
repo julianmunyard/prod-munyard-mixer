@@ -194,86 +194,8 @@ function MixerPage() {
   
   // CD Spinner / Listening Mode state
   const [isListeningMode, setIsListeningMode] = useState(false); // false = mixing mode (modules), true = listening mode (CD spinner)
+  const cdSpinDuration = 5; // Constant speed - always spins at 5 seconds per rotation
   const cdElementRef = useRef<HTMLDivElement | null>(null);
-  const cdAnimationRef = useRef<number | null>(null);
-  const currentCdDurationRef = useRef<number | null>(null); // Track current duration for smooth interpolation (null = not initialized)
-  
-  // Initialize CD spinner speed when entering listening mode
-  useEffect(() => {
-    if (isListeningMode && cdElementRef.current && currentCdDurationRef.current === null) {
-      // First time entering listening mode - set initial speed based on current varispeed
-      const initialDuration = 5 / varispeed;
-      cdElementRef.current.style.animationDuration = `${initialDuration}s`;
-      currentCdDurationRef.current = initialDuration;
-    } else if (!isListeningMode) {
-      // Reset ref when leaving listening mode so it reinitializes next time
-      currentCdDurationRef.current = null;
-    }
-  }, [isListeningMode, varispeed]);
-  
-  // Smoothly update CD spin duration when varispeed changes (only when in listening mode)
-  useEffect(() => {
-    if (!isListeningMode || !cdElementRef.current || currentCdDurationRef.current === null) return;
-    
-    // Calculate target duration: 5s / varispeed
-    const targetDuration = 5 / varispeed;
-    
-    // Cancel any existing animation
-    if (cdAnimationRef.current) {
-      cancelAnimationFrame(cdAnimationRef.current);
-      cdAnimationRef.current = null;
-    }
-    
-    // Get current duration from ref
-    const startDuration = currentCdDurationRef.current;
-    const durationDiff = targetDuration - startDuration;
-    
-    // If the difference is very small, update immediately and stay at that speed
-    if (Math.abs(durationDiff) < 0.01) {
-      if (cdElementRef.current) {
-        cdElementRef.current.style.animationDuration = `${targetDuration}s`;
-        currentCdDurationRef.current = targetDuration;
-      }
-      return;
-    }
-    
-    const startTime = performance.now();
-    const transitionTime = 200; // 200ms smooth transition (faster response)
-    
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / transitionTime, 1);
-      
-      // Ease-out interpolation for smooth acceleration/deceleration
-      const easedProgress = 1 - Math.pow(1 - progress, 2);
-      const currentDuration = startDuration + (durationDiff * easedProgress);
-      
-      if (cdElementRef.current) {
-        cdElementRef.current.style.animationDuration = `${currentDuration}s`;
-        currentCdDurationRef.current = currentDuration;
-      }
-      
-      if (progress < 1) {
-        cdAnimationRef.current = requestAnimationFrame(animate);
-      } else {
-        // Ensure we end exactly at target and STAY at that speed
-        if (cdElementRef.current) {
-          cdElementRef.current.style.animationDuration = `${targetDuration}s`;
-          currentCdDurationRef.current = targetDuration;
-        }
-        cdAnimationRef.current = null;
-      }
-    };
-    
-    cdAnimationRef.current = requestAnimationFrame(animate);
-    
-    return () => {
-      if (cdAnimationRef.current) {
-        cancelAnimationFrame(cdAnimationRef.current);
-        cdAnimationRef.current = null;
-      }
-    };
-  }, [varispeed, isListeningMode]);
   const [memoryUsage, setMemoryUsage] = useState<{heap: number, total: number}>({heap: 0, total: 0});
   
   // Loading screen state
@@ -3326,7 +3248,7 @@ function MixerPage() {
                       ref={cdElementRef}
                       className="cd-spin-accelerating"
                       style={{
-                        animationDuration: '5s', // Initial value, will be updated smoothly by useEffect
+                        animationDuration: '5s', // Constant speed - always 5 seconds per rotation
                         width: isMobile ? '200px' : '300px',
                         height: isMobile ? '200px' : '300px',
                         borderRadius: '50%',
