@@ -16,7 +16,7 @@ import EchoConfigModal from '../../../components/EchoConfigModal'
 import FlangerConfigModal from '../../../components/FlangerConfigModal'
 import CompressorConfigModal from '../../../components/CompressorConfigModal'
 import PoolsuiteLoadingScreen from '../../../components/PoolsuiteLoadingScreen'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import VarispeedSlider from '../../../components/VarispeedSlider'
 import RealTimelineMixerEngine from '../../../../audio/engine/realTimelineMixerEngine'
 import Image from 'next/image'
@@ -93,9 +93,11 @@ class MixerErrorBoundary extends React.Component<
 // ==================== 🎬 Main Component ====================
 function MixerPage() {
   const { artist, songSlug } = useParams() as { artist: string; songSlug: string }
+  const router = useRouter()
     
   // -------------------- 🔧 State --------------------
   const [songData, setSongData] = useState<Song | null>(null)
+  const [hasAlbum, setHasAlbum] = useState(false)
   const [stems, setStems] = useState<Stem[]>([])
   const [volumes, setVolumes] = useState<Record<string, number>>({})
   const [reverbs, setReverbs] = useState<Record<string, any>>({})
@@ -971,6 +973,25 @@ function MixerPage() {
       // Set page theme from song data
       if (data.page_theme && (data.page_theme === 'TERMINAL THEME' || data.page_theme === 'OLD COMPUTER' || data.page_theme === 'MUNY')) {
         setPageTheme(data.page_theme);
+      }
+      
+      // Check if artist has an album
+      try {
+        const { data: albumData, error: albumError } = await supabase!
+          .from('albums')
+          .select('id')
+          .eq('artist_slug', artist)
+          .limit(1)
+          .maybeSingle()
+        
+        if (!albumError && albumData) {
+          setHasAlbum(true)
+        } else {
+          setHasAlbum(false)
+        }
+      } catch (err) {
+        // If albums table doesn't exist or other error, assume no album
+        setHasAlbum(false)
       }
       setStems(stemObjs);
       setVolumes(Object.fromEntries(stemObjs.map(s => [s.label, 1])));
@@ -2311,6 +2332,52 @@ function MixerPage() {
                     : '60px',
             }}
           >
+            {/* ⬅️ Back Button - Top Left (only shows if artist has album) */}
+            {hasAlbum && (
+              <button
+                onClick={() => router.push(`/artist/${artist}`)}
+                aria-label="Back to album page"
+                className="pressable flex items-center justify-center"
+                style={{
+                  position: 'fixed',
+                  top: '12px',
+                  left: '12px',
+                  width: isMobile ? '36px' : '42px',
+                  height: isMobile ? '36px' : '42px',
+                  borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '50%',
+                  backgroundColor: pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE')),
+                  color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primary,
+                  border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : `1px solid ${primary}`,
+                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                  fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
+                  fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal',
+                  zIndex: 1000,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title="Back to album page"
+              >
+                <svg
+                  width={isMobile ? "18" : "22"}
+                  height={isMobile ? "18" : "22"}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M19 12H5M5 12L12 19M5 12L12 5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            )}
+            
             {/* 🔇 Mobile Silent Mode Unmute Floating Button (SVG in primary color) */}
             {/* Also works as Master Mute/Unmute for all tracks */}
             {/* Hidden for OLD COMPUTER theme - volume button is in player box */}
