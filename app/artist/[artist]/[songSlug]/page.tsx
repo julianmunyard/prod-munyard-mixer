@@ -2249,6 +2249,22 @@ function MixerPage() {
                 font-size: clamp(10px, 2.5vw, 12px) !important;
               }
             }
+            /* 🎯 Samsung Galaxy S8 specific tweaks (360 x ~740) */
+            @media screen 
+              and (min-width: 360px) 
+              and (max-width: 380px) 
+              and (min-height: 730px) 
+              and (max-height: 780px) {
+              .mixer-module {
+                /* Slightly shorter so CONTROLS + VARISPEED fit without overlap */
+                min-height: clamp(320px, 50dvh, 360px) !important;
+              }
+              .controls-panel {
+                /* Pull controls a bit closer to mixer and free space at bottom */
+                margin-top: 12px !important;
+                margin-bottom: 12px !important;
+              }
+            }
           `}</style>
           
 
@@ -2389,6 +2405,7 @@ function MixerPage() {
                   justifyContent: 'center',
                 }}
                 title="Back to album page"
+              className="controls-panel"
               >
                 <svg
                   width={isMobile ? "18" : "22"}
