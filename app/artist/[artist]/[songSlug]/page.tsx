@@ -2380,13 +2380,13 @@ function MixerPage() {
                   maxWidth: isMobile ? 'calc(100% - 100px)' : '90%', // Shorter on mobile to fit with back arrow
                 }}
               >
-                {/* Left side lines - 5 lines tapering to triangle shape */}
+                {/* Left side lines - slight taper to triangle shape at end */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-end', marginRight: isMobile ? '6px' : '14px' }}>
-                  <div style={{ width: isMobile ? '12px' : '40px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '18px' : '60px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '24px' : '80px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '18px' : '60px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '12px' : '40px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '18px' : '64px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '20px' : '72px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '22px' : '80px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '20px' : '72px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '18px' : '64px', height: '1px', backgroundColor: '#000000' }} />
                 </div>
                 
                 {/* Title Text */}
@@ -2405,13 +2405,13 @@ function MixerPage() {
                   MUNYARD MIXER
                 </h1>
                 
-                {/* Right side lines - 5 lines tapering to triangle shape */}
+                {/* Right side lines - slight taper to triangle shape at end */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '3px', alignItems: 'flex-start', marginLeft: isMobile ? '6px' : '14px' }}>
-                  <div style={{ width: isMobile ? '12px' : '40px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '18px' : '60px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '24px' : '80px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '18px' : '60px', height: '1px', backgroundColor: '#000000' }} />
-                  <div style={{ width: isMobile ? '12px' : '40px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '18px' : '64px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '20px' : '72px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '22px' : '80px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '20px' : '72px', height: '1px', backgroundColor: '#000000' }} />
+                  <div style={{ width: isMobile ? '18px' : '64px', height: '1px', backgroundColor: '#000000' }} />
                 </div>
               </div>
             </div>
