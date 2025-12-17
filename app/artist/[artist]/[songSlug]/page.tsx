@@ -6025,7 +6025,7 @@ function MixerPage() {
                             boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 2px 8px rgba(0,0,0,0.15)'
                           }}
                         >
-                          {(['CLASSIC', 'OLD COMPUTER', 'MUNY', 'TERMINAL THEME', 'OLD INTERNET'] as const).map(themeOption => (
+                          {(['OLD COMPUTER', 'OLD COMPUTER 2'] as const).map(themeOption => (
                             <div
                               key={themeOption}
                               onClick={() => handleThemeChange(themeOption)}
