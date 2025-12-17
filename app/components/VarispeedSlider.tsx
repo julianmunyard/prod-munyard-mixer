@@ -16,7 +16,7 @@ type Props = {
   stemCount?: number
   varispeedMode?: 'timeStretch' | 'natural'
   onVarispeedModeChange?: (mode: 'timeStretch' | 'natural') => void
-  pageTheme?: 'CLASSIC' | 'TERMINAL THEME' | 'OLD COMPUTER' | 'MUNY' | 'OLD INTERNET'
+  pageTheme?: 'OLD COMPUTER' | 'OLD COMPUTER 2'
 }
 
 export default function VarispeedSlider({
@@ -29,7 +29,7 @@ export default function VarispeedSlider({
   stemCount = 0,
   varispeedMode = 'timeStretch',
   onVarispeedModeChange,
-  pageTheme = 'CLASSIC',
+  pageTheme = 'OLD COMPUTER',
 }: Props) {
   const previousTick = useRef<number | null>(null)
 
@@ -108,10 +108,10 @@ const tickLabels = shouldFlipLabels
     )
   }
 
-  const sliderColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primaryColor
-  const sliderBg = pageTheme === 'OLD COMPUTER' ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : 'transparent'))
-  const sliderBorder = (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : `1px solid ${primaryColor}`
-  const thumbColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primaryColor
+  const sliderColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primaryColor
+  const sliderBg = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : 'transparent'
+  const sliderBorder = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primaryColor}`
+  const thumbColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primaryColor
 
   return (
     <div
@@ -123,8 +123,8 @@ const tickLabels = shouldFlipLabels
         paddingBottom: '8px',
         border: sliderBorder,
         backgroundColor: sliderBg,
-        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '4px',
-        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
         '--varispeed-primary-color': thumbColor,
       } as React.CSSProperties & { '--varispeed-primary-color': string }}
     >
@@ -140,8 +140,8 @@ const tickLabels = shouldFlipLabels
         {tickLabels.map((label, i) => (
           <span key={i} className="text-[10px] font-mono text-right w-6" style={{ 
             color: sliderColor,
-            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
-            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal'
+            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
           }}>
             {label}
           </span>
@@ -153,15 +153,15 @@ const tickLabels = shouldFlipLabels
         <div className="absolute -top-10 flex flex-col items-center">
           <span className="text-[13px] font-mono" style={{ 
             color: sliderColor,
-            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
-            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal'
+            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
           }}>
             {Math.round(bpm * (isIOS ? value : 2 - value))} BPM
           </span>
           <span className="text-[12px] font-mono tracking-wider mt-1" style={{ 
             color: sliderColor,
-            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit',
-            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal'
+            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
           }}>
             VARISPEED
           </span>
@@ -174,16 +174,14 @@ const tickLabels = shouldFlipLabels
               }}
               className="mt-2 px-2 py-1 text-[10px] font-mono rounded border"
               style={{ 
-                color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primaryColor,
-                borderColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '#000000' : primaryColor,
-                borderWidth: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px' : '1px',
-                backgroundColor: pageTheme === 'OLD COMPUTER' 
-                  ? '#D4C5B9'
-                  : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : (varispeedMode === 'natural' ? primaryColor + '20' : 'transparent'))),
-                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '0' : '4px',
-                fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'bold' : 'normal',
-                boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? 'monospace' : 'inherit'
+                color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primaryColor,
+                borderColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primaryColor,
+                borderWidth: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px' : '1px',
+                backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (varispeedMode === 'natural' ? primaryColor + '20' : 'transparent'),
+                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+                fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
+                boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit'
               }}
               title={`Switch to ${varispeedMode === 'timeStretch' ? 'Natural' : 'Time-stretch'} mode`}
             >
@@ -239,14 +237,14 @@ const tickLabels = shouldFlipLabels
           -webkit-appearance: none !important;
           height: 35px !important;
           width: 18px !important;
-          border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD INTERNET') ? '0' : '10px'} !important;
+          border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '10px'} !important;
           background: var(--varispeed-primary-color, ${thumbColor}) !important;
-          border: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : 'none'} !important;
+          border: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none'} !important;
           position: relative;
           top: 0;
           transform: translateY(1px);
           z-index: 10;
-          box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
+          box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
         }
   
         .varispeed-slider::-moz-range-track {
@@ -259,10 +257,10 @@ const tickLabels = shouldFlipLabels
         .varispeed-slider::-moz-range-thumb {
           height: 45px !important;
           width: 18px !important;
-          border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD INTERNET') ? '0' : '10px'} !important;
+          border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '10px'} !important;
           background: var(--varispeed-primary-color, ${thumbColor}) !important;
-          border: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : 'none'} !important;
-          box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
+          border: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none'} !important;
+          box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
         }
 
         .varispeed-slider::-ms-track {
@@ -275,10 +273,10 @@ const tickLabels = shouldFlipLabels
         .varispeed-slider::-ms-thumb {
           height: 45px !important;
           width: 18px !important;
-          border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD INTERNET') ? '0' : '10px'} !important;
+          border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '10px'} !important;
           background: var(--varispeed-primary-color, ${thumbColor}) !important;
-          border: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : 'none'} !important;
-          box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD INTERNET') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
+          border: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none'} !important;
+          box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
         }
 
         .varispeed-slider::-ms-fill-lower,
