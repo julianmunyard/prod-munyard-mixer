@@ -282,6 +282,8 @@ export default function Dashboard() {
               fontSize: '0.9rem',
               fontWeight: 'bold',
               fontFamily: 'monospace',
+              width: '50%',
+              minWidth: '120px',
             }}
           >
             Songs
@@ -297,9 +299,11 @@ export default function Dashboard() {
               fontSize: '0.9rem',
               fontWeight: 'bold',
               fontFamily: 'monospace',
+              width: '50%',
+              minWidth: '120px',
             }}
           >
-            Albums
+            Collections
           </button>
           </div>
 
@@ -384,11 +388,11 @@ export default function Dashboard() {
           <>
             {albums.length === 0 ? (
               <div style={{ marginBottom: '1.5rem', padding: '0.75rem 1rem', border: '2px solid #000000', backgroundColor: '#FCFAEE', fontSize: '0.95rem' }}>
-                You don't have any albums yet.
+                You don't have any collections yet.
               </div>
             ) : (
               <div style={{ textAlign: 'left', marginBottom: '2rem' }}>
-                <p style={{ fontSize: '1rem', marginBottom: '0.75rem', fontWeight: 'bold' }}>Your Albums</p>
+                <p style={{ fontSize: '1rem', marginBottom: '0.75rem', fontWeight: 'bold' }}>Your Collections</p>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                   {albums.map((album) => {
                     const songIds = album.songs.map(s => s.id).join(',')
@@ -472,7 +476,7 @@ export default function Dashboard() {
               boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
             }}
           >
-            Create Album
+            Create Collection
           </button>
           </div>
         </div>

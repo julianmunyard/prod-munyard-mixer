@@ -55,181 +55,138 @@ export default function PoolsuiteLoadingScreen({
 
   return (
     <>
-      {/* Font face declaration */}
-      <style jsx>{`
-        @font-face {
-          font-family: 'New York';
-          src: url('/fonts/new-york.ttf') format('truetype');
-          font-weight: normal;
-          font-style: normal;
-        }
-      `}</style>
-      
       <div 
         className="fixed inset-0 z-50 flex items-center justify-center"
         style={{
-          backgroundColor: '#FCFAEE', // Light beige background
-          fontFamily: 'New York, serif'
+          backgroundColor: '#FFE5E5', // Pink background to match dashboard
         }}
       >
-      {/* Main Loading Window */}
+      {/* Main Loading Window - OLD COMPUTER aesthetic */}
       <div 
-        className="relative overflow-hidden"
+        className="relative"
         style={{
           width: 'min(95vw, 800px)',
-          height: 'min(80vh, 500px)',
           maxWidth: isVerySmallScreen ? '95vw' : 'min(90vw, 800px)',
-          maxHeight: isSmallScreen ? '85vh' : 'min(70vh, 500px)',
-          backgroundColor: '#FCFAEE',
-          border: '2px solid #000',
-          borderRadius: '12px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+          border: '3px solid #000000',
+          backgroundColor: '#D4C5B9',
+          boxShadow: 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
         }}
       >
-        {/* Inner teal border */}
-        <div 
-          className="absolute inset-1 rounded-lg"
+        {/* Title bar */}
+        <div
           style={{
-            border: '1px solid #20B2AA',
-            pointerEvents: 'none'
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0.6rem 0.9rem',
+            borderBottom: '3px solid #000000',
+            backgroundColor: '#C0C0C0',
+            fontWeight: 'bold',
+            fontSize: '0.9rem',
+            fontFamily: 'monospace',
           }}
-        />
-
-        {/* Content Container */}
-        <div className="flex h-full">
-          {/* Left Section - Vintage Studio Photo */}
-          <div 
-            className="relative flex-shrink-0"
-            style={{
-              width: '40%',
-              backgroundImage: 'url("/giorgio-and-bowie.jpg")',
-              backgroundSize: 'cover',
-              backgroundPosition: '35% center',
-              opacity: 0.9
-            }}
-          >
-            {/* Vintage filter overlay */}
-            <div 
-              className="absolute inset-0"
-              style={{
-                background: 'linear-gradient(45deg, rgba(245, 245, 220, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%)'
-              }}
-            />
-          </div>
-
-          {/* Right Section - Text and Progress */}
-          <div 
-            className="flex-1 flex flex-col justify-between p-6"
-            style={{
-              background: 'radial-gradient(circle at 20% 50%, rgba(32, 178, 170, 0.1) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(32, 178, 170, 0.05) 0%, transparent 50%)',
-              position: 'relative'
-            }}
-          >
-            {/* Dotted pattern overlay */}
-            <div 
-              className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage: 'radial-gradient(circle, #20B2AA 1px, transparent 1px)',
-                backgroundSize: '8px 8px'
-              }}
-            />
-
-            <div className="relative z-10">
-              {/* Title */}
-              <div className="flex items-center justify-between mb-4">
-                <h1 
-                  className="font-bold tracking-wider"
-                  style={{ 
-                    fontSize: isVerySmallScreen ? '1.5rem' : isSmallScreen ? '2rem' : '2.5rem',
-                    color: '#000000',
-                    fontFamily: 'New York, serif',
-                    textShadow: '2px 2px 0px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  MUNYARD MIXER
-                </h1>
-                <div 
-                  className="w-8 h-8 rounded-full"
-                  style={{
-                    background: `linear-gradient(45deg, ${primaryColor}, #FFD700)`,
-                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
-                  }}
-                />
-              </div>
-
-              {/* Subtitle */}
-              <div 
-                className="text-sm italic mb-6 leading-relaxed"
-                style={{ color: '#000000', fontFamily: 'New York, serif' }}
-              >
-                <div className="font-bold mb-1">Interactive Stem Player</div>
-              </div>
-
-              {/* Loading Message */}
-              <div 
-                className="text-lg mb-4"
-                style={{ color: '#000000', fontFamily: 'New York, serif' }}
-              >
-                {loadingMessage}
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mb-2">
-                <div 
-                  className="relative h-6 overflow-hidden"
-                  style={{ 
-                    backgroundColor: '#FCFAEE',
-                    border: '1px solid #000',
-                    borderBottom: '4px solid #000',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                  }}
-                >
-                  {/* Segmented Progress Blocks */}
-                  <div className="absolute inset-0 flex gap-0.5 p-0.5">
-                    {Array.from({ length: 40 }, (_, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 h-full"
-                        style={{
-                          backgroundColor: i < Math.floor((progress / 100) * 40) ? '#20B2AA' : 'transparent'
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                
-                {/* Progress Percentage */}
-                <div 
-                  className="text-right text-sm mt-1"
-                  style={{ color: '#000000', fontFamily: 'New York, serif' }}
-                >
-                  {Math.round(progress)}%
-                </div>
-              </div>
-
-              {/* Song Info */}
-              <div 
-                className="text-sm mt-4"
-                style={{ color: '#000000', fontFamily: 'New York, serif' }}
-              >
-                <div>Loading: {songTitle}</div>
-                <div>Artist: {artistName}</div>
-              </div>
-            </div>
+        >
+          <span>LOADING</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
           </div>
         </div>
 
-        {/* Loading Animation */}
-        {showContent && (
-          <div 
-            className="absolute top-4 right-4 w-3 h-3 animate-pulse"
-            style={{
-              backgroundColor: '#20B2AA',
-              borderRadius: '50%',
-              boxShadow: '0 0 10px #20B2AA'
+        {/* Content area */}
+        <div
+          style={{
+            padding: '1.5rem',
+            backgroundColor: '#FFFFFF',
+            borderTop: '2px solid #000000',
+          }}
+        >
+          {/* Title */}
+          <h1 
+            style={{ 
+              fontSize: isVerySmallScreen ? '1.5rem' : isSmallScreen ? '1.8rem' : '2rem',
+              fontWeight: 'bold',
+              marginBottom: '1rem',
+              color: '#000000',
+              fontFamily: 'monospace',
             }}
-          />
-        )}
+          >
+            MUNYARD MIXER
+          </h1>
+
+          {/* Loading Message */}
+          <div 
+            style={{ 
+              fontSize: '0.95rem',
+              marginBottom: '1.5rem',
+              color: '#000000',
+              fontFamily: 'monospace',
+            }}
+          >
+            {loadingMessage}
+          </div>
+
+          {/* Progress Bar Container */}
+          <div style={{ marginBottom: '1rem' }}>
+            <div 
+              style={{ 
+                position: 'relative',
+                height: '24px',
+                overflow: 'hidden',
+                backgroundColor: '#FFFFFF',
+                border: '2px solid #000000',
+                boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+              }}
+            >
+              {/* Segmented Progress Blocks */}
+              <div style={{ 
+                position: 'absolute',
+                inset: '2px',
+                display: 'flex',
+                gap: '2px',
+                padding: '2px',
+              }}>
+                {Array.from({ length: 40 }, (_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      flex: 1,
+                      height: '100%',
+                      backgroundColor: i < Math.floor((progress / 100) * 40) ? '#000000' : 'transparent'
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* Progress Percentage */}
+            <div 
+              style={{ 
+                textAlign: 'right',
+                fontSize: '0.85rem',
+                marginTop: '0.5rem',
+                color: '#000000',
+                fontFamily: 'monospace',
+              }}
+            >
+              {Math.round(progress)}%
+            </div>
+          </div>
+
+          {/* Song Info */}
+          <div 
+            style={{ 
+              fontSize: '0.9rem',
+              marginTop: '1rem',
+              color: '#000000',
+              fontFamily: 'monospace',
+            }}
+          >
+            <div style={{ marginBottom: '0.5rem' }}>Loading: {songTitle}</div>
+            <div>Artist: {artistName}</div>
+          </div>
+        </div>
       </div>
     </div>
     </>

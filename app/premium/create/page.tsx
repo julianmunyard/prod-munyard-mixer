@@ -399,7 +399,7 @@ export default function PremiumCreate() {
     } else {
       // Handle album
       if (!albumTitle.trim()) {
-        alert('Please enter an album title.')
+        alert('Please enter a collection title.')
         setIsSubmitting(false)
         return
       }
@@ -431,7 +431,7 @@ export default function PremiumCreate() {
         }
       }
 
-      // Create album record (we'll use a simple approach - store album_id in songs)
+      // Create collection record (we'll use a simple approach - store album_id in songs)
       const albumId = uuidv4()
       const artistSlug = toSlug(artistName)
       const albumSlug = toSlug(albumTitle)
@@ -642,7 +642,7 @@ export default function PremiumCreate() {
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Project Type Selection - visually shows ALBUM only (single flow hidden) */}
+          {/* Project Type Selection - visually shows COLLECTION only (single flow hidden) */}
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Project Type</label>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -662,7 +662,7 @@ export default function PremiumCreate() {
                   opacity: 0.9,
                 }}
               >
-                ALBUM
+                COLLECTION
               </button>
             </div>
           </div>
@@ -680,7 +680,7 @@ export default function PremiumCreate() {
           {projectType === 'album' && (
             <>
               <label>
-                Album Title
+                Collection Title
                 <input
                   type="text"
                   value={albumTitle}
@@ -689,7 +689,7 @@ export default function PremiumCreate() {
                 />
               </label>
 
-              {/* Album songs */}
+              {/* Collection songs */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginTop: '1rem' }}>
                 {albumSongs.map((song, index) => (
                   <div key={index} style={{ border: `2px solid ${currentTheme.border}`, borderRadius: '8px', padding: '1.5rem', backgroundColor: currentTheme.cardBg, boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none' }}>

@@ -155,7 +155,7 @@ export default function EditAlbum() {
         .order('track_number', { ascending: true })
 
       if (songsError || !songs || songs.length === 0) {
-        alert('Could not find album to edit.')
+        alert('Could not find collection to edit.')
         router.push('/dashboard')
         return
       }
@@ -382,7 +382,7 @@ export default function EditAlbum() {
     }
 
     if (!artistName.trim() || !albumTitle.trim()) {
-      alert('Please enter both an artist name and album title.')
+      alert('Please enter both an artist name and collection title.')
       setIsSubmitting(false)
       return
     }
@@ -711,7 +711,7 @@ export default function EditAlbum() {
   if (locked) {
     return (
       <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <p style={{ fontFamily: 'Geist Mono, monospace', fontSize: '1.25rem' }}>Loading album...</p>
+        <p style={{ fontFamily: 'Geist Mono, monospace', fontSize: '1.25rem' }}>Loading collection...</p>
       </main>
     )
   }
@@ -795,7 +795,7 @@ export default function EditAlbum() {
           color: currentTheme.text,
           textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.4)' : 'none',
           fontFamily: pageTheme === 'TERMINAL THEME' ? 'monospace' : 'inherit'
-        }}>EDIT ALBUM</h1>
+        }}>EDIT COLLECTION</h1>
 
         {userEmail && (
           <p style={{ marginBottom: '2rem' }}>
@@ -815,7 +815,7 @@ export default function EditAlbum() {
           </label>
 
           <label>
-            Album Title
+            Collection Title
             <input
               type="text"
               value={albumTitle}
@@ -824,7 +824,7 @@ export default function EditAlbum() {
             />
           </label>
 
-          {/* Album songs */}
+          {/* Collection songs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginTop: '1rem' }}>
             {albumSongs.map((song, index) => (
               <div key={index} style={{ border: `2px solid ${currentTheme.border}`, borderRadius: '8px', padding: '1.5rem', backgroundColor: currentTheme.cardBg, boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : 'none' }}>

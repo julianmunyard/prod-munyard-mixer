@@ -37,7 +37,7 @@ return (
       <link rel="shortcut icon" href="/munyard-icon.ico" />
       {/* PWA manifest removed to prevent install prompts */}
       {/* <link rel="manifest" href="/manifest.json" /> */}
-      <meta name="theme-color" content="#FCFAEE" />
+      <meta name="theme-color" content="#FFE5E5" />
       
       {/* iOS Safari Status Bar - Match cream background */}
       {/* PWA install prompts disabled */}
@@ -128,7 +128,7 @@ return (
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: '#FCFAEE',
+          backgroundColor: '#FFE5E5', /* Pink background to match OLD COMPUTER theme */
           zIndex: -1,
           pointerEvents: 'none'
         }}

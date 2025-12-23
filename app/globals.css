@@ -463,7 +463,7 @@ body {
 }
 
 body {
-  background: #FCFAEE;
+  background: #FFE5E5; /* Pink background to match OLD COMPUTER theme */
   overscroll-behavior-y: auto; /* Allow bounce effect when scrolling */
   -webkit-overflow-scrolling: touch;
 }
@@ -489,7 +489,7 @@ body {
 /* FORCE RESET BACKGROUND PER PAGE */
 body[data-page="dashboard"],
 body[data-page="create"] {
-  --background: #FCFAEE !important;
+  --background: #FFE5E5 !important; /* Pink background to match OLD COMPUTER theme */
   --foreground: #171717 !important;
   background: var(--background) !important;
   color: var(--foreground) !important;
