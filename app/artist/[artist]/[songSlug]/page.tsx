@@ -2366,10 +2366,11 @@ function MixerPage() {
             }`}
             style={{
               minHeight: '100dvh',
-              height: isMobile ? 'auto' : undefined, // Allow content to extend naturally on mobile
+              height: 'auto', // Allow content to extend naturally on all devices
               color: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : (currentTheme?.text || primary),
               zIndex: 1,
               position: 'relative',
+              overflowY: 'visible', // Allow full scrolling
               backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.background : ((pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FFFFFF') : undefined),
               backgroundImage: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? `
                 repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px),
@@ -2398,7 +2399,7 @@ function MixerPage() {
                   ? 'clamp(180px, 25vh, 200px)'  // Increased padding to ensure bottom content is accessible
                   : isMobile 
                     ? 'clamp(200px, 25vh, 220px)' 
-                    : '60px',
+                    : '120px', // Increased to show controls box bottom border and pink space
             }}
           >
             {/* ⬅️ Back Button - Top Left (only shows if artist has album) */}
@@ -4756,7 +4757,7 @@ function MixerPage() {
                   marginTop: '20px',
                   marginLeft: 'auto',
                   marginRight: 'auto',
-                  marginBottom: '20px',
+                  marginBottom: '60px',
                   width: 'calc(100% - 20px)',
                   maxWidth: '896px',
                 }}
@@ -5538,7 +5539,7 @@ function MixerPage() {
                   marginTop: (isSmallScreen || isMediumScreen) ? '12px' : '-22px',
                   marginLeft: 'auto',
                   marginRight: 'auto',
-                  marginBottom: (isSmallScreen || isMediumScreen) ? '12px' : '20px',
+                  marginBottom: (isSmallScreen || isMediumScreen) ? '40px' : '60px',
                   width: 'calc(100% - 20px)',
                   maxWidth: '896px',
                 }}

@@ -464,23 +464,26 @@ body {
 
 body {
   background: #FCFAEE;
-  overscroll-behavior: none;
+  overscroll-behavior-y: auto; /* Allow bounce effect when scrolling */
   -webkit-overflow-scrolling: touch;
 }
 
 main {
-  height: 100dvh;
+  min-height: 100dvh;
+  height: auto;
   width: 100vw;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  overflow-y: visible;
 }
 
 html,
-
 body {
   height: auto;
   min-height: 100dvh;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto; /* Allow bounce effect */
 }
 
 /* FORCE RESET BACKGROUND PER PAGE */
