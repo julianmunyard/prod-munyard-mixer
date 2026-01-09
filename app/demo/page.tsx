@@ -570,6 +570,7 @@ export default function DemoPage({
           transformOrigin: 'center center',
           margin: '0',
           flexShrink: 0,
+          overflow: 'hidden',
         }}
       >
         {/* Tp-7 Container */}
@@ -580,7 +581,7 @@ export default function DemoPage({
             height: '1419.53px',
             left: '0px',
             top: '0px',
-            overflow: 'visible',
+            overflow: 'hidden',
           }}
         >
           {/* Card - Main Background */}
