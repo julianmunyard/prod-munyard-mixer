@@ -533,6 +533,25 @@ export default function DemoPage({
     }
   }
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!showThemeDropdown) return
+    
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement
+      if (!target.closest('[data-theme-dropdown]')) {
+        setShowThemeDropdown && setShowThemeDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [showThemeDropdown, setShowThemeDropdown])
+
   return (
     <main
       style={{
@@ -1737,17 +1756,30 @@ export default function DemoPage({
       {/* Theme Button - Absolute at bottom next to content */}
       {onThemeChange && (
         <div 
+          data-theme-dropdown
           style={{
             position: 'absolute',
             bottom: isMobile ? '10px' : '20px',
             left: '50%',
             transform: 'translateX(-50%)',
-            zIndex: 1000,
+            zIndex: 10000,
+            pointerEvents: 'auto',
           }}
+          onClick={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
         >
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', pointerEvents: 'auto' }}>
             <button
-              onClick={() => setShowThemeDropdown && setShowThemeDropdown(!showThemeDropdown)}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setShowThemeDropdown && setShowThemeDropdown(!showThemeDropdown)
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setShowThemeDropdown && setShowThemeDropdown(!showThemeDropdown)
+              }}
               style={{ 
                 backgroundColor: '#D4C5B9',
                 color: '#000000',
@@ -1763,6 +1795,9 @@ export default function DemoPage({
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px',
+                zIndex: 1002,
+                position: 'relative',
+                touchAction: 'manipulation',
               }}
             >
               <span>THEMES</span>
@@ -1787,8 +1822,16 @@ export default function DemoPage({
                 {(['OLD COMPUTER', 'OLD COMPUTER 2', 'FIGMA', 'DEMO'] as const).map((themeOption, index, array) => (
                   <div
                     key={themeOption}
-                    onClick={() => {
-                      onThemeChange(themeOption)
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      onThemeChange && onThemeChange(themeOption)
+                      setShowThemeDropdown && setShowThemeDropdown(false)
+                    }}
+                    onTouchStart={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      onThemeChange && onThemeChange(themeOption)
                       setShowThemeDropdown && setShowThemeDropdown(false)
                     }}
                     style={{
@@ -1800,6 +1843,10 @@ export default function DemoPage({
                       fontSize: '12px',
                       fontFamily: 'monospace',
                       fontWeight: 'bold',
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent',
+                      zIndex: 1003,
+                      position: 'relative',
                     }}
                     onMouseEnter={(e) => {
                       if (currentTheme !== themeOption) {
