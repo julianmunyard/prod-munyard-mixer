@@ -452,6 +452,7 @@ export default function DemoPage({
   setShowThemeDropdown?: (show: boolean) => void
 } = {}) {
   const [scale, setScale] = useState(0.65)
+  const [isMobile, setIsMobile] = useState(false)
 
   // Add marquee animation styles
   useEffect(() => {
