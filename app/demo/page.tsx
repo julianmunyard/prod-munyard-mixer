@@ -822,7 +822,8 @@ export default function DemoPage({
             </div>
           </div>
 
-          {/* Left Slider/Fader - Using exact SVG */}
+          {/* Left Slider/Fader - Using exact SVG - Hidden on mobile */}
+          {!isMobile && (
           <div
             style={{
               position: 'absolute',
@@ -938,6 +939,7 @@ export default function DemoPage({
 </svg>`
             }}
           />
+          )}
 
 
           {/* Right Faders - Dynamically render based on number of stems with horizontal scrolling */}
