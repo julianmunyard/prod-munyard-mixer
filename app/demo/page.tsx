@@ -474,14 +474,25 @@ export default function DemoPage({
 
   useEffect(() => {
     const calculateScale = () => {
-      const isMobile = window.innerWidth <= 768
-      const padding = isMobile ? 40 : 80
-      const width = window.innerWidth - padding
-      const height = window.innerHeight - padding
-      const scaleX = width / 1375
-      const scaleY = height / 1419.53
-      const newScale = Math.min(scaleX, scaleY, 0.75) // Max 75% scale
-      setScale(newScale)
+      const mobile = window.innerWidth <= 768
+      setIsMobile(mobile)
+      if (mobile) {
+        // On mobile, use viewport width with minimal padding for better sizing
+        const padding = 20
+        const width = window.innerWidth - padding
+        const scaleX = width / 1375
+        // Don't limit mobile scale as much - let it be larger
+        const newScale = Math.min(scaleX, 1.0) // Can go up to 100% on mobile
+        setScale(newScale)
+      } else {
+        const padding = 80
+        const width = window.innerWidth - padding
+        const height = window.innerHeight - padding
+        const scaleX = width / 1375
+        const scaleY = height / 1419.53
+        const newScale = Math.min(scaleX, scaleY, 0.75) // Max 75% scale on desktop
+        setScale(newScale)
+      }
     }
 
     calculateScale()
@@ -526,16 +537,16 @@ export default function DemoPage({
       style={{
         minHeight: '100vh',
         backgroundColor: '#DBDBDB',
-        padding: '40px',
+        padding: isMobile ? '10px' : '40px',
         margin: '0',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden',
+        overflow: isMobile ? 'auto' : 'hidden',
         width: '100%',
         boxSizing: 'border-box',
         position: 'relative',
-        paddingBottom: onThemeChange ? '80px' : '40px', // Extra padding for theme button
+        paddingBottom: onThemeChange ? (isMobile ? '100px' : '80px') : (isMobile ? '20px' : '40px'), // Extra padding for theme button
       }}
     >
       <style>{`
@@ -1724,7 +1735,7 @@ export default function DemoPage({
         <div 
           style={{
             position: 'absolute',
-            bottom: '20px',
+            bottom: isMobile ? '10px' : '20px',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 1000,
