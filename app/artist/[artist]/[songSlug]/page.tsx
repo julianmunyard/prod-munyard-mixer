@@ -41,7 +41,7 @@ type Song = {
   background_video?: string
   primary_color?: string
   artwork_url?: string
-  page_theme?: 'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA'
+  page_theme?: 'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA' | 'DEMO'
   album_id?: string
 }
 
