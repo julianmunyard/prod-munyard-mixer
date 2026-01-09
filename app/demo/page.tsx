@@ -535,6 +535,7 @@ export default function DemoPage({
         width: '100%',
         boxSizing: 'border-box',
         position: 'relative',
+        paddingBottom: onThemeChange ? '80px' : '40px', // Extra padding for theme button
       }}
     >
       <style>{`
@@ -1718,11 +1719,11 @@ export default function DemoPage({
         </div>
       </div>
 
-      {/* Theme Button - Fixed at bottom */}
+      {/* Theme Button - Absolute at bottom next to content */}
       {onThemeChange && (
         <div 
           style={{
-            position: 'fixed',
+            position: 'absolute',
             bottom: '20px',
             left: '50%',
             transform: 'translateX(-50%)',
