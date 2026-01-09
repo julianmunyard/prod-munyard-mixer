@@ -565,7 +565,7 @@ export default function DemoPage({
           position: 'relative',
           width: '1375px',
           height: '1419.53px',
-          backgroundColor: '#DBDBDB',
+          backgroundColor: isMobile ? 'transparent' : '#DBDBDB',
           transform: `scale(${scale})`,
           transformOrigin: 'center center',
           margin: '0',
