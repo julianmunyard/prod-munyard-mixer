@@ -1809,74 +1809,155 @@ export default function AlbumLandingPage() {
         </div>
 
         {/* THEME Button - At bottom of page content */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: pageTheme === 'OLD COMPUTER' ? (isMobile ? '20px' : '40px') : (isMobile ? '20px' : '40px'),
-            marginBottom: pageTheme === 'OLD COMPUTER' ? (isMobile ? '20px' : '40px') : (isMobile ? '20px' : '40px'),
-            paddingBottom: `calc(${pageTheme === 'OLD COMPUTER' ? (isMobile ? '20px' : '40px') : (isMobile ? '20px' : '40px')} + env(safe-area-inset-bottom, 0px))`,
-          }}
-          data-dropdown
-        >
-          <div style={{ pointerEvents: 'auto', position: 'relative' }}>
-            <button
-              type="button"
-              onClick={() => setShowPageThemeDropdown(!showPageThemeDropdown)}
-              style={{
-                padding: pageTheme === 'OLD COMPUTER' ? (isMobile ? '6px 12px' : '8px 16px') : (isMobile ? '6px 12px' : '8px 16px'),
-                backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).buttonBg || '#D4C5B9' : currentTheme.buttonBg,
-                color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.buttonText,
-                border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme.border}`,
-                cursor: 'pointer',
-                fontSize: isMobile ? '11px' : '15px',
-                fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
-                boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : (pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
-                fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
-                textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.5)' : 'none'
-              }}
-            >
-              THEME: {pageTheme} ▼
-            </button>
-            {showPageThemeDropdown && (
-              <div style={{
-                position: 'absolute',
-                bottom: '100%',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                marginBottom: '8px',
-                backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.cardBg,
-                border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme.border}`,
-                borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px',
-                boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : (pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
-                zIndex: 1001,
-                minWidth: isMobile ? '180px' : '220px'
-              }}>
-                {(['TERMINAL THEME', 'OLD COMPUTER'] as const).map(themeOption => (
-                  <div
-                    key={themeOption}
-                    onClick={() => handleThemeChange(themeOption)}
-                    style={{
-                      padding: isMobile ? '8px 12px' : '10px 16px',
-                      cursor: 'pointer',
-                      backgroundColor: pageTheme === themeOption 
-                        ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : (pageTheme === 'OLD COMPUTER' ? '#E0E0E0' : '#f3f3f3'))
-                        : (pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.cardBg),
-                      color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.text,
-                      borderBottom: themeOption !== 'OLD COMPUTER' ? `1px solid ${pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.border}` : 'none',
-                      fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
-                      fontSize: isMobile ? '11px' : '15px',
-                      fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
-                      textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none'
-                    }}
-                  >
-                    {themeOption}
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Desktop / larger screens: keep in normal flow below PLAYER */}
+        {!isMobile && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              marginTop: pageTheme === 'OLD COMPUTER' ? '40px' : '40px',
+              marginBottom: pageTheme === 'OLD COMPUTER' ? '40px' : '40px',
+              paddingBottom: `calc(${pageTheme === 'OLD COMPUTER' ? '40px' : '40px'} + env(safe-area-inset-bottom, 0px))`,
+            }}
+            data-dropdown
+          >
+            <div style={{ pointerEvents: 'auto', position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setShowPageThemeDropdown(!showPageThemeDropdown)}
+                style={{
+                  padding: pageTheme === 'OLD COMPUTER' ? '8px 16px' : '8px 16px',
+                  backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).buttonBg || '#D4C5B9' : currentTheme.buttonBg,
+                  color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.buttonText,
+                  border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme.border}`,
+                  cursor: 'pointer',
+                  fontSize: '15px',
+                  fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
+                  boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : (pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
+                  fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
+                  textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.5)' : 'none'
+                }}
+              >
+                THEME: {pageTheme} ▼
+              </button>
+              {showPageThemeDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  marginBottom: '8px',
+                  backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.cardBg,
+                  border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme.border}`,
+                  borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px',
+                  boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : (pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
+                  zIndex: 1001,
+                  minWidth: '220px'
+                }}>
+                  {(['TERMINAL THEME', 'OLD COMPUTER'] as const).map(themeOption => (
+                    <div
+                      key={themeOption}
+                      onClick={() => handleThemeChange(themeOption)}
+                      style={{
+                        padding: '10px 16px',
+                        cursor: 'pointer',
+                        backgroundColor: pageTheme === themeOption 
+                          ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : (pageTheme === 'OLD COMPUTER' ? '#E0E0E0' : '#f3f3f3'))
+                          : (pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.cardBg),
+                        color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.text,
+                        borderBottom: themeOption !== 'OLD COMPUTER' ? `1px solid ${pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.border}` : 'none',
+                        fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
+                        fontSize: '15px',
+                        fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
+                        textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none'
+                      }}
+                    >
+                      {themeOption}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Mobile: pin THEME button to bottom of browser, above safe area */}
+        {isMobile && (
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 1000,
+              display: 'flex',
+              justifyContent: 'center',
+              paddingLeft: `calc(10px + env(safe-area-inset-left, 0px))`,
+              paddingRight: `calc(10px + env(safe-area-inset-right, 0px))`,
+              paddingBottom: `calc(10px + env(safe-area-inset-bottom, 0px))`,
+            }}
+            data-dropdown
+          >
+            <div style={{ pointerEvents: 'auto', position: 'relative', width: '100%', maxWidth: '896px', display: 'flex', justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={() => setShowPageThemeDropdown(!showPageThemeDropdown)}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).buttonBg || '#D4C5B9' : currentTheme.buttonBg,
+                  color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.buttonText,
+                  border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme.border}`,
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
+                  boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : (pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
+                  fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
+                  textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 8px rgba(255,255,255,0.5)' : 'none',
+                  backgroundClip: 'padding-box',
+                }}
+              >
+                THEME: {pageTheme} ▼
+              </button>
+              {showPageThemeDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  marginBottom: '8px',
+                  backgroundColor: pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.cardBg,
+                  border: pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme.border}`,
+                  borderRadius: pageTheme === 'OLD COMPUTER' ? '0' : '4px',
+                  boxShadow: pageTheme === 'TERMINAL THEME' ? currentTheme.glow : (pageTheme === 'OLD COMPUTER' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
+                  zIndex: 1001,
+                  minWidth: '180px'
+                }}>
+                  {(['TERMINAL THEME', 'OLD COMPUTER'] as const).map(themeOption => (
+                    <div
+                      key={themeOption}
+                      onClick={() => handleThemeChange(themeOption)}
+                      style={{
+                        padding: '8px 12px',
+                        cursor: 'pointer',
+                        backgroundColor: pageTheme === themeOption 
+                          ? (pageTheme === 'TERMINAL THEME' ? '#1A1A1A' : (pageTheme === 'OLD COMPUTER' ? '#E0E0E0' : '#f3f3f3'))
+                          : (pageTheme === 'OLD COMPUTER' ? (currentTheme as any).cardBg || '#D4C5B9' : currentTheme.cardBg),
+                        color: pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.text,
+                        borderBottom: themeOption !== 'OLD COMPUTER' ? `1px solid ${pageTheme === 'OLD COMPUTER' ? '#000000' : currentTheme.border}` : 'none',
+                        fontFamily: pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : (pageTheme === 'OLD COMPUTER' ? 'monospace' : 'inherit'),
+                        fontSize: '11px',
+                        fontWeight: pageTheme === 'OLD COMPUTER' ? 'bold' : 'normal',
+                        textShadow: pageTheme === 'TERMINAL THEME' ? '0 0 6px rgba(255,255,255,0.4)' : 'none'
+                      }}
+                    >
+                      {themeOption}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
 

@@ -10,9 +10,14 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setError(null)
+
+    // Get the current origin (works in both dev and production)
+    const redirectTo = `${window.location.origin}/reset-password`
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://munyardmixer.com/reset-password',
+      redirectTo,
+      flowType: 'pkce', // Use PKCE flow (required for exchangeCodeForSession)
     })
 
     if (error) {

@@ -3,8 +3,11 @@
 import React, { useEffect, useRef, useState } from 'react'
 import RealTimelineMixerEngine from '../../audio/engine/realTimelineMixerEngine'
 import FullWaveformScrubber from '../components/FullWaveformScrubber'
+import DemoPage from '../demo/page'
 
 export default function TimelineMixerPage() {
+  const [theme, setTheme] = useState<string>('default')
+  const [showThemeDropdown, setShowThemeDropdown] = useState(false)
   const mixerEngineRef = useRef<RealTimelineMixerEngine | null>(null)
   const [timelineReady, setTimelineReady] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -142,9 +145,152 @@ export default function TimelineMixerPage() {
     mixerEngineRef.current.audioEngine.updateCursor(seconds)
   }
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (showThemeDropdown && !target.closest('[data-theme-dropdown]')) {
+        setShowThemeDropdown(false)
+      }
+    }
+
+    if (showThemeDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showThemeDropdown])
+
+  if (theme === 'demo') {
+    return (
+      <div style={{ position: 'relative' }}>
+        {/* Theme Dropdown - positioned absolutely for demo theme */}
+        <div style={{ 
+          position: 'absolute', 
+          top: '20px', 
+          right: '20px', 
+          zIndex: 10000 
+        }} data-theme-dropdown>
+          <button
+            onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#1F2937',
+              color: 'white',
+              border: '1px solid #374151',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            THEME: {theme.toUpperCase()} ▼
+          </button>
+          {showThemeDropdown && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: '8px',
+                backgroundColor: '#1F2937',
+                border: '1px solid #374151',
+                borderRadius: '4px',
+                zIndex: 1000,
+                minWidth: '120px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+              }}
+            >
+              {['default', 'demo'].map((themeOption) => (
+                <div
+                  key={themeOption}
+                  onClick={() => {
+                    setTheme(themeOption)
+                    setShowThemeDropdown(false)
+                  }}
+                  style={{
+                    padding: '0.5rem',
+                    cursor: 'pointer',
+                    backgroundColor: theme === themeOption ? '#374151' : '#1F2937',
+                    color: 'white',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (theme !== themeOption) {
+                      e.currentTarget.style.backgroundColor = '#374151'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (theme !== themeOption) {
+                      e.currentTarget.style.backgroundColor = '#1F2937'
+                    }
+                  }}
+                >
+                  {themeOption.toUpperCase()}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <DemoPage />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-4xl mx-auto">
+        {/* Theme Dropdown */}
+        <div className="mb-8 flex justify-center">
+          <div style={{ position: 'relative' }} data-theme-dropdown>
+            <button
+              onClick={() => setShowThemeDropdown(!showThemeDropdown)}
+              className="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded cursor-pointer"
+            >
+              THEME: {theme.toUpperCase()} ▼
+            </button>
+            {showThemeDropdown && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  marginTop: '8px',
+                  backgroundColor: '#1F2937',
+                  border: '1px solid #374151',
+                  borderRadius: '4px',
+                  zIndex: 1000,
+                  minWidth: '120px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                }}
+              >
+                {['default', 'demo'].map((themeOption) => (
+                  <div
+                    key={themeOption}
+                    onClick={() => {
+                      setTheme(themeOption)
+                      setShowThemeDropdown(false)
+                    }}
+                    style={{
+                      padding: '0.5rem',
+                      cursor: 'pointer',
+                      backgroundColor: theme === themeOption ? '#374151' : '#1F2937',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (theme !== themeOption) {
+                        e.currentTarget.style.backgroundColor = '#374151'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (theme !== themeOption) {
+                        e.currentTarget.style.backgroundColor = '#1F2937'
+                      }
+                    }}
+                  >
+                    {themeOption.toUpperCase()}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         <h1 className="text-3xl font-bold mb-8 text-center">Timeline Mixer</h1>
         
         {/* Controls */}

@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null); // ✅ new
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,21 +127,64 @@ const { data, error } = await supabase.auth.signUp({
               required
             />
 
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                padding: '0.75rem 0.9rem',
-                fontSize: '0.9rem',
-                border: '2px solid #000000',
-                backgroundColor: '#FFFFFF',
-                fontFamily: 'monospace',
-                boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-              }}
-              required
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{
+                  padding: '0.75rem 0.9rem',
+                  paddingRight: '2.5rem',
+                  fontSize: '0.9rem',
+                  border: '2px solid #000000',
+                  backgroundColor: '#FFFFFF',
+                  fontFamily: 'monospace',
+                  boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '0.5rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '24px',
+                  height: '24px',
+                }}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#000000"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ position: 'relative' }}
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                  {!showPassword && (
+                    <line x1="1" y1="1" x2="23" y2="23" strokeWidth="2.5" />
+                  )}
+                </svg>
+              </button>
+            </div>
 
             {errorMsg && (
               <p style={{

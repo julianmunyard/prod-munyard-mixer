@@ -108,53 +108,122 @@ export default function Dashboard() {
     const confirmed = window.confirm('Are you sure you want to delete this project?')
     if (!confirmed) return
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      alert('You must be logged in to delete projects.')
+      return
+    }
+
     try {
-      const parsedStems = typeof stems === 'string' ? JSON.parse(stems) : stems
+      // Try to delete storage files (don't block if this fails)
+      try {
+        if (stems) {
+          const parsedStems = typeof stems === 'string' ? JSON.parse(stems) : stems
+          if (parsedStems && Array.isArray(parsedStems) && parsedStems.length > 0) {
+            const deleteFilePaths = parsedStems
+              .map((stem) => {
+                if (!stem || !stem.file) return null
+                const parts = stem.file.split('/')
+                if (parts.length < 2) return null
+                return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`
+              })
+              .filter(Boolean)
 
-      if (Array.isArray(parsedStems)) {
-        const deleteFilePaths = parsedStems
-          .map((stem) => {
-            if (!stem || !stem.file) return null
-            const parts = stem.file.split('/')
-            if (parts.length < 2) return null
-            return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`
-          })
-          .filter(Boolean)
-
-        if (deleteFilePaths.length > 0) {
-          const { error: storageError } = await supabase
-            .storage
-            .from('stems')
-            .remove(deleteFilePaths)
-
-          if (storageError) {
-            console.error('Storage delete error:', storageError)
-            alert('Could not delete files from storage.')
-            return
+            if (deleteFilePaths.length > 0) {
+              await supabase.storage.from('stems').remove(deleteFilePaths)
+            }
           }
         }
+      } catch (storageErr) {
+        console.error('Storage delete error (continuing):', storageErr)
       }
 
+      // Delete from database - just do it, no verification needed
       const { error: dbError } = await supabase
         .from('songs')
         .delete()
         .eq('id', songId)
 
+      // Only show error if there's an actual database error
       if (dbError) {
         console.error('DB delete error:', dbError)
-        alert('Could not delete project from database.')
+        alert(`Could not delete project: ${dbError.message}`)
         return
       }
 
-      setProjects((prev) => prev.filter((p) => p.id !== songId))
-      setAlbums((prev) => prev.map(album => ({
-        ...album,
-        songs: album.songs.filter(s => s.id !== songId)
-      })).filter(album => album.songs.length > 0))
+      // Reload all data from database
+      const { data: allSongs, error: reloadError } = await supabase
+        .from('songs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (reloadError) {
+        console.error('Error reloading songs:', reloadError)
+        // Still remove from UI optimistically
+        setProjects((prev) => prev.filter((p) => p.id !== songId))
+        setAlbums((prev) => prev.map(album => ({
+          ...album,
+          songs: album.songs.filter(s => s.id !== songId)
+        })).filter(album => album.songs.length > 0))
+        return
+      }
+
+      // Update state with fresh data from database
+      if (allSongs) {
+        const singleSongs = []
+        const albumSongs = []
+
+        allSongs.forEach(song => {
+          if (song.album_id && song.album_id !== null && song.album_id !== '') {
+            albumSongs.push(song)
+          } else {
+            singleSongs.push(song)
+          }
+        })
+
+        setProjects(singleSongs)
+
+        if (albumSongs.length > 0) {
+          const albumMap = {}
+          albumSongs.forEach(song => {
+            const albumKey = song.album_id
+            if (!albumMap[albumKey]) {
+              albumMap[albumKey] = {
+                album_id: albumKey,
+                album_slug: song.album_slug || albumKey,
+                album_title: song.album_title || 'Untitled Album',
+                artist_name: song.artist_name,
+                songs: []
+              }
+            }
+            albumMap[albumKey].songs.push(song)
+          })
+
+          const albumsArray = Object.values(albumMap).map(album => ({
+            ...album,
+            songs: album.songs.sort((a, b) => (a.track_number || 0) - (b.track_number || 0))
+          }))
+
+          setAlbums(albumsArray)
+        } else {
+          setAlbums([])
+        }
+      }
 
     } catch (err) {
-      console.error('Unexpected delete error:', err)
-      alert('Something went wrong while deleting.')
+      console.error('Delete error:', err)
+      alert(`Error deleting project: ${err.message}`)
+    }
+  }
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      console.error('Logout error:', error)
+      alert('Error logging out. Please try again.')
+    } else {
+      router.push('/login')
     }
   }
 
@@ -228,10 +297,28 @@ export default function Dashboard() {
           }}
         >
           <span>DASHBOARD.EXE</span>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
-            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
-            <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <button
+              onClick={handleLogout}
+              style={{
+                padding: '0.3rem 0.7rem',
+                backgroundColor: '#D4C5B9',
+                color: '#000000',
+                border: '2px solid #000000',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                fontFamily: 'monospace',
+                fontWeight: 'bold',
+                boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+              }}
+            >
+              Logout
+            </button>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+              <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+              <span style={{ width: 14, height: 14, border: '2px solid #000', background: '#FFFFFF' }} />
+            </div>
           </div>
         </div>
 

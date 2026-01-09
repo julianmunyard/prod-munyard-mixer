@@ -3333,16 +3333,7 @@ function MixerPage() {
             {/* 🎚️ Mixer Modules */}
             {pageTheme === 'DEMO' ? (
               /* Demo Theme */
-              <div style={{ 
-                width: '100%', 
-                position: 'relative',
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                margin: 0, 
-                padding: 0,
-                minHeight: '100vh',
-              }}>
+              <div style={{ width: '100%', position: 'relative' }}>
                 <DemoPage 
                   onPlay={playAll}
                   onPause={pauseAll}
@@ -3350,7 +3341,6 @@ function MixerPage() {
                   volumes={volumes}
                   setVolumes={setVolumes}
                   setTrackVolume={setTrackVolume}
-                  songTitle={songData?.title}
                 />
               </div>
             ) : pageTheme === 'FIGMA' ? (
@@ -4810,8 +4800,8 @@ function MixerPage() {
               </div>
             )}
 
-            {/* Desktop Controls Box - Below Mixer Box - Hidden for DEMO theme */}
-            {pageTheme !== 'DEMO' && !isMobile && (
+            {/* Desktop Controls Box - Below Mixer Box */}
+            {!isMobile && (
               <div 
                 style={{
                   backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
@@ -5586,9 +5576,9 @@ function MixerPage() {
               </div>
             )}
 
-            {/* Mobile Effect Controls - Above VARISPEED - Hidden for DEMO theme */}
+            {/* Mobile Effect Controls - Above VARISPEED */}
             {/* Optimized for iPhone 13/14 (390x844 viewport) - ONLY move down for small screens */}
-            {pageTheme !== 'DEMO' && isMobilePortrait && stems.length >= 1 && (
+            {isMobilePortrait && stems.length >= 1 && (
               /* Mobile Controls Box for all themes */
               <div 
                 style={{

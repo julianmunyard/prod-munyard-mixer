@@ -6,39 +6,93 @@ import { supabase } from '@/lib/supabaseClient'
 
 function ResetPasswordForm() {
   const [newPassword, setNewPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(true)
   const [validSession, setValidSession] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-useEffect(() => {
-  const init = async () => {
-    const hash = window.location.hash
-
-    // This is all you need now — no manual parsing
-    if (hash && hash.includes('access_token')) {
-      const { error } = await supabase.auth.exchangeCodeForSession(hash)
-      if (error) {
-        console.error(error.message)
-        alert('Link expired or invalid')
+  useEffect(() => {
+    const init = async () => {
+      // First check if we already have a valid session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setValidSession(true)
         setLoading(false)
         return
       }
-      setValidSession(true)
+
+      const hash = window.location.hash
+      const searchParams = new URLSearchParams(window.location.search)
+
+      // Check for PKCE flow (code in URL params)
+      const code = searchParams.get('code')
+      
+      if (code) {
+        // PKCE flow - exchange code for session
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+        if (error) {
+          console.error('PKCE exchange error:', error.message)
+          setLoading(false)
+          return
+        }
+        if (data?.session) {
+          setValidSession(true)
+        } else {
+          console.error('No session after code exchange')
+          setLoading(false)
+          return
+        }
+      } else if (hash && hash.includes('access_token')) {
+        // Legacy flow - Supabase should automatically detect the hash
+        // Let's wait a bit for Supabase to process it
+        await new Promise(resolve => setTimeout(resolve, 500))
+        const { data, error } = await supabase.auth.getSession()
+        if (error || !data?.session) {
+          console.error('Session error:', error?.message || 'No session found')
+          setLoading(false)
+          return
+        }
+        setValidSession(true)
+      } else {
+        // No code or hash found
+        console.error('No reset code or hash found in URL')
+        setLoading(false)
+        return
+      }
+
+      setLoading(false)
     }
 
-    setLoading(false)
-  }
-
-  init()
-}, [])
+    init()
+  }, [])
 
 
   const handleReset = async () => {
-    const { error } = await supabase.auth.updateUser({ password: newPassword })
-    if (error) {
-      alert('Error resetting password.')
+    setError(null)
+
+    // Validate password
+    if (!newPassword || newPassword.length < 6) {
+      setError('Password must be at least 6 characters long.')
+      return
+    }
+
+    // Verify we have a valid session before attempting to update
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      setError('Session expired. Please request a new reset link.')
+      return
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({ 
+      password: newPassword 
+    })
+
+    if (updateError) {
+      console.error('Password update error:', updateError)
+      setError(updateError.message || 'Error resetting password. Please try again.')
     } else {
-      alert('Password updated. You can now log in.')
+      alert('Password updated successfully! You can now log in.')
       router.push('/login')
     }
   }
@@ -161,23 +215,89 @@ useEffect(() => {
           <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1.5rem', textAlign: 'left' }}>
             Reset Your Password
           </h1>
-          <form style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}>
-            <input
-              type="password"
-              placeholder="New password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              style={{
-                padding: '0.75rem 0.9rem',
-                fontSize: '0.9rem',
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleReset()
+            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'left' }}
+          >
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="New password (minimum 6 characters)"
+                value={newPassword}
+                onChange={(e) => {
+                  setNewPassword(e.target.value)
+                  setError(null)
+                }}
+                style={{
+                  padding: '0.75rem 0.9rem',
+                  paddingRight: '2.5rem',
+                  fontSize: '0.9rem',
+                  border: '2px solid #000000',
+                  backgroundColor: '#FFFFFF',
+                  fontFamily: 'monospace',
+                  boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '0.5rem',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '24px',
+                  height: '24px',
+                }}
+                title={showPassword ? "Hide password" : "Show password"}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#000000"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ position: 'relative' }}
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                  {!showPassword && (
+                    <line x1="1" y1="1" x2="23" y2="23" strokeWidth="2.5" />
+                  )}
+                </svg>
+              </button>
+            </div>
+            {error && (
+              <div style={{
+                padding: '0.75rem 1rem',
                 border: '2px solid #000000',
-                backgroundColor: '#FFFFFF',
+                backgroundColor: '#FCFAEE',
+                fontSize: '0.9rem',
                 fontFamily: 'monospace',
-                boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-              }}
-            />
+                color: '#000000',
+              }}>
+                {error}
+              </div>
+            )}
             <button
-              onClick={handleReset}
+              type="submit"
               style={{
                 padding: '0.45rem 1.1rem',
                 backgroundColor: '#D4C5B9',
