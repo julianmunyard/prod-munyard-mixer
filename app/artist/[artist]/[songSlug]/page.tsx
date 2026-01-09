@@ -3351,6 +3351,10 @@ function MixerPage() {
                   setVolumes={setVolumes}
                   setTrackVolume={setTrackVolume}
                   songTitle={songData?.title}
+                  onThemeChange={handleThemeChange}
+                  currentTheme={pageTheme}
+                  showThemeDropdown={showThemeDropdown}
+                  setShowThemeDropdown={setShowThemeDropdown}
                 />
               </div>
             ) : pageTheme === 'FIGMA' ? (

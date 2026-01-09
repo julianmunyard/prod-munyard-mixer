@@ -433,7 +433,11 @@ export default function DemoPage({
   volumes = {},
   setVolumes,
   setTrackVolume,
-  songTitle
+  songTitle,
+  onThemeChange,
+  currentTheme,
+  showThemeDropdown,
+  setShowThemeDropdown
 }: { 
   onPlay?: () => void
   onPause?: () => void
@@ -442,6 +446,10 @@ export default function DemoPage({
   setVolumes?: (volumes: Record<string, number> | ((prev: Record<string, number>) => Record<string, number>)) => void
   setTrackVolume?: (stemLabel: string, volume: number) => void
   songTitle?: string
+  onThemeChange?: (theme: 'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA' | 'DEMO') => void
+  currentTheme?: 'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA' | 'DEMO'
+  showThemeDropdown?: boolean
+  setShowThemeDropdown?: (show: boolean) => void
 } = {}) {
   const [scale, setScale] = useState(0.65)
 
@@ -1709,6 +1717,93 @@ export default function DemoPage({
           </div>
         </div>
       </div>
+
+      {/* Theme Button - Fixed at bottom */}
+      {onThemeChange && (
+        <div 
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000,
+          }}
+        >
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowThemeDropdown && setShowThemeDropdown(!showThemeDropdown)}
+              style={{ 
+                backgroundColor: '#D4C5B9',
+                color: '#000000',
+                border: '2px solid #000000',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontFamily: 'monospace',
+                fontWeight: 'bold',
+                boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                borderRadius: '0',
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <span>THEMES</span>
+              <span style={{ fontSize: '10px' }}>▼</span>
+            </button>
+            {showThemeDropdown && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  marginBottom: '8px',
+                  backgroundColor: '#D4C5B9',
+                  border: '2px solid #000000',
+                  borderRadius: '0',
+                  minWidth: '150px',
+                  boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                  zIndex: 1001,
+                }}
+              >
+                {(['OLD COMPUTER', 'OLD COMPUTER 2', 'FIGMA', 'DEMO'] as const).map((themeOption, index, array) => (
+                  <div
+                    key={themeOption}
+                    onClick={() => {
+                      onThemeChange(themeOption)
+                      setShowThemeDropdown && setShowThemeDropdown(false)
+                    }}
+                    style={{
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      backgroundColor: currentTheme === themeOption ? '#E0E0E0' : '#D4C5B9',
+                      color: '#000000',
+                      borderBottom: index !== array.length - 1 ? '2px solid #000000' : 'none',
+                      fontSize: '12px',
+                      fontFamily: 'monospace',
+                      fontWeight: 'bold',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (currentTheme !== themeOption) {
+                        e.currentTarget.style.backgroundColor = '#E0E0E0'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (currentTheme !== themeOption) {
+                        e.currentTarget.style.backgroundColor = '#D4C5B9'
+                      }
+                    }}
+                  >
+                    {themeOption}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
   )
 }
