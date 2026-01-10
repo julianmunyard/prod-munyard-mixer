@@ -74,16 +74,13 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             script.id = 'dropboxjs'
             script.src = src
             script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
-            // NOTE: Do NOT set data-origin attribute
-            // Dropbox will auto-detect origin from window.location.origin
-            // The origin must be registered in Dropbox App Console > Settings > "Chooser / Saver / Embedder domains"
-            // For development: add "localhost" (without http://, without port - Dropbox handles all ports automatically)
-            // For production: add "munyardmixer.com" (without https://)
+            // NOTE: Do NOT set data-origin attribute - let Dropbox auto-detect
+            // Do NOT set crossOrigin - it can interfere with Dropbox's postMessage
             console.log('Loading Dropbox script with app key: tgtfykx9u7aqyn2')
-            console.log('Current origin will be:', window.location.origin)
-            console.log('⚠️ Make sure this origin is registered in Dropbox App Console!')
+            console.log('Current origin:', window.location.origin)
+            console.log('Register this hostname in Dropbox:', window.location.hostname)
             script.async = true
-            script.crossOrigin = 'anonymous'
+            // Removed crossOrigin - was causing issues
 
             script.onload = () => {
               console.log(`Dropbox script loaded from ${src}`)
@@ -177,14 +174,17 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     const currentHostname = typeof window !== 'undefined' ? window.location.hostname : 'unknown'
     const currentProtocol = typeof window !== 'undefined' ? window.location.protocol : 'unknown'
     
-    console.log('🔍 Dropbox Debug Info:')
+    console.log('🔍 ===== DROPBOX DEBUG INFO =====')
     console.log('   Full origin:', currentOrigin)
-    console.log('   Hostname:', currentHostname)
+    console.log('   Hostname to register:', currentHostname)
     console.log('   Protocol:', currentProtocol)
-    console.log('   ⚠️ CRITICAL: In Dropbox App Console → Settings → "Chooser / Saver / Embedder domains"')
-    console.log('   You MUST register EXACTLY:', currentHostname)
-    console.log('   ✅ Correct format: "munyardmixer.com" (no www, no https://, no port)')
-    console.log('   ❌ Wrong format: "https://munyardmixer.com" or "www.munyardmixer.com" or "munyardmixer.com:443"')
+    console.log('   Is localhost?', currentHostname.includes('localhost') || currentHostname.includes('127.0.0.1'))
+    console.log('   Is HTTP?', currentProtocol === 'http:')
+    console.log('   ⚠️ CRITICAL CHECK:')
+    console.log('   In Dropbox App Console → Settings → "Chooser / Saver / Embedder domains"')
+    console.log('   Register EXACTLY this:', `"${currentHostname}"`)
+    console.log('   NO www prefix, NO https://, NO port number')
+    console.log('=========================================')
     
     // Use the exact approach from Dropbox article
     // Do NOT include origin parameter - let Dropbox auto-detect from registered domain
@@ -334,16 +334,26 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     })
     console.log('ℹ️ Using domain from "Chooser / Saver / Embedder domains": munyardmixer.com')
 
-    // Use Dropbox.choose directly as shown in the article
+    // Use Dropbox.choose - ensure we're in user event context
     try {
-      if (window.Dropbox && window.Dropbox.choose) {
-        window.Dropbox.choose(options)
-      } else {
-        throw new Error('Dropbox not available')
+      if (!window.Dropbox || !window.Dropbox.choose) {
+        throw new Error('Dropbox API not loaded. Please refresh the page.')
       }
-    } catch (err) {
-      console.error('Dropbox error:', err)
-      setError(`Dropbox error: ${err.message || err}`)
+      
+      // Call from within the user event handler to avoid popup blocking
+      console.log('Calling Dropbox.choose with options:', {
+        linkType: options.linkType,
+        multiselect: options.multiselect,
+        extensions: options.extensions,
+        currentHostname: currentHostname
+      })
+      
+      window.Dropbox.choose(options)
+      
+      // Note: isLoading will be set to false in success/cancel/error callbacks
+    } catch (err: any) {
+      console.error('Dropbox initialization error:', err)
+      setError(`Dropbox error: ${err?.message || 'Unknown error. Please refresh the page and try again.'}`)
       setIsLoading(false)
     }
   }
