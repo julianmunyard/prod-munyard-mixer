@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import DropboxChooser from 'react-dropbox-chooser'
 
 interface DropboxFilePickerProps {
@@ -13,6 +13,32 @@ const APP_KEY = 'tgtfykx9u7aqyn2'
 export default function DropboxFilePicker({ onFilesSelected, isMobile }: DropboxFilePickerProps) {
   const [loader, setLoader] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string>('')
+
+  useEffect(() => {
+    // Debug: Check if Dropbox script is loading
+    if (typeof window !== 'undefined') {
+      const checkDropbox = () => {
+        const script = document.getElementById('dropboxjs')
+        const hasDropbox = !!(window as any).Dropbox
+        
+        let info = []
+        info.push(`Script tag exists: ${!!script}`)
+        info.push(`window.Dropbox exists: ${hasDropbox}`)
+        if (hasDropbox) {
+          info.push(`window.Dropbox.choose exists: ${typeof (window as any).Dropbox.choose === 'function'}`)
+        }
+        info.push(`Current hostname: ${window.location.hostname}`)
+        info.push(`Current origin: ${window.location.origin}`)
+        
+        setDebugInfo(info.join(' | '))
+      }
+      
+      checkDropbox()
+      const interval = setInterval(checkDropbox, 1000)
+      return () => clearInterval(interval)
+    }
+  }, [])
 
   function handleSuccess(files: any[]) {
     console.log('files >> ', files)
@@ -77,6 +103,13 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       })
   }
 
+  const handleClick = () => {
+    console.log('🔘 Button clicked!')
+    console.log('   Dropbox script tag:', document.getElementById('dropboxjs'))
+    console.log('   window.Dropbox:', (window as any).Dropbox)
+    console.log('   Current hostname:', window.location.hostname)
+  }
+
   return (
     <div style={{ width: '100%' }}>
       {loader ? (
@@ -107,6 +140,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
           padding: '0.5rem 1rem',
           textAlign: 'center'
         }}
+        onClick={handleClick}
       >
         <DropboxChooser
           appKey={APP_KEY}
@@ -117,9 +151,21 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
           multiselect={true}
           extensions={['.mp3', '.wav', '.m4a', '.aac', '.ogg']}
         >
-          📁 Dropbox
+          <span style={{ cursor: 'pointer', userSelect: 'none' }}>📁 Dropbox</span>
         </DropboxChooser>
       </div>
+
+      {debugInfo && (
+        <div style={{
+          marginTop: '0.5rem',
+          padding: '0.5rem',
+          backgroundColor: '#f0f0f0',
+          fontSize: '0.75rem',
+          fontFamily: 'monospace'
+        }}>
+          Debug: {debugInfo}
+        </div>
+      )}
       
       {error && (
         <div style={{
@@ -139,7 +185,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
                 <li>Go to <a href="https://www.dropbox.com/developers/apps" target="_blank" rel="noopener noreferrer" style={{ color: '#c62828', textDecoration: 'underline' }}>Dropbox App Console</a></li>
                 <li>Select app with key: <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem' }}>tgtfykx9u7aqyn2</code></li>
                 <li>Settings → "Chooser / Saver / Embedder domains"</li>
-                <li>Add: <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem' }}>{window.location.hostname}</code></li>
+                <li>Add: <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem' }}>{typeof window !== 'undefined' ? window.location.hostname : 'localhost'}</code></li>
                 <li>Wait 2-3 minutes, then refresh</li>
               </ol>
             </div>
