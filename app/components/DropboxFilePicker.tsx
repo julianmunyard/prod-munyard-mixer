@@ -18,24 +18,59 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
   useEffect(() => {
     // Debug: Check if Dropbox script is loading
     if (typeof window !== 'undefined') {
+      // Check immediately and on script load
       const checkDropbox = () => {
-        const script = document.getElementById('dropboxjs')
+        const script = document.getElementById('dropboxjs') as HTMLScriptElement
         const hasDropbox = !!(window as any).Dropbox
         
         let info = []
         info.push(`Script tag exists: ${!!script}`)
+        if (script) {
+          info.push(`Script src: ${script.src || 'none'}`)
+          info.push(`Script loaded: ${script.getAttribute('data-loaded') || 'unknown'}`)
+        }
         info.push(`window.Dropbox exists: ${hasDropbox}`)
         if (hasDropbox) {
           info.push(`window.Dropbox.choose exists: ${typeof (window as any).Dropbox.choose === 'function'}`)
+        } else {
+          // Check for errors
+          const dropboxError = (window as any).__DROPBOX_ERROR__
+          if (dropboxError) {
+            info.push(`Error: ${dropboxError}`)
+          }
         }
-        info.push(`Current hostname: ${window.location.hostname}`)
-        info.push(`Current origin: ${window.location.origin}`)
+        info.push(`Hostname: ${window.location.hostname}`)
         
         setDebugInfo(info.join(' | '))
       }
       
+      // Listen for script load
+      const script = document.getElementById('dropboxjs') as HTMLScriptElement
+      if (script && !script.hasAttribute('data-monitored')) {
+        script.setAttribute('data-monitored', 'true')
+        script.addEventListener('load', () => {
+          console.log('✅ Dropbox script loaded event fired')
+          script.setAttribute('data-loaded', 'true')
+          // Wait a bit for Dropbox to initialize
+          setTimeout(() => {
+            if ((window as any).Dropbox) {
+              console.log('✅ window.Dropbox is now available!')
+            } else {
+              console.error('❌ Script loaded but window.Dropbox still not available')
+              // Check for console errors
+              console.error('Check browser console for Dropbox errors')
+            }
+            checkDropbox()
+          }, 1000)
+        })
+        script.addEventListener('error', (e) => {
+          console.error('❌ Dropbox script failed to load:', e)
+          setDebugInfo('Script failed to load - check network tab')
+        })
+      }
+      
       checkDropbox()
-      const interval = setInterval(checkDropbox, 1000)
+      const interval = setInterval(checkDropbox, 2000)
       return () => clearInterval(interval)
     }
   }, [])
@@ -169,13 +204,14 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
           {debugInfo.includes('window.Dropbox exists: false') && (
             <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #ccc' }}>
               <strong style={{ color: '#856404' }}>⚠️ PROBLEM DETECTED:</strong><br />
-              Dropbox script loaded but API not initialized. This means <strong>"{typeof window !== 'undefined' ? window.location.hostname : 'localhost'}"</strong> is not registered in Dropbox App Console.<br /><br />
-              <strong>Fix it NOW:</strong><br />
-              1. Go to <a href="https://www.dropbox.com/developers/apps" target="_blank" style={{ color: '#B8001F', textDecoration: 'underline' }}>Dropbox App Console</a><br />
-              2. Click app: <code style={{ background: '#fff', padding: '0.1rem 0.25rem' }}>tgtfykx9u7aqyn2</code><br />
-              3. Settings → "Chooser / Saver / Embedder domains"<br />
-              4. Add: <code style={{ background: '#fff', padding: '0.1rem 0.25rem', fontWeight: 'bold' }}>{typeof window !== 'undefined' ? window.location.hostname : 'localhost'}</code><br />
-              5. Click "Save" and wait 2-3 minutes
+              Dropbox script loaded but API not initialized.<br /><br />
+              <strong>Since localhost IS registered, try these fixes:</strong><br />
+              1. <strong>Hard refresh:</strong> Press Cmd/Ctrl + Shift + R (clears cache)<br />
+              2. <strong>Wait 5 minutes:</strong> Domain changes can take time to propagate<br />
+              3. <strong>Check browser console (F12):</strong> Look for Dropbox error messages<br />
+              4. <strong>Try incognito/private window:</strong> Rules out cache issues<br />
+              5. <strong>Check for mixed content errors:</strong> HTTP localhost + HTTPS Dropbox = blocked<br /><br />
+              <strong>If still not working:</strong> The react-dropbox-chooser library might not be compatible with Next.js. We may need to load Dropbox script manually instead.
             </div>
           )}
         </div>
