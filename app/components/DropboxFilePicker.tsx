@@ -8,7 +8,7 @@ interface DropboxFilePickerProps {
   isMobile: boolean
 }
 
-interface DropboxFile {
+interface file {
   id: string
   name: string
   link: string
@@ -18,7 +18,17 @@ interface DropboxFile {
   isDir: boolean
 }
 
-const APP_KEY = 'tgtfykx9u7aqyn2'
+interface options {
+  success: (files: file[]) => void
+  cancel?: () => void
+  multiselect?: boolean
+  linkType?: string
+  folderselect?: boolean
+  extensions?: string[]
+  sizeLimit?: number[]
+}
+
+const APP_KEY = process.env.NEXT_PUBLIC_DROPBOX_APP_KEY || 'tgtfykx9u7aqyn2'
 
 declare global {
   interface Window {
@@ -26,12 +36,38 @@ declare global {
   }
 }
 
+var options: options = {
+  success: (files: file[]) => {
+    console.log('success', files)
+  },
+  cancel: () => {
+    console.log('cancel')
+  },
+  linkType: 'direct',
+  multiselect: true,
+  folderselect: false
+}
+
 export default function DropboxFilePicker({ onFilesSelected, isMobile }: DropboxFilePickerProps) {
   const [loader, setLoader] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [Dropbox, setDropbox] = useState<any>(null)
+  const [Dropbox, setDropbox] = useState<any>()
 
-  const handleSuccess = useCallback(async (files: DropboxFile[]) => {
+  useEffect(() => {
+    options.success = (files: file[]) => {
+      console.log('success', files)
+      handleDropboxSuccess(files)
+    }
+    options.linkType = 'direct'
+    options.multiselect = true
+    options.folderselect = false
+    options.extensions = ['.mp3', '.wav', '.m4a', '.aac', '.ogg']
+    options.cancel = () => {
+      console.log('cancel')
+    }
+  }, [onFilesSelected])
+
+  const handleDropboxSuccess = async (files: file[]) => {
     console.log('files >> ', files)
     
     if (!files || files.length === 0) {
@@ -92,19 +128,6 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
         setLoader(false)
         setError(`Failed to download files: ${err?.message || 'Unknown error'}`)
       })
-  }, [onFilesSelected])
-
-  const handleCancel = useCallback(() => {
-    console.log('closed')
-  }, [])
-
-  const options = {
-    success: handleSuccess,
-    cancel: handleCancel,
-    linkType: 'direct' as const,
-    multiselect: true,
-    folderselect: false,
-    extensions: ['.mp3', '.wav', '.m4a', '.aac', '.ogg']
   }
 
   const handleChoose = useCallback(() => {
@@ -116,7 +139,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     } else {
       setError('Dropbox not ready yet. Please wait...')
     }
-  }, [Dropbox, options])
+  }, [options, Dropbox])
 
   return (
     <>
@@ -153,6 +176,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
         ) : null}
         
         <div
+          onClick={handleChoose}
           style={{
             border: '3px dotted black',
             cursor: Dropbox ? 'pointer' : 'not-allowed',
@@ -160,11 +184,8 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             textAlign: 'center',
             opacity: Dropbox ? 1 : 0.7
           }}
-          onClick={handleChoose}
         >
-          <span style={{ cursor: Dropbox ? 'pointer' : 'not-allowed', userSelect: 'none' }}>
-            {Dropbox ? '📁 Dropbox' : '📁 Dropbox (Loading...)'}
-          </span>
+          {Dropbox ? '📁 Dropbox' : '📁 Dropbox (Loading...)'}
         </div>
         
         {error && (
