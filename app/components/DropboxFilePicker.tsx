@@ -90,7 +90,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
         success={handleSuccess}
         cancel={handleCancel}
         multiselect={true}
-        extensions={['audio']}
+        extensions={['.mp3', '.wav', '.m4a', '.aac', '.ogg']}
         linkType="direct"
       >
         <button
