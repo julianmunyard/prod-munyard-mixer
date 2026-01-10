@@ -317,7 +317,6 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       // Including 'origin' parameter can cause "Could not communicate" errors
     }
     
-    const currentOrigin = getDropboxOrigin()
     console.log('Dropbox chooser options:', { 
       linkType: options.linkType, 
       multiselect: options.multiselect,
