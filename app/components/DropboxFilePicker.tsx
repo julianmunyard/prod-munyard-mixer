@@ -15,17 +15,16 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
   const [error, setError] = useState<string | null>(null)
 
   function handleSuccess(files: any[]) {
-    console.log('✅ Files selected from Dropbox:', files)
+    console.log('files >> ', files)
     
     if (!files || files.length === 0) {
       setError('No files selected')
       return
     }
 
+    let promiseArray: Promise<File>[] = []
     setLoader(true)
     setError(null)
-
-    let promiseArray: Promise<File>[] = []
 
     files.forEach((file) => {
       promiseArray.push(
@@ -39,7 +38,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
         })
           .then((x) => x.blob())
           .then((response) => {
-            console.log('Downloaded file blob:', response)
+            console.log('response >> ', response)
             
             // Determine MIME type
             let mimeType = response.type
@@ -59,7 +58,7 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             })
           })
           .catch((err) => {
-            console.log('Error fetching file from url:', err)
+            console.log('error fetching file from url ', err)
             throw err
           })
       )
@@ -67,12 +66,12 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
 
     Promise.all(promiseArray)
       .then((fileObjects) => {
-        console.log('✅ All files downloaded successfully:', fileObjects.length)
+        console.log('all the files downloaded successfully !!')
         setLoader(false)
         onFilesSelected(fileObjects)
       })
       .catch((err) => {
-        console.error('❌ Error downloading files:', err)
+        console.log('some error in downloading files')
         setLoader(false)
         setError(`Failed to download files: ${err?.message || 'Unknown error'}`)
       })
@@ -80,6 +79,40 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
 
   return (
     <div style={{ width: '100%' }}>
+      {loader && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            backgroundColor: '#fff',
+            padding: '2rem',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem'
+          }}>
+            <div style={{
+              width: '20px',
+              height: '20px',
+              border: '3px solid #B8001F',
+              borderTop: '3px solid transparent',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <span>Downloading files...</span>
+          </div>
+        </div>
+      )}
+      
       <div
         style={{
           border: '3px dotted #ccc',
@@ -88,39 +121,22 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
           backgroundColor: '#ffffff',
           color: '#B8001F',
           borderRadius: '4px',
-          opacity: loader ? 0.7 : 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '0.5rem',
           fontSize: '0.9rem',
+          textAlign: 'center',
+          opacity: loader ? 0.7 : 1
         }}
       >
-        {loader ? (
-          <>
-            <div style={{
-              width: '12px',
-              height: '12px',
-              border: '2px solid #B8001F',
-              borderTop: '2px solid transparent',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-            Downloading...
-          </>
-        ) : (
-          <DropboxChooser
-            appKey={APP_KEY}
-            success={handleSuccess}
-            linkType="direct"
-            cancel={() => console.log('User closed Dropbox chooser')}
-            folderselect={false}
-            multiselect={true}
-            extensions={['.mp3', '.wav', '.m4a', '.aac', '.ogg']}
-          >
-            📁 Dropbox
-          </DropboxChooser>
-        )}
+        <DropboxChooser
+          appKey={APP_KEY}
+          success={handleSuccess}
+          linkType="direct"
+          cancel={() => console.log('closed')}
+          folderselect={false}
+          multiselect={true}
+          extensions={['.mp3', '.wav', '.m4a', '.aac', '.ogg']}
+        >
+          📁 Dropbox
+        </DropboxChooser>
       </div>
       
       {error && (
