@@ -181,8 +181,10 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     console.log('   Full origin:', currentOrigin)
     console.log('   Hostname:', currentHostname)
     console.log('   Protocol:', currentProtocol)
-    console.log('   Expected in Dropbox: Register just the hostname (e.g., "munyardmixer.com" not "https://munyardmixer.com")')
-    console.log('⚠️ VERIFY: In Dropbox App Console, make sure you registered:', currentHostname)
+    console.log('   ⚠️ CRITICAL: In Dropbox App Console → Settings → "Chooser / Saver / Embedder domains"')
+    console.log('   You MUST register EXACTLY:', currentHostname)
+    console.log('   ✅ Correct format: "munyardmixer.com" (no www, no https://, no port)')
+    console.log('   ❌ Wrong format: "https://munyardmixer.com" or "www.munyardmixer.com" or "munyardmixer.com:443"')
     
     // Use the exact approach from Dropbox article
     // Do NOT include origin parameter - let Dropbox auto-detect from registered domain
