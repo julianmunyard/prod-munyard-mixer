@@ -50,16 +50,18 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
         if (existingScript) {
           // Script exists but Dropbox not ready, poll until ready
           let attempts = 0
-          const maxAttempts = 10
+          const maxAttempts = 25
           const checkInterval = setInterval(() => {
             attempts++
-            if (window.Dropbox && window.Dropbox.choose) {
+            console.log(`Checking existing script... attempt ${attempts}/${maxAttempts}`)
+            if (window.Dropbox && typeof window.Dropbox.choose === 'function') {
               setDropboxReady(true)
               setError(null)
               console.log('✅ Dropbox ready (existing script)')
               clearInterval(checkInterval)
             } else if (attempts >= maxAttempts) {
-              setError('Dropbox script loaded but API not available. Please refresh the page.')
+              console.error('❌ Existing script but API not available')
+              setError('Dropbox script loaded but API not available. Try refreshing the page or check for JavaScript errors.')
               clearInterval(checkInterval)
             }
           }, 200)
@@ -83,12 +85,22 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
             // Removed crossOrigin - was causing issues
 
             script.onload = () => {
-              console.log(`Dropbox script loaded from ${src}`)
-              resolve(true)
+              console.log(`✅ Dropbox script loaded successfully from ${src}`)
+              console.log('   Waiting for Dropbox API to initialize...')
+              // Don't resolve immediately - wait for API to be ready
+              setTimeout(() => {
+                if (window.Dropbox && typeof window.Dropbox.choose === 'function') {
+                  console.log('   ✅ Dropbox API is ready!')
+                  resolve(true)
+                } else {
+                  console.warn('   ⚠️ Script loaded but API not yet ready, will poll...')
+                  resolve(true) // Resolve anyway, polling will handle it
+                }
+              }, 500)
             }
 
-            script.onerror = () => {
-              console.error(`Failed to load Dropbox script from ${src}`)
+            script.onerror = (error) => {
+              console.error(`❌ Failed to load Dropbox script from ${src}`, error)
               reject(new Error(`Failed to load from ${src}`))
             }
 
@@ -119,18 +131,25 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
           return
         }
 
-        // Wait for Dropbox to initialize - check multiple times
+        // Wait for Dropbox to initialize - check multiple times with longer wait
         let attempts = 0
-        const maxAttempts = 10
+        const maxAttempts = 25 // Increased from 10 to 25 (5 seconds total)
         const checkInterval = setInterval(() => {
           attempts++
-          if (window.Dropbox && window.Dropbox.choose) {
+          console.log(`Checking for Dropbox API... attempt ${attempts}/${maxAttempts}`)
+          console.log('  window.Dropbox exists?', !!window.Dropbox)
+          console.log('  window.Dropbox.choose exists?', !!(window.Dropbox && window.Dropbox.choose))
+          
+          if (window.Dropbox && typeof window.Dropbox.choose === 'function') {
             setDropboxReady(true)
             setError(null)
-            console.log('✅ Dropbox ready after', attempts * 200, 'ms')
+            console.log('✅ Dropbox API ready after', attempts * 200, 'ms')
             clearInterval(checkInterval)
           } else if (attempts >= maxAttempts) {
-            setError('Dropbox script loaded but API not available. Please refresh the page.')
+            console.error('❌ Dropbox API failed to initialize after 5 seconds')
+            console.error('   window.Dropbox:', window.Dropbox)
+            console.error('   Type of window.Dropbox:', typeof window.Dropbox)
+            setError('Dropbox API not initializing. Try refreshing the page. If it persists, check browser console for errors.')
             clearInterval(checkInterval)
           }
         }, 200)

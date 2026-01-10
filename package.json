@@ -6,6 +6,7 @@
     "copy:worklet": "cpx audio/worklet/mixer-processor.js public/worklet/",
     "watch:worklet": "cpx \"audio/worklet/*.js\" public/worklet/ --watch",
     "dev:next": "next dev --webpack",
+    "dev:https": "next dev --webpack --experimental-https --experimental-https-key ./localhost+1-key.pem --experimental-https-cert ./localhost+1.pem",
     "dev": "npm-run-all --parallel watch:worklet dev:next",
     "build": "npm run copy:worklet && next build --webpack",
     "start": "next start",
