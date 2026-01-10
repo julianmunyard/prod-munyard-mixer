@@ -174,11 +174,15 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     }
 
     const currentOrigin = getDropboxOrigin()
-    console.log('Opening Dropbox chooser...')
-    console.log('Current page origin:', currentOrigin)
-    console.log('⚠️ This origin MUST be registered in Dropbox App Console!')
-    console.log('   For localhost: Add "localhost" (without port)')
-    console.log('   The origin detected is:', currentOrigin)
+    const currentHostname = typeof window !== 'undefined' ? window.location.hostname : 'unknown'
+    const currentProtocol = typeof window !== 'undefined' ? window.location.protocol : 'unknown'
+    
+    console.log('🔍 Dropbox Debug Info:')
+    console.log('   Full origin:', currentOrigin)
+    console.log('   Hostname:', currentHostname)
+    console.log('   Protocol:', currentProtocol)
+    console.log('   Expected in Dropbox: Register just the hostname (e.g., "munyardmixer.com" not "https://munyardmixer.com")')
+    console.log('⚠️ VERIFY: In Dropbox App Console, make sure you registered:', currentHostname)
     
     // Use the exact approach from Dropbox article
     // Do NOT include origin parameter - let Dropbox auto-detect from registered domain
@@ -291,15 +295,18 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       },
       error: (errorMessage: string) => {
         console.error('❌ Dropbox chooser error:', errorMessage)
+        console.error('   Current hostname:', window.location.hostname)
+        console.error('   Current origin:', window.location.origin)
         setIsLoading(false)
         const isLocalhost = window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1')
         const isHttp = window.location.protocol === 'http:'
+        const currentDomain = window.location.hostname
         
         if (errorMessage.includes('misconfigured') || errorMessage.includes('not configured') || errorMessage.includes('Could not communicate') || errorMessage.includes('Could not find host')) {
           if (isLocalhost && isHttp) {
-            setError('Mixed content blocked: Dropbox (HTTPS) cannot communicate with HTTP localhost. Browsers block HTTPS→HTTP communication for security. SOLUTION: Use ngrok to get HTTPS URL (see instructions below).')
+            setError('Mixed content blocked: Dropbox (HTTPS) cannot communicate with HTTP localhost. Use ngrok for HTTPS tunnel.')
           } else {
-            setError('App is misconfigured or domain not registered. Please register your domain in Dropbox App Console.')
+            setError(`Domain "${currentDomain}" may not be registered or needs time to propagate. Check Dropbox App Console → Settings → "Chooser / Saver / Embedder domains" contains exactly "${currentDomain}" (no www, no protocol). Wait 3-5 minutes after adding.`)
           }
         } else {
           setError(`Dropbox error: ${errorMessage}`)
@@ -399,17 +406,28 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
           {(error.includes('misconfigured') || error.includes('not configured') || error.includes('Mixed content') || error.includes('Could not')) ? (
             <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', opacity: 0.9 }}>
               <strong>🔧 Quick Fix (5 minutes):</strong>
-              <ol style={{ margin: '0.5rem 0 0 1.25rem', padding: 0 }}>
-                <li><strong>Install ngrok:</strong> <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem', borderRadius: '2px' }}>brew install ngrok</code></li>
-                <li><strong>Start tunnel:</strong> <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem', borderRadius: '2px' }}>ngrok http 3000</code></li>
-                <li><strong>Copy the HTTPS URL</strong> (e.g., <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem', borderRadius: '2px' }}>abc123.ngrok.io</code>)</li>
-                <li>Go to <a href="https://www.dropbox.com/developers/apps" target="_blank" rel="noopener noreferrer" style={{ color: '#c62828', textDecoration: 'underline' }}>Dropbox App Console</a></li>
-                <li>Select your app (key: tgtfykx9u7aqyn2) → Settings</li>
-                <li>In "Chooser / Saver / Embedder domains", add the ngrok domain</li>
-                <li>Save, wait 1-2 minutes, then use the ngrok URL instead of localhost</li>
-              </ol>
+              {window.location.protocol === 'http:' && (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1')) ? (
+                <ol style={{ margin: '0.5rem 0 0 1.25rem', padding: 0 }}>
+                  <li><strong>Install ngrok:</strong> <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem', borderRadius: '2px' }}>brew install ngrok</code></li>
+                  <li><strong>Start tunnel:</strong> <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem', borderRadius: '2px' }}>ngrok http 3000</code></li>
+                  <li><strong>Copy the HTTPS URL</strong> (e.g., <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem', borderRadius: '2px' }}>abc123.ngrok.io</code>)</li>
+                  <li>Go to <a href="https://www.dropbox.com/developers/apps" target="_blank" rel="noopener noreferrer" style={{ color: '#c62828', textDecoration: 'underline' }}>Dropbox App Console</a></li>
+                  <li>Select your app (key: tgtfykx9u7aqyn2) → Settings</li>
+                  <li>In "Chooser / Saver / Embedder domains", add the ngrok domain</li>
+                  <li>Save, wait 1-2 minutes, then use the ngrok URL instead of localhost</li>
+                </ol>
+              ) : (
+                <ol style={{ margin: '0.5rem 0 0 1.25rem', padding: 0 }}>
+                  <li>Go to <a href="https://www.dropbox.com/developers/apps" target="_blank" rel="noopener noreferrer" style={{ color: '#c62828', textDecoration: 'underline' }}>Dropbox App Console</a></li>
+                  <li>Select your app (key: tgtfykx9u7aqyn2) → Settings</li>
+                  <li>Check "Chooser / Saver / Embedder domains" contains: <code style={{ background: '#fff3cd', padding: '0.1rem 0.25rem', borderRadius: '2px' }}>{window.location.hostname}</code></li>
+                  <li><strong>VERIFY:</strong> No "www" prefix, no "https://", just the domain name</li>
+                  <li>If missing, add it and wait 3-5 minutes for propagation</li>
+                  <li>Clear browser cache (Cmd/Ctrl + Shift + R) and try again</li>
+                </ol>
+              )}
               <p style={{ marginTop: '0.5rem', fontSize: '0.7rem', fontStyle: 'italic' }}>
-                <strong>Why?</strong> Browsers block HTTPS (Dropbox) → HTTP (localhost) communication. ngrok gives you HTTPS for localhost.
+                <strong>Debug:</strong> Check browser console (F12) for exact origin being detected. It must match exactly what's registered in Dropbox.
               </p>
             </div>
           ) : null}
