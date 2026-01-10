@@ -58,18 +58,10 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       console.log('success', files)
       handleDropboxSuccess(files)
     }
-    if ('direct') {
-      options.linkType = 'direct'
-    }
-    if (true) {
-      options.multiselect = true
-    }
-    if (false) {
-      options.folderselect = false
-    }
-    if (['.mp3', '.wav', '.m4a', '.aac', '.ogg']) {
-      options.extensions = ['.mp3', '.wav', '.m4a', '.aac', '.ogg']
-    }
+    options.linkType = 'direct'
+    options.multiselect = true
+    options.folderselect = false
+    options.extensions = ['.mp3', '.wav', '.m4a', '.aac', '.ogg']
     options.cancel = () => {
       console.log('cancel')
     }
