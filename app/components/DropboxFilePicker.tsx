@@ -158,12 +158,26 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       {debugInfo && (
         <div style={{
           marginTop: '0.5rem',
-          padding: '0.5rem',
-          backgroundColor: '#f0f0f0',
+          padding: '0.75rem',
+          backgroundColor: debugInfo.includes('window.Dropbox exists: false') ? '#fff3cd' : '#f0f0f0',
+          border: debugInfo.includes('window.Dropbox exists: false') ? '1px solid #ffc107' : 'none',
           fontSize: '0.75rem',
           fontFamily: 'monospace'
         }}>
-          Debug: {debugInfo}
+          <strong>Debug Info:</strong><br />
+          {debugInfo}
+          {debugInfo.includes('window.Dropbox exists: false') && (
+            <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #ccc' }}>
+              <strong style={{ color: '#856404' }}>⚠️ PROBLEM DETECTED:</strong><br />
+              Dropbox script loaded but API not initialized. This means <strong>"{typeof window !== 'undefined' ? window.location.hostname : 'localhost'}"</strong> is not registered in Dropbox App Console.<br /><br />
+              <strong>Fix it NOW:</strong><br />
+              1. Go to <a href="https://www.dropbox.com/developers/apps" target="_blank" style={{ color: '#B8001F', textDecoration: 'underline' }}>Dropbox App Console</a><br />
+              2. Click app: <code style={{ background: '#fff', padding: '0.1rem 0.25rem' }}>tgtfykx9u7aqyn2</code><br />
+              3. Settings → "Chooser / Saver / Embedder domains"<br />
+              4. Add: <code style={{ background: '#fff', padding: '0.1rem 0.25rem', fontWeight: 'bold' }}>{typeof window !== 'undefined' ? window.location.hostname : 'localhost'}</code><br />
+              5. Click "Save" and wait 2-3 minutes
+            </div>
+          )}
         </div>
       )}
       
