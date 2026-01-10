@@ -1,15 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-
-// Declare Dropbox global
-declare global {
-  interface Window {
-    Dropbox?: {
-      choose: (options: any) => void
-    }
-  }
-}
+import React, { useState } from 'react'
+import DropboxChooser from 'react-dropbox-chooser'
 
 interface DropboxFilePickerProps {
   onFilesSelected: (files: File[]) => void
@@ -17,243 +9,126 @@ interface DropboxFilePickerProps {
 }
 
 export default function DropboxFilePicker({ onFilesSelected, isMobile }: DropboxFilePickerProps) {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [dropboxReady, setDropboxReady] = useState(false)
 
-  useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') return
-
-    const initDropbox = () => {
-      // Check if already loaded
-      if (window.Dropbox && typeof window.Dropbox.choose === 'function') {
-        console.log('✅ Dropbox already loaded')
-        setDropboxReady(true)
-        return
-      }
-
-      // Check if script already exists
-      const existingScript = document.getElementById('dropboxjs')
-      if (existingScript) {
-        console.log('📄 Dropbox script exists, waiting for API...')
-        let attempts = 0
-        const maxAttempts = 30
-        const checkInterval = setInterval(() => {
-          attempts++
-          if (window.Dropbox && typeof window.Dropbox.choose === 'function') {
-            console.log('✅ Dropbox API ready')
-            setDropboxReady(true)
-            setError(null)
-            clearInterval(checkInterval)
-          } else if (attempts >= maxAttempts) {
-            console.error('❌ Dropbox API never initialized')
-            setError('Dropbox script loaded but not initializing. Check domain registration.')
-            clearInterval(checkInterval)
-          }
-        }, 200)
-        return () => clearInterval(checkInterval)
-      }
-
-      // Load the Dropbox script
-      console.log('📥 Loading Dropbox script...')
-      const script = document.createElement('script')
-      script.type = 'text/javascript'
-      script.src = 'https://www.dropbox.com/static/api/2/dropins.js'
-      script.id = 'dropboxjs'
-      script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
-      script.async = true
-
-      script.onload = () => {
-        console.log('✅ Dropbox script loaded')
-        // Wait for API to be available
-        let attempts = 0
-        const maxAttempts = 30
-        const checkInterval = setInterval(() => {
-          attempts++
-          if (window.Dropbox && typeof window.Dropbox.choose === 'function') {
-            console.log('✅ Dropbox.choose is available!')
-            setDropboxReady(true)
-            setError(null)
-            clearInterval(checkInterval)
-          } else if (attempts >= maxAttempts) {
-            console.error('❌ Dropbox API failed to initialize')
-            setError('Dropbox API not initializing. Check domain registration in Dropbox App Console.')
-            clearInterval(checkInterval)
-          }
-        }, 200)
-      }
-
-      script.onerror = () => {
-        console.error('❌ Failed to load Dropbox script')
-        setError('Failed to load Dropbox script. Check your internet connection.')
-      }
-
-      document.head.appendChild(script)
-    }
-
-    initDropbox()
-  }, [])
-
-  const handleDropboxClick = () => {
-    if (typeof window === 'undefined') return
-
-    if (!dropboxReady) {
-      setError('Dropbox not ready yet. Please wait...')
+  const handleSuccess = async (files: any[]) => {
+    console.log('✅ Files selected from Dropbox:', files)
+    
+    if (!files || files.length === 0) {
+      setError('No files selected')
       return
     }
 
-    if (!window.Dropbox || !window.Dropbox.choose) {
-      setError('Dropbox API not available. Please refresh the page.')
-      return
-    }
-
-    setIsLoading(true)
+    setIsDownloading(true)
     setError(null)
 
-    if (isMobile) {
-      const proceed = confirm('📱 Mobile: Dropbox will open in a new tab. After selecting files, return to this page. Continue?')
-      if (!proceed) {
-        setIsLoading(false)
-        return
-      }
-    }
-
-    const currentHostname = window.location.hostname
-    console.log('🔍 Current hostname:', currentHostname)
-
     try {
-      window.Dropbox.choose({
-        success: async (files: any[]) => {
-          console.log('✅ Files selected from Dropbox:', files.length)
-          
-          if (!files || files.length === 0) {
-            setError('No files selected')
-            setIsLoading(false)
-            return
-          }
+      // Download and convert files
+      const filePromises = files.map(async (file: any) => {
+        console.log(`📥 Downloading: ${file.name}`)
+        
+        // Ensure direct download link
+        let downloadLink = file.link
+        if (downloadLink.includes('?dl=0') || downloadLink.includes('&dl=0')) {
+          downloadLink = downloadLink.replace(/[?&]dl=0/g, '') + (downloadLink.includes('?') ? '&' : '?') + 'dl=1'
+        } else if (!downloadLink.includes('dl=1')) {
+          downloadLink += (downloadLink.includes('?') ? '&' : '?') + 'dl=1'
+        }
 
-          try {
-            // Download and convert files
-            const filePromises = files.map(async (file: any) => {
-              console.log(`📥 Downloading: ${file.name}`)
-              
-              // Ensure direct download link
-              let downloadLink = file.link
-              if (downloadLink.includes('?dl=0') || downloadLink.includes('&dl=0')) {
-                downloadLink = downloadLink.replace(/[?&]dl=0/g, '') + (downloadLink.includes('?') ? '&' : '?') + 'dl=1'
-              } else if (!downloadLink.includes('dl=1')) {
-                downloadLink += (downloadLink.includes('?') ? '&' : '?') + 'dl=1'
-              }
+        const response = await fetch(downloadLink, {
+          method: 'GET',
+          mode: 'cors',
+          credentials: 'omit',
+        })
 
-              const response = await fetch(downloadLink, {
-                method: 'GET',
-                mode: 'cors',
-                credentials: 'omit',
-              })
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
 
-              if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-              }
+        const blob = await response.blob()
+        
+        // Determine MIME type
+        let mimeType = blob.type
+        if (!mimeType || mimeType === 'application/octet-stream') {
+          const ext = file.name.toLowerCase().split('.').pop()
+          if (ext === 'mp3') mimeType = 'audio/mpeg'
+          else if (ext === 'wav') mimeType = 'audio/wav'
+          else if (ext === 'm4a') mimeType = 'audio/mp4'
+          else if (ext === 'aac') mimeType = 'audio/aac'
+          else if (ext === 'ogg') mimeType = 'audio/ogg'
+          else mimeType = 'audio/wav'
+        }
 
-              const blob = await response.blob()
-              
-              // Determine MIME type
-              let mimeType = blob.type
-              if (!mimeType || mimeType === 'application/octet-stream') {
-                const ext = file.name.toLowerCase().split('.').pop()
-                if (ext === 'mp3') mimeType = 'audio/mpeg'
-                else if (ext === 'wav') mimeType = 'audio/wav'
-                else if (ext === 'm4a') mimeType = 'audio/mp4'
-                else if (ext === 'aac') mimeType = 'audio/aac'
-                else if (ext === 'ogg') mimeType = 'audio/ogg'
-                else mimeType = 'audio/wav'
-              }
-
-              return new File([blob], file.name, { 
-                type: mimeType,
-                lastModified: Date.now()
-              })
-            })
-
-            const fileObjects = await Promise.all(filePromises)
-            console.log('✅ All files downloaded:', fileObjects.length)
-            
-            onFilesSelected(fileObjects)
-            setIsLoading(false)
-          } catch (err: any) {
-            console.error('❌ Error downloading files:', err)
-            setError(`Failed to download files: ${err?.message || 'Unknown error'}`)
-            setIsLoading(false)
-          }
-        },
-        cancel: () => {
-          console.log('User cancelled Dropbox chooser')
-          setIsLoading(false)
-        },
-        error: (errorMessage: string) => {
-          console.error('❌ Dropbox error:', errorMessage)
-          setIsLoading(false)
-          
-          const currentDomain = window.location.hostname
-          if (errorMessage.includes('misconfigured') || errorMessage.includes('not configured') || errorMessage.includes('Could not communicate')) {
-            setError(`Domain "${currentDomain}" must be registered in Dropbox App Console → Settings → "Chooser / Saver / Embedder domains". Add exactly "${currentDomain}" (no www, no protocol).`)
-          } else {
-            setError(`Dropbox error: ${errorMessage}`)
-          }
-        },
-        linkType: 'direct',
-        multiselect: true,
-        extensions: ['audio'],
-        folderselect: false
+        return new File([blob], file.name, { 
+          type: mimeType,
+          lastModified: Date.now()
+        })
       })
+
+      const fileObjects = await Promise.all(filePromises)
+      console.log('✅ All files downloaded:', fileObjects.length)
+      
+      onFilesSelected(fileObjects)
+      setIsDownloading(false)
     } catch (err: any) {
-      console.error('❌ Dropbox.choose error:', err)
-      setError(`Failed to open Dropbox: ${err?.message || 'Unknown error'}`)
-      setIsLoading(false)
+      console.error('❌ Error downloading files:', err)
+      setError(`Failed to download files: ${err?.message || 'Unknown error'}`)
+      setIsDownloading(false)
     }
+  }
+
+  const handleCancel = () => {
+    console.log('User cancelled Dropbox chooser')
+    setIsDownloading(false)
   }
 
   return (
     <div style={{ width: '100%' }}>
-      <button
-        type="button"
-        onClick={handleDropboxClick}
-        disabled={isLoading || !dropboxReady}
-        style={{
-          padding: '0.5rem 1rem',
-          backgroundColor: '#ffffff',
-          color: dropboxReady ? '#B8001F' : '#999',
-          border: `1px solid ${dropboxReady ? '#B8001F' : '#999'}`,
-          borderRadius: '4px',
-          cursor: (isLoading || !dropboxReady) ? 'not-allowed' : 'pointer',
-          fontSize: '0.9rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          opacity: (isLoading || !dropboxReady) ? 0.7 : 1,
-          width: '100%',
-          justifyContent: 'center',
-        }}
+      <DropboxChooser
+        appKey="tgtfykx9u7aqyn2"
+        success={handleSuccess}
+        cancel={handleCancel}
+        multiselect={true}
+        extensions={['audio']}
+        linkType="direct"
       >
-        {isLoading ? (
-          <>
-            <div style={{
-              width: '12px',
-              height: '12px',
-              border: '2px solid #B8001F',
-              borderTop: '2px solid transparent',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-            Loading...
-          </>
-        ) : !dropboxReady ? (
-          <>📁 Dropbox (Loading...)</>
-        ) : (
-          <>📁 Dropbox</>
-        )}
-      </button>
+        <button
+          type="button"
+          disabled={isDownloading}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: '#ffffff',
+            color: '#B8001F',
+            border: '1px solid #B8001F',
+            borderRadius: '4px',
+            cursor: isDownloading ? 'not-allowed' : 'pointer',
+            fontSize: '0.9rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            opacity: isDownloading ? 0.7 : 1,
+            width: '100%',
+            justifyContent: 'center',
+          }}
+        >
+          {isDownloading ? (
+            <>
+              <div style={{
+                width: '12px',
+                height: '12px',
+                border: '2px solid #B8001F',
+                borderTop: '2px solid transparent',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite'
+              }} />
+              Downloading...
+            </>
+          ) : (
+            <>📁 Dropbox</>
+          )}
+        </button>
+      </DropboxChooser>
       
       {error && (
         <div style={{
