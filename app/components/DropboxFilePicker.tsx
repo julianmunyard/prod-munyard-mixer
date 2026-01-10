@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import DropboxChooser from 'react-dropbox-chooser'
 
 interface DropboxFilePickerProps {
@@ -11,8 +11,50 @@ interface DropboxFilePickerProps {
 export default function DropboxFilePicker({ onFilesSelected, isMobile }: DropboxFilePickerProps) {
   const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [dropboxReady, setDropboxReady] = useState(false)
+
+  // Check if Dropbox script is loaded
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    console.log('🔍 Checking for Dropbox script...')
+    
+    // Check if script exists
+    const script = document.getElementById('dropboxjs')
+    if (script) {
+      console.log('✅ Dropbox script tag found')
+      
+      // Wait for Dropbox API to be available
+      let attempts = 0
+      const maxAttempts = 20
+      const checkInterval = setInterval(() => {
+        attempts++
+        if (window.Dropbox && typeof (window as any).Dropbox.choose === 'function') {
+          console.log('✅ Dropbox API is ready!')
+          setDropboxReady(true)
+          clearInterval(checkInterval)
+        } else if (attempts >= maxAttempts) {
+          console.error('❌ Dropbox API not available after 4 seconds')
+          setError('Dropbox not loading. Check domain registration and browser console.')
+          clearInterval(checkInterval)
+        }
+      }, 200)
+      
+      return () => clearInterval(checkInterval)
+    } else {
+      console.warn('⚠️ Dropbox script tag not found - react-dropbox-chooser should add it')
+      // Give it a moment to load
+      setTimeout(() => {
+        const scriptAfterDelay = document.getElementById('dropboxjs')
+        if (!scriptAfterDelay) {
+          setError('Dropbox script not loading. Check browser console for errors.')
+        }
+      }, 2000)
+    }
+  }, [])
 
   const handleSuccess = async (files: any[]) => {
+    console.log('✅ Dropbox success callback triggered!')
     console.log('✅ Files selected from Dropbox:', files)
     
     if (!files || files.length === 0) {
@@ -96,6 +138,14 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
         <button
           type="button"
           disabled={isDownloading}
+          onClick={() => {
+            console.log('🔘 Dropbox button clicked!')
+            console.log('   Dropbox script exists?', !!document.getElementById('dropboxjs'))
+            console.log('   window.Dropbox exists?', !!(window as any).Dropbox)
+            if ((window as any).Dropbox) {
+              console.log('   window.Dropbox.choose exists?', typeof (window as any).Dropbox.choose === 'function')
+            }
+          }}
           style={{
             padding: '0.5rem 1rem',
             backgroundColor: '#ffffff',
@@ -124,6 +174,8 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
               }} />
               Downloading...
             </>
+          ) : !dropboxReady ? (
+            <>📁 Dropbox (Loading...)</>
           ) : (
             <>📁 Dropbox</>
           )}
