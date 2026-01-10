@@ -79,51 +79,33 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
 
   return (
     <div style={{ width: '100%' }}>
-      {loader && (
+      {loader ? (
         <div style={{
+          backgroundColor: 'rgba(26, 25, 25, 0.37)',
+          width: '100%',
+          height: '100%',
+          display: 'grid',
+          placeItems: 'center',
           position: 'fixed',
           top: 0,
           left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           zIndex: 9999
         }}>
           <div style={{
-            backgroundColor: '#fff',
-            padding: '2rem',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1rem'
+            color: '#fff',
+            fontSize: '1.2rem'
           }}>
-            <div style={{
-              width: '20px',
-              height: '20px',
-              border: '3px solid #B8001F',
-              borderTop: '3px solid transparent',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }} />
-            <span>Downloading files...</span>
+            Downloading files...
           </div>
         </div>
-      )}
+      ) : null}
       
       <div
         style={{
-          border: '3px dotted #ccc',
-          cursor: loader ? 'not-allowed' : 'pointer',
+          border: '3px dotted black',
+          cursor: 'pointer',
           padding: '0.5rem 1rem',
-          backgroundColor: '#ffffff',
-          color: '#B8001F',
-          borderRadius: '4px',
-          fontSize: '0.9rem',
-          textAlign: 'center',
-          opacity: loader ? 0.7 : 1
+          textAlign: 'center'
         }}
       >
         <DropboxChooser
