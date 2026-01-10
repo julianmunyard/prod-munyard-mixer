@@ -1,12 +1,7 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useEffect, useCallback, useState } from 'react'
 import Script from 'next/script'
-
-interface DropboxFilePickerProps {
-  onFilesSelected: (files: File[]) => void
-  isMobile: boolean
-}
 
 interface file {
   id: string
@@ -16,6 +11,11 @@ interface file {
   icon: string
   thumbnailLink?: string
   isDir: boolean
+}
+
+interface DropboxFilePickerProps {
+  onFilesSelected: (files: File[]) => void
+  isMobile: boolean
 }
 
 interface options {
@@ -58,10 +58,18 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
       console.log('success', files)
       handleDropboxSuccess(files)
     }
-    options.linkType = 'direct'
-    options.multiselect = true
-    options.folderselect = false
-    options.extensions = ['.mp3', '.wav', '.m4a', '.aac', '.ogg']
+    if ('direct') {
+      options.linkType = 'direct'
+    }
+    if (true) {
+      options.multiselect = true
+    }
+    if (false) {
+      options.folderselect = false
+    }
+    if (['.mp3', '.wav', '.m4a', '.aac', '.ogg']) {
+      options.extensions = ['.mp3', '.wav', '.m4a', '.aac', '.ogg']
+    }
     options.cancel = () => {
       console.log('cancel')
     }
@@ -136,8 +144,6 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
     if (Dropbox) {
       console.log('ok')
       Dropbox.choose(options)
-    } else {
-      setError('Dropbox not ready yet. Please wait...')
     }
   }, [options, Dropbox])
 
