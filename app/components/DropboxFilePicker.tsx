@@ -72,31 +72,57 @@ export default function DropboxFilePicker({ onFilesSelected, isMobile }: Dropbox
         // Try multiple approaches to load Dropbox script
         const loadScript = (src: string) => {
           return new Promise((resolve, reject) => {
+            // Remove any existing script first to avoid conflicts
+            const existing = document.getElementById('dropboxjs')
+            if (existing) {
+              existing.remove()
+            }
+            
             const script = document.createElement('script')
             script.id = 'dropboxjs'
             script.src = src
             script.setAttribute('data-app-key', 'tgtfykx9u7aqyn2')
-            // NOTE: Do NOT set data-origin attribute - let Dropbox auto-detect
-            // Do NOT set crossOrigin - it can interfere with Dropbox's postMessage
-            console.log('Loading Dropbox script with app key: tgtfykx9u7aqyn2')
-            console.log('Current origin:', window.location.origin)
-            console.log('Register this hostname in Dropbox:', window.location.hostname)
+            // NOTE: Do NOT set data-origin attribute - let Dropbox auto-detect from page
+            console.log('📥 Loading Dropbox script:')
+            console.log('   URL:', src)
+            console.log('   App key: tgtfykx9u7aqyn2')
+            console.log('   Current origin:', window.location.origin)
+            console.log('   Register in Dropbox:', window.location.hostname)
             script.async = true
-            // Removed crossOrigin - was causing issues
+            // Don't set crossOrigin - can interfere with Dropbox initialization
 
             script.onload = () => {
               console.log(`✅ Dropbox script loaded successfully from ${src}`)
-              console.log('   Waiting for Dropbox API to initialize...')
-              // Don't resolve immediately - wait for API to be ready
-              setTimeout(() => {
-                if (window.Dropbox && typeof window.Dropbox.choose === 'function') {
-                  console.log('   ✅ Dropbox API is ready!')
-                  resolve(true)
+              console.log('   Checking for API availability...')
+              
+              // Give Dropbox script time to initialize
+              const checkAPI = () => {
+                if (window.Dropbox) {
+                  console.log('   window.Dropbox object exists:', Object.keys(window.Dropbox))
+                  if (typeof window.Dropbox.choose === 'function') {
+                    console.log('   ✅ Dropbox.choose is available!')
+                    resolve(true)
+                    return true
+                  } else {
+                    console.warn('   ⚠️ window.Dropbox exists but .choose is not a function')
+                    console.warn('   Available methods:', Object.keys(window.Dropbox))
+                  }
                 } else {
-                  console.warn('   ⚠️ Script loaded but API not yet ready, will poll...')
-                  resolve(true) // Resolve anyway, polling will handle it
+                  console.warn('   ⚠️ window.Dropbox does not exist yet')
                 }
-              }, 500)
+                return false
+              }
+              
+              // Check immediately
+              if (!checkAPI()) {
+                // Check after delay
+                setTimeout(() => {
+                  if (!checkAPI()) {
+                    console.warn('   ⚠️ API not ready after script load, will poll...')
+                  }
+                  resolve(true) // Resolve anyway, polling will handle it
+                }, 1000)
+              }
             }
 
             script.onerror = (error) => {
