@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { HexColorPicker } from 'react-colorful'
 import { convertToMp3 } from '@/lib/convertToMp3'
 import MiniMixerPreview from '../../../components/MiniMixerPreview'
+import BarLoadingIndicator from '../../../components/BarLoadingIndicator'
 
 function toSlug(input: string) {
   return input
@@ -1381,9 +1382,18 @@ export default function EditAlbum() {
               cursor: isSubmitting ? 'not-allowed' : 'pointer',
               fontSize: '1.25rem',
               fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.75rem',
             }}
           >
-            {isSubmitting ? 'SAVING...' : 'SAVE CHANGES'}
+            {isSubmitting ? (
+              <>
+                <BarLoadingIndicator size="small" />
+                SAVING...
+              </>
+            ) : 'SAVE CHANGES'}
           </button>
         </form>
       </div>

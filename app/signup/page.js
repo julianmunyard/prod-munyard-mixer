@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import BarLoadingIndicator from '../components/BarLoadingIndicator';
 
 export default function SignUp() {
   const [email, setEmail] = useState('');
@@ -235,14 +236,7 @@ const { data, error } = await supabase.auth.signUp({
             >
               {isSubmitting ? (
                 <>
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    border: '3px solid #000000',
-                    borderTop: '3px solid transparent',
-                    borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite'
-                  }} />
+                  <BarLoadingIndicator size="small" />
                   Creating Account…
                 </>
               ) : (
@@ -260,12 +254,6 @@ const { data, error } = await supabase.auth.signUp({
         </div>
       </div>
 
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </main>
   );
 }

@@ -15,6 +15,7 @@ import { HexColorPicker } from 'react-colorful'
 import MiniMixerPreview from '../components/MiniMixerPreview'
 import DropboxFilePicker from '../components/DropboxFilePicker'
 import { convertToMp3 } from '@/lib/convertToMp3';
+import BarLoadingIndicator from '../components/BarLoadingIndicator'
 
 
 
@@ -123,6 +124,16 @@ useEffect(() => {
 
   
 const handleDropboxFiles = (files: File[]) => {
+  console.log('📥 handleDropboxFiles called with files:', files)
+  console.log('File count:', files?.length || 0)
+  console.log('File details:', files?.map(f => ({ name: f.name, size: f.size, type: f.type })))
+  
+  if (!files || files.length === 0) {
+    console.error('❌ No files provided to handleDropboxFiles')
+    alert('No files were received from Dropbox. Please try again.')
+    return
+  }
+  
   // Mobile memory optimization: limit stems to 15
   const maxStemsForMobile = 15
   let processedFiles = files
@@ -132,18 +143,52 @@ const handleDropboxFiles = (files: File[]) => {
     alert(`📱 Mobile detected: Limited to ${maxStemsForMobile} stems for memory optimization. Only the first ${maxStemsForMobile} files will be used.`)
   }
   
-  // Create a FileList from the array of Files
-  const newFileList = new DataTransfer()
-  processedFiles.forEach(file => newFileList.items.add(file))
+  // Validate files before processing
+  const validFiles = processedFiles.filter(file => {
+    if (!file || !file.name) {
+      console.warn('⚠️ Invalid file detected:', file)
+      return false
+    }
+    if (file.size === 0) {
+      console.warn(`⚠️ File ${file.name} has 0 size`)
+      return false
+    }
+    return true
+  })
   
-  setStems(newFileList.files)
-  setUploadedFiles(processedFiles.map((file) => file.name))
+  if (validFiles.length === 0) {
+    console.error('❌ No valid files after filtering')
+    alert('No valid files were received. Please check that the files are not empty.')
+    return
+  }
+  
+  if (validFiles.length < processedFiles.length) {
+    console.warn(`⚠️ Filtered out ${processedFiles.length - validFiles.length} invalid files`)
+  }
+  
+  // Create a FileList from the array of Files using DataTransfer API
+  try {
+    const newFileList = new DataTransfer()
+    validFiles.forEach(file => {
+      newFileList.items.add(file)
+      console.log(`✅ Added file to DataTransfer: ${file.name} (${file.size} bytes)`)
+    })
+    
+    console.log(`✅ Created FileList with ${newFileList.files.length} files`)
+    setStems(newFileList.files)
+    setUploadedFiles(validFiles.map((file) => file.name))
 
-  // Check for .wav files
-  const wavDetected = processedFiles.some((file) =>
-    file.name.toLowerCase().endsWith('.wav') || file.type === 'audio/wav'
-  )
-  setHasWavs(wavDetected)
+    // Check for .wav files
+    const wavDetected = validFiles.some((file) =>
+      file.name.toLowerCase().endsWith('.wav') || file.type === 'audio/wav'
+    )
+    setHasWavs(wavDetected)
+    
+    console.log(`✅ Files processed successfully. WAVs detected: ${wavDetected}`)
+  } catch (error: any) {
+    console.error('❌ Error creating FileList:', error)
+    alert(`Error processing files: ${error.message || 'Unknown error'}`)
+  }
 }
 
 const handleConvertAllToMp3 = async () => {
@@ -859,14 +904,7 @@ videoPublicUrl = publicUrlData.publicUrl
           >
             {isSubmitting ? (
               <>
-                <span className="spinner" style={{
-                  border: '2px solid white',
-                  borderTop: '2px solid transparent',
-                  borderRadius: '50%',
-                  width: '16px',
-                  height: '16px',
-                  animation: 'spin 1s linear infinite'
-                }} />
+                <BarLoadingIndicator size="small" />
                 Generating…
               </>
             ) : 'Continue'}

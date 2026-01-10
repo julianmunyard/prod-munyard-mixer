@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid'
 import axios, { AxiosProgressEvent } from 'axios'
 import { HexColorPicker } from 'react-colorful'
 import MiniMixerPreview from '../../../../components/MiniMixerPreview'
+import BarLoadingIndicator from '../../../../components/BarLoadingIndicator'
 
 function toSlug(input: string) {
   return input
@@ -815,12 +816,6 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
         </button>
       </div>
     )}
-    <style>{`
-      @keyframes spin {
-        0% { transform: rotate(0deg);}
-        100% { transform: rotate(360deg);}
-      }
-    `}</style>
   </div>
 )}
 
@@ -845,14 +840,7 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
           >
             {isSubmitting ? (
               <>
-                <span className="spinner" style={{
-                  border: '2px solid white',
-                  borderTop: '2px solid transparent',
-                  borderRadius: '50%',
-                  width: '16px',
-                  height: '16px',
-                  animation: 'spin 1s linear infinite'
-                }} />
+                <BarLoadingIndicator size="small" />
                 Generating…
               </>
             ) : 'Continue'}
@@ -877,13 +865,6 @@ router.replace(`/artist/${updatedSong.artist_slug}/${updatedSong.song_slug}`)
         </form> {/* ✅ Properly close form tag */}
 
       </div>
-
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </main>
   )
 }

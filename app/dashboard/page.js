@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../../lib/supabaseClient'
 import Link from 'next/link'
+import BarLoadingIndicator from '../components/BarLoadingIndicator'
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal'
 
 // Force dynamic rendering (no static generation)
 export const dynamic = 'force-dynamic'
@@ -16,6 +18,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('songs')
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, itemId: null, itemName: '', itemType: 'song', stems: null, albumId: null })
 
   useEffect(() => {
     document.body.setAttribute('data-page', 'dashboard')
@@ -104,116 +107,235 @@ export default function Dashboard() {
     getUserAndProjects()
   }, [])
 
-  const handleDelete = async (songId, stems) => {
-    const confirmed = window.confirm('Are you sure you want to delete this project?')
-    if (!confirmed) return
+  // Helper function to reload songs data
+  const reloadSongsData = async (userId) => {
+    const { data: allSongs, error: reloadError } = await supabase
+      .from('songs')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (reloadError) {
+      console.error('Error reloading songs:', reloadError)
+      return
+    }
+
+    if (allSongs) {
+      const singleSongs = []
+      const albumSongs = []
+
+      allSongs.forEach(song => {
+        if (song.album_id && song.album_id !== null && song.album_id !== '') {
+          albumSongs.push(song)
+        } else {
+          singleSongs.push(song)
+        }
+      })
+
+      setProjects(singleSongs)
+
+      if (albumSongs.length > 0) {
+        const albumMap = {}
+        albumSongs.forEach(song => {
+          const albumKey = song.album_id
+          if (!albumMap[albumKey]) {
+            albumMap[albumKey] = {
+              album_id: albumKey,
+              album_slug: song.album_slug || albumKey,
+              album_title: song.album_title || 'Untitled Album',
+              artist_name: song.artist_name,
+              songs: []
+            }
+          }
+          albumMap[albumKey].songs.push(song)
+        })
+
+        const albumsArray = Object.values(albumMap).map(album => ({
+          ...album,
+          songs: album.songs.sort((a, b) => (a.track_number || 0) - (b.track_number || 0))
+        }))
+
+        setAlbums(albumsArray)
+      } else {
+        setAlbums([])
+      }
+    }
+  }
+
+  const openDeleteModal = (songId, stems, itemName, itemType = 'song', albumId = null) => {
+    console.log('🔓 Opening delete modal:', { songId, itemName, itemType, albumId })
+    setDeleteModal({
+      isOpen: true,
+      itemId: songId,
+      itemName: itemName,
+      itemType: itemType,
+      stems: stems,
+      albumId: albumId
+    })
+  }
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ isOpen: false, itemId: null, itemName: '', itemType: 'song', stems: null, albumId: null })
+  }
+
+  const handleDeleteConfirm = async () => {
+    // Capture values immediately before any state updates
+    const currentModal = { ...deleteModal }
+    const { itemId, stems, albumId, itemType } = currentModal
+    
+    console.log('🗑️ Delete confirmed:', { itemId, albumId, itemType })
+    
+    if (!itemId) {
+      console.error('No itemId provided for deletion')
+      closeDeleteModal()
+      return
+    }
+
+    // Close modal immediately for better UX
+    closeDeleteModal()
+
+    // Optimistically update UI first
+    if (albumId) {
+      setAlbums((prev) => prev.filter(album => album.album_id !== albumId))
+    } else {
+      setProjects((prev) => prev.filter((p) => p.id !== itemId))
+      setAlbums((prev) => prev.map(album => ({
+        ...album,
+        songs: album.songs.filter(s => s.id !== itemId)
+      })).filter(album => album.songs.length > 0))
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       alert('You must be logged in to delete projects.')
+      // Restore UI by reloading
+      await reloadSongsData(user?.id || '')
       return
     }
 
     try {
-      // Try to delete storage files (don't block if this fails)
-      try {
-        if (stems) {
-          const parsedStems = typeof stems === 'string' ? JSON.parse(stems) : stems
-          if (parsedStems && Array.isArray(parsedStems) && parsedStems.length > 0) {
-            const deleteFilePaths = parsedStems
-              .map((stem) => {
-                if (!stem || !stem.file) return null
-                const parts = stem.file.split('/')
-                if (parts.length < 2) return null
-                return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`
-              })
-              .filter(Boolean)
+      // If deleting a collection, delete all songs in that collection
+      if (albumId) {
+        console.log('🗑️ Deleting collection:', albumId)
+        const { data: albumSongs } = await supabase
+          .from('songs')
+          .select('*')
+          .eq('album_id', albumId)
+          .eq('user_id', user.id)
 
-            if (deleteFilePaths.length > 0) {
-              await supabase.storage.from('stems').remove(deleteFilePaths)
+        if (albumSongs && albumSongs.length > 0) {
+          // Delete all storage files for all songs in the collection
+          for (const song of albumSongs) {
+            try {
+              if (song.stems) {
+                const parsedStems = typeof song.stems === 'string' ? JSON.parse(song.stems) : song.stems
+                if (parsedStems && Array.isArray(parsedStems) && parsedStems.length > 0) {
+                  const deleteFilePaths = parsedStems
+                    .map((stem) => {
+                      if (!stem || !stem.file) return null
+                      const parts = stem.file.split('/')
+                      if (parts.length < 2) return null
+                      return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`
+                    })
+                    .filter(Boolean)
+
+                  if (deleteFilePaths.length > 0) {
+                    await supabase.storage.from('stems').remove(deleteFilePaths)
+                  }
+                }
+              }
+            } catch (storageErr) {
+              console.error('Storage delete error (continuing):', storageErr)
             }
           }
-        }
-      } catch (storageErr) {
-        console.error('Storage delete error (continuing):', storageErr)
-      }
 
-      // Delete from database - just do it, no verification needed
-      const { error: dbError } = await supabase
-        .from('songs')
-        .delete()
-        .eq('id', songId)
+          // Delete all songs from the collection
+          const { data: deleteResult, error: deleteError } = await supabase
+            .from('songs')
+            .delete()
+            .eq('album_id', albumId)
+            .eq('user_id', user.id)
+            .select()
 
-      // Only show error if there's an actual database error
-      if (dbError) {
-        console.error('DB delete error:', dbError)
-        alert(`Could not delete project: ${dbError.message}`)
-        return
-      }
-
-      // Reload all data from database
-      const { data: allSongs, error: reloadError } = await supabase
-        .from('songs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (reloadError) {
-        console.error('Error reloading songs:', reloadError)
-        // Still remove from UI optimistically
-        setProjects((prev) => prev.filter((p) => p.id !== songId))
-        setAlbums((prev) => prev.map(album => ({
-          ...album,
-          songs: album.songs.filter(s => s.id !== songId)
-        })).filter(album => album.songs.length > 0))
-        return
-      }
-
-      // Update state with fresh data from database
-      if (allSongs) {
-        const singleSongs = []
-        const albumSongs = []
-
-        allSongs.forEach(song => {
-          if (song.album_id && song.album_id !== null && song.album_id !== '') {
-            albumSongs.push(song)
-          } else {
-            singleSongs.push(song)
+          if (deleteError) {
+            console.error('❌ DB delete error:', deleteError)
+            alert(`Could not delete collection: ${deleteError.message}`)
+            // Reload data to restore UI
+            await reloadSongsData(user.id)
+            return
           }
-        })
 
-        setProjects(singleSongs)
+          if (!deleteResult || deleteResult.length === 0) {
+            console.error('❌ Delete returned no rows - RLS policy may be blocking delete!')
+            alert('Delete failed: No songs were deleted. You may not have permission to delete this collection.')
+            // Reload data to restore UI
+            await reloadSongsData(user.id)
+            return
+          }
 
-        if (albumSongs.length > 0) {
-          const albumMap = {}
-          albumSongs.forEach(song => {
-            const albumKey = song.album_id
-            if (!albumMap[albumKey]) {
-              albumMap[albumKey] = {
-                album_id: albumKey,
-                album_slug: song.album_slug || albumKey,
-                album_title: song.album_title || 'Untitled Album',
-                artist_name: song.artist_name,
-                songs: []
+          console.log('✅ Collection deleted successfully. Songs deleted:', deleteResult.length, deleteResult)
+        }
+      } else {
+        // Delete single song
+        console.log('🗑️ Deleting song:', itemId)
+        // Try to delete storage files (don't block if this fails)
+        try {
+          if (stems) {
+            const parsedStems = typeof stems === 'string' ? JSON.parse(stems) : stems
+            if (parsedStems && Array.isArray(parsedStems) && parsedStems.length > 0) {
+              const deleteFilePaths = parsedStems
+                .map((stem) => {
+                  if (!stem || !stem.file) return null
+                  const parts = stem.file.split('/')
+                  if (parts.length < 2) return null
+                  return `${parts[parts.length - 2]}/${parts[parts.length - 1]}`
+                })
+                .filter(Boolean)
+
+              if (deleteFilePaths.length > 0) {
+                await supabase.storage.from('stems').remove(deleteFilePaths)
               }
             }
-            albumMap[albumKey].songs.push(song)
-          })
-
-          const albumsArray = Object.values(albumMap).map(album => ({
-            ...album,
-            songs: album.songs.sort((a, b) => (a.track_number || 0) - (b.track_number || 0))
-          }))
-
-          setAlbums(albumsArray)
-        } else {
-          setAlbums([])
+          }
+        } catch (storageErr) {
+          console.error('Storage delete error (continuing):', storageErr)
         }
+
+        // Delete from database
+        const { data: deleteResult, error: dbError } = await supabase
+          .from('songs')
+          .delete()
+          .eq('id', itemId)
+          .eq('user_id', user.id) // Ensure we only delete our own songs
+          .select()
+
+        if (dbError) {
+          console.error('❌ DB delete error:', dbError)
+          alert(`Could not delete project: ${dbError.message}`)
+          // Reload data to restore UI
+          await reloadSongsData(user.id)
+          return
+        }
+
+        if (!deleteResult || deleteResult.length === 0) {
+          console.error('❌ Delete returned no rows - RLS policy may be blocking delete!')
+          alert('Delete failed: No rows were deleted. You may not have permission to delete this item.')
+          // Reload data to restore UI
+          await reloadSongsData(user.id)
+          return
+        }
+
+        console.log('✅ Song deleted successfully. Rows deleted:', deleteResult.length, deleteResult)
       }
 
+      // Don't reload data after successful delete - trust the optimistic update
+      // This prevents the item from reappearing due to timing/delay issues
+      console.log('✅ Delete completed - UI already updated optimistically')
     } catch (err) {
       console.error('Delete error:', err)
       alert(`Error deleting project: ${err.message}`)
+      // Reload data to restore UI on error
+      await reloadSongsData(user.id)
     }
   }
 
@@ -238,23 +360,7 @@ export default function Dashboard() {
           alignItems: 'center',
         }}
       >
-        <div
-          style={{
-            border: '4px solid #000000',
-            borderTop: '4px solid transparent',
-            borderRadius: '50%',
-            width: '36px',
-            height: '36px',
-            animation: 'spin 1s linear infinite',
-            boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-          }}
-        />
-        <style>{`
-          @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-          }
-        `}</style>
+        <BarLoadingIndicator size="large" />
       </main>
     )
   }
@@ -427,24 +533,27 @@ export default function Dashboard() {
                           <span style={{ fontSize: '0.85rem' }}>{song.artist_name}</span>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                          <form onSubmit={(e) => e.preventDefault()}>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(song.id, song.stems)}
-                              style={{
-                                backgroundColor: '#D4C5B9',
-                                color: '#000000',
-                                border: '2px solid #000000',
-                                padding: '0.4rem 0.9rem',
-                                cursor: 'pointer',
-                                fontSize: '0.8rem',
-                                fontFamily: 'monospace',
-                                boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </form>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              console.log('🗑️ Delete button clicked for song:', song.id, song.title)
+                              openDeleteModal(song.id, song.stems, song.title, 'song')
+                            }}
+                            style={{
+                              backgroundColor: '#D4C5B9',
+                              color: '#000000',
+                              border: '2px solid #000000',
+                              padding: '0.4rem 0.9rem',
+                              cursor: 'pointer',
+                              fontSize: '0.8rem',
+                              fontFamily: 'monospace',
+                              boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                            }}
+                          >
+                            Delete
+                          </button>
                           <Link
                             href={`/artist/${song.artist_slug}/${song.song_slug}/edit`}
                             style={{
@@ -505,24 +614,47 @@ export default function Dashboard() {
                               {album.artist_name} • {album.songs.length} {album.songs.length === 1 ? 'song' : 'songs'}
                             </span>
                           </div>
-                          <Link
-                            href={`/premium/edit/${album.album_id}`}
-                            style={{
-                              backgroundColor: '#D4C5B9',
-                              color: '#000000',
-                              border: '2px solid #000000',
-                              padding: '0.4rem 0.9rem',
-                              cursor: 'pointer',
-                              fontSize: '0.8rem',
-                              textDecoration: 'none',
-                              display: 'inline-block',
-                              textAlign: 'center',
-                              fontFamily: 'monospace',
-                              boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                            }}
-                          >
-                            Edit
-                          </Link>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                console.log('🗑️ Delete button clicked for collection:', album.album_id, album.album_title)
+                                openDeleteModal(album.album_id, null, album.album_title, 'collection', album.album_id)
+                              }}
+                              style={{
+                                backgroundColor: '#D4C5B9',
+                                color: '#000000',
+                                border: '2px solid #000000',
+                                padding: '0.4rem 0.9rem',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                fontFamily: 'monospace',
+                                boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                              }}
+                            >
+                              Delete
+                            </button>
+                            <Link
+                              href={`/premium/edit/${album.album_id}`}
+                              style={{
+                                backgroundColor: '#D4C5B9',
+                                color: '#000000',
+                                border: '2px solid #000000',
+                                padding: '0.4rem 0.9rem',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                textDecoration: 'none',
+                                display: 'inline-block',
+                                textAlign: 'center',
+                                fontFamily: 'monospace',
+                                boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                              }}
+                            >
+                              Edit
+                            </Link>
+                          </div>
                         </div>
                       </li>
                     )
@@ -568,6 +700,15 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteConfirm}
+        itemName={deleteModal.itemName}
+        itemType={deleteModal.itemType}
+      />
     </main>
   )
 }
