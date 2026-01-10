@@ -8,129 +8,120 @@ interface DropboxFilePickerProps {
   isMobile: boolean
 }
 
-const DROPBOX_APP_KEY = 'tgtfykx9u7aqyn2'
+const APP_KEY = 'tgtfykx9u7aqyn2'
 
 export default function DropboxFilePicker({ onFilesSelected, isMobile }: DropboxFilePickerProps) {
-  const [isDownloading, setIsDownloading] = useState(false)
+  const [loader, setLoader] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const onSuccess = async (selectedFiles: any[]) => {
-    console.log('✅ Files selected from Dropbox:', selectedFiles)
+  function handleSuccess(files: any[]) {
+    console.log('✅ Files selected from Dropbox:', files)
     
-    if (!selectedFiles || selectedFiles.length === 0) {
+    if (!files || files.length === 0) {
       setError('No files selected')
       return
     }
 
-    setIsDownloading(true)
+    setLoader(true)
     setError(null)
 
-    try {
-      // Download files and convert to File objects
-      const filePromises = selectedFiles.map(async (file: any) => {
-        console.log(`📥 Downloading: ${file.name}`)
-        
-        // Ensure direct download link
-        let downloadLink = file.link
-        if (downloadLink.includes('?dl=0') || downloadLink.includes('&dl=0')) {
-          downloadLink = downloadLink.replace(/[?&]dl=0/g, '') + (downloadLink.includes('?') ? '&' : '?') + 'dl=1'
-        } else if (!downloadLink.includes('dl=1')) {
-          downloadLink += (downloadLink.includes('?') ? '&' : '?') + 'dl=1'
-        }
+    let promiseArray: Promise<File>[] = []
 
-        const response = await fetch(downloadLink, {
+    files.forEach((file) => {
+      promiseArray.push(
+        fetch(file.link, {
           method: 'GET',
           mode: 'cors',
-          credentials: 'omit',
+          cache: 'no-cache',
+          credentials: 'same-origin',
+          headers: {},
+          referrer: 'no-referrer'
         })
+          .then((x) => x.blob())
+          .then((response) => {
+            console.log('Downloaded file blob:', response)
+            
+            // Determine MIME type
+            let mimeType = response.type
+            if (!mimeType || mimeType === 'application/octet-stream') {
+              const ext = file.name.toLowerCase().split('.').pop()
+              if (ext === 'mp3') mimeType = 'audio/mpeg'
+              else if (ext === 'wav') mimeType = 'audio/wav'
+              else if (ext === 'm4a') mimeType = 'audio/mp4'
+              else if (ext === 'aac') mimeType = 'audio/aac'
+              else if (ext === 'ogg') mimeType = 'audio/ogg'
+              else mimeType = 'audio/wav'
+            }
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
+            return new File([response], file.name, { 
+              type: mimeType,
+              lastModified: Date.now()
+            })
+          })
+          .catch((err) => {
+            console.log('Error fetching file from url:', err)
+            throw err
+          })
+      )
+    })
 
-        const blob = await response.blob()
-        
-        // Determine MIME type
-        let mimeType = blob.type
-        if (!mimeType || mimeType === 'application/octet-stream') {
-          const ext = file.name.toLowerCase().split('.').pop()
-          if (ext === 'mp3') mimeType = 'audio/mpeg'
-          else if (ext === 'wav') mimeType = 'audio/wav'
-          else if (ext === 'm4a') mimeType = 'audio/mp4'
-          else if (ext === 'aac') mimeType = 'audio/aac'
-          else if (ext === 'ogg') mimeType = 'audio/ogg'
-          else mimeType = 'audio/wav'
-        }
-
-        return new File([blob], file.name, { 
-          type: mimeType,
-          lastModified: Date.now()
-        })
+    Promise.all(promiseArray)
+      .then((fileObjects) => {
+        console.log('✅ All files downloaded successfully:', fileObjects.length)
+        setLoader(false)
+        onFilesSelected(fileObjects)
       })
-
-      const fileObjects = await Promise.all(filePromises)
-      console.log('✅ All files downloaded:', fileObjects.length)
-      
-      onFilesSelected(fileObjects)
-      setIsDownloading(false)
-    } catch (err: any) {
-      console.error('❌ Error downloading files:', err)
-      setError(`Failed to download files: ${err?.message || 'Unknown error'}`)
-      setIsDownloading(false)
-    }
-  }
-
-  const onCancel = () => {
-    console.log('User canceled the Dropbox operation.')
-    setIsDownloading(false)
+      .catch((err) => {
+        console.error('❌ Error downloading files:', err)
+        setLoader(false)
+        setError(`Failed to download files: ${err?.message || 'Unknown error'}`)
+      })
   }
 
   return (
     <div style={{ width: '100%' }}>
-      <DropboxChooser
-        appKey={DROPBOX_APP_KEY}
-        success={onSuccess}
-        cancel={onCancel}
-        multiselect={true}
-        extensions={['.mp3', '.wav', '.m4a', '.aac', '.ogg']}
-        linkType="direct"
+      <div
+        style={{
+          border: '3px dotted #ccc',
+          cursor: loader ? 'not-allowed' : 'pointer',
+          padding: '0.5rem 1rem',
+          backgroundColor: '#ffffff',
+          color: '#B8001F',
+          borderRadius: '4px',
+          opacity: loader ? 0.7 : 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          fontSize: '0.9rem',
+        }}
       >
-        <button
-          type="button"
-          disabled={isDownloading}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#ffffff',
-            color: '#B8001F',
-            border: '1px solid #B8001F',
-            borderRadius: '4px',
-            cursor: isDownloading ? 'not-allowed' : 'pointer',
-            fontSize: '0.9rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            opacity: isDownloading ? 0.7 : 1,
-            width: '100%',
-            justifyContent: 'center',
-          }}
-        >
-          {isDownloading ? (
-            <>
-              <div style={{
-                width: '12px',
-                height: '12px',
-                border: '2px solid #B8001F',
-                borderTop: '2px solid transparent',
-                borderRadius: '50%',
-                animation: 'spin 1s linear infinite'
-              }} />
-              Downloading...
-            </>
-          ) : (
-            <>📁 Dropbox</>
-          )}
-        </button>
-      </DropboxChooser>
+        {loader ? (
+          <>
+            <div style={{
+              width: '12px',
+              height: '12px',
+              border: '2px solid #B8001F',
+              borderTop: '2px solid transparent',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            Downloading...
+          </>
+        ) : (
+          <DropboxChooser
+            appKey={APP_KEY}
+            success={handleSuccess}
+            linkType="direct"
+            cancel={() => console.log('User closed Dropbox chooser')}
+            folderselect={false}
+            multiselect={true}
+            extensions={['.mp3', '.wav', '.m4a', '.aac', '.ogg']}
+          >
+            📁 Dropbox
+          </DropboxChooser>
+        )}
+      </div>
       
       {error && (
         <div style={{
