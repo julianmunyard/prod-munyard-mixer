@@ -41,7 +41,7 @@ type Song = {
   background_video?: string
   primary_color?: string
   artwork_url?: string
-  page_theme?: 'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA' | 'DEMO'
+  page_theme?: 'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA' | 'DEMO' | 'ANALOG PANEL'
   album_id?: string
 }
 
@@ -214,7 +214,7 @@ function MixerPage() {
   
   // Page theme state - CLASSIC = original (primary color), others = themed.
   // NOTE: Theme selection is temporarily locked to OLD COMPUTER; UI dropdown is disabled below.
-  const [pageTheme, setPageTheme] = useState<'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA' | 'DEMO'>('OLD COMPUTER')
+  const [pageTheme, setPageTheme] = useState<'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA' | 'DEMO' | 'ANALOG PANEL'>('OLD COMPUTER')
   const [showThemeDropdown, setShowThemeDropdown] = useState(false) // kept for future use
   
   // OLD COMPUTER 2 editable colors - starts as exact copy of OLD COMPUTER theme
@@ -339,6 +339,31 @@ function MixerPage() {
       knobBg: '#FFFFFF', // White knob background
       knobBorder: '#000000', // Black knob border
       knobText: '#000000', // Black knob text
+    },
+    'ANALOG PANEL': {
+      background: '#1a1a1a', // Dark charcoal
+      text: '#E8E8E8', // Off-white/warm grey
+      border: '#D0D0D0', // Light grey, thin borders
+      inputBg: '#1a1a1a', // Dark charcoal
+      inputText: '#E8E8E8',
+      buttonBg: '#2a2a2a', // Slightly lighter grey
+      buttonText: '#E8E8E8',
+      cardBg: 'transparent', // No filled panels
+      cardBorder: '#D0D0D0', // Thin outline
+      accent: '#E8E8E8', // Neutral, no accent colors
+      sectionBg: '#2a2a2a', // Neutral grey for selected items
+      windowTitleBg: 'transparent', // No title bar background
+      windowContentBg: 'transparent', // No filled content area
+      glow: 'none',
+      moduleBg: 'transparent',
+      moduleText: '#E8E8E8',
+      moduleBorder: '#D0D0D0',
+      fontFamily: 'Arial, Helvetica, sans-serif', // Sans-serif, industrial
+      sliderTrack: '#2a2a2a', // Neutral grey
+      sliderThumb: '#E8E8E8', // Off-white
+      knobBg: '#2a2a2a', // Neutral grey
+      knobBorder: '#D0D0D0', // Light grey
+      knobText: '#E8E8E8' // Off-white
     }
   }
   
@@ -374,7 +399,7 @@ function MixerPage() {
   };
 
   // -------------------- 🎨 Handle Theme Change ====================
-  const handleThemeChange = async (newTheme: 'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA' | 'DEMO') => {
+  const handleThemeChange = async (newTheme: 'OLD COMPUTER' | 'OLD COMPUTER 2' | 'FIGMA' | 'DEMO' | 'ANALOG PANEL') => {
     setPageTheme(newTheme)
     setShowThemeDropdown(false)
     
@@ -400,8 +425,8 @@ function MixerPage() {
   // Load theme from database on mount
   useEffect(() => {
     if (songData?.page_theme) {
-      // Allow OLD COMPUTER, OLD COMPUTER 2, FIGMA, or DEMO, default to OLD COMPUTER
-      if (songData.page_theme === 'OLD COMPUTER' || songData.page_theme === 'OLD COMPUTER 2' || songData.page_theme === 'FIGMA' || songData.page_theme === 'DEMO') {
+      // Allow OLD COMPUTER, OLD COMPUTER 2, FIGMA, DEMO, or ANALOG PANEL, default to OLD COMPUTER
+      if (songData.page_theme === 'OLD COMPUTER' || songData.page_theme === 'OLD COMPUTER 2' || songData.page_theme === 'FIGMA' || songData.page_theme === 'DEMO' || songData.page_theme === 'ANALOG PANEL') {
         setPageTheme(songData.page_theme)
       } else {
         setPageTheme('OLD COMPUTER')
@@ -425,6 +450,8 @@ function MixerPage() {
       backgroundColor = '#FFE5E5' // Pink
     } else if (pageTheme === 'OLD COMPUTER 2') {
       backgroundColor = color2Colors.background || '#FFE5E5'
+    } else if (pageTheme === 'ANALOG PANEL') {
+      backgroundColor = '#1a1a1a' // Dark charcoal
     }
     
     themeColorMeta.content = backgroundColor
@@ -2071,10 +2098,10 @@ function MixerPage() {
 
   // ==================== 🎨 RENDER ====================
   // Compute CSS values for OLD COMPUTER 2 theme
-  const sliderTrackBg = (pageTheme === 'OLD COMPUTER') ? '#FFE5E5' : (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.background || '#FFE5E5') : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#FFFFFF' : (isTransparent ? 'transparent' : '#FCFAEE')))
-  const sliderTrackBorder = (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${currentTheme?.border || '#000000'}` : (isTransparent ? `1px solid ${primary}` : 'none')
-  const sliderThumbBg = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? (pageTheme === 'OLD COMPUTER' ? '#000000' : (currentTheme?.sliderThumb || '#000000')) : primary
-  const sliderThumbBorder = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? (pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme?.border || '#000000'}`) : 'none'
+  const sliderTrackBg = (pageTheme === 'ANALOG PANEL') ? (currentTheme?.sliderTrack || '#2a2a2a') : (pageTheme === 'OLD COMPUTER') ? '#FFE5E5' : (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.background || '#FFE5E5') : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#FFFFFF' : (isTransparent ? 'transparent' : '#FCFAEE')))
+  const sliderTrackBorder = (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${currentTheme?.border || '#000000'}` : (isTransparent ? `1px solid ${primary}` : 'none')
+  const sliderThumbBg = (pageTheme === 'ANALOG PANEL') ? (currentTheme?.sliderThumb || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? (pageTheme === 'OLD COMPUTER' ? '#000000' : (currentTheme?.sliderThumb || '#000000')) : primary
+  const sliderThumbBorder = (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? (pageTheme === 'OLD COMPUTER' ? '2px solid #000000' : `2px solid ${currentTheme?.border || '#000000'}`) : 'none'
 
   return (
     <>
@@ -2156,7 +2183,7 @@ function MixerPage() {
               -webkit-appearance: none !important;
               background: ${sliderTrackBg} !important;
               border: ${sliderTrackBorder} !important;
-              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '2px'} !important;
+              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '2px'} !important;
               height: 100% !important; /* Match slider height */
               width: 20px !important; /* Wide enough to fit 18px thumb */
             }
@@ -2166,7 +2193,7 @@ function MixerPage() {
             input[type="range"].transparent-volume-slider::-moz-range-track {
               background: ${sliderTrackBg} !important;
               border: ${sliderTrackBorder} !important;
-              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '2px'} !important;
+              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '2px'} !important;
               height: 100% !important; /* Match slider height */
               width: 20px !important; /* Wide enough to fit 18px thumb */
             }
@@ -2176,7 +2203,7 @@ function MixerPage() {
             input[type="range"].transparent-volume-slider::-ms-track {
               background: ${sliderTrackBg} !important;
               border: ${sliderTrackBorder} !important;
-              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '2px'} !important;
+              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '2px'} !important;
               height: 100% !important; /* Match slider height */
               width: 20px !important; /* Wide enough to fit 18px thumb */
               color: transparent !important;
@@ -2190,11 +2217,11 @@ function MixerPage() {
               appearance: none !important;
               height: 35px !important; /* Slightly longer */
               width: 18px !important;
-              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '10px'} !important;
+              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '10px'} !important;
               background: ${sliderThumbBg} !important;
               border: ${sliderThumbBorder} !important;
               cursor: pointer !important;
-              box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
+              box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? ((pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff') : 'none'} !important;
               margin: 0 !important;
               padding: 0 !important;
               /* Remove position/transform to allow natural movement */
@@ -2206,11 +2233,11 @@ function MixerPage() {
               appearance: none !important;
               height: 35px !important; /* Slightly longer */
               width: 18px !important;
-              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '10px'} !important;
+              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '10px'} !important;
               background: ${sliderThumbBg} !important;
               border: ${sliderThumbBorder} !important;
               cursor: pointer !important;
-              box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
+              box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? ((pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff') : 'none'} !important;
             }
             .volume-slider::-moz-range-thumb,
             .transparent-volume-slider::-moz-range-thumb,
@@ -2218,11 +2245,11 @@ function MixerPage() {
             input[type="range"].transparent-volume-slider::-moz-range-thumb {
               height: 45px !important; /* Slightly longer */
               width: 18px !important;
-              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '10px'} !important;
+              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '10px'} !important;
               background: ${sliderThumbBg} !important;
               border: ${sliderThumbBorder} !important;
               cursor: pointer !important;
-              box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
+              box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? ((pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff') : 'none'} !important;
             }
             .volume-slider::-ms-thumb,
             .transparent-volume-slider::-ms-thumb,
@@ -2230,11 +2257,11 @@ function MixerPage() {
             input[type="range"].transparent-volume-slider::-ms-thumb {
               height: 45px !important; /* Slightly longer */
               width: 18px !important;
-              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '10px'} !important;
+              border-radius: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '10px'} !important;
               background: ${sliderThumbBg} !important;
               border: ${sliderThumbBorder} !important;
               cursor: pointer !important;
-              box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'} !important;
+              box-shadow: ${(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? ((pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff') : 'none'} !important;
             }
             @media screen and (max-width: 767px) and (orientation: landscape) {
               .mixer-module {
@@ -2391,16 +2418,16 @@ function MixerPage() {
               className={`min-h-screen font-sans relative ${
               isTransparent
                 ? 'bg-transparent'
-                : (pageTheme === 'OLD COMPUTER') ? 'bg-[#FFE5E5]' : (pageTheme === 'OLD COMPUTER 2') ? undefined : (pageTheme === 'MUNY' ? 'bg-[#FFFFFF]' : (pageTheme === 'OLD INTERNET' ? 'bg-[#C0C0C0]' : 'bg-[#FCFAEE]'))
+                : (pageTheme === 'OLD COMPUTER') ? 'bg-[#FFE5E5]' : (pageTheme === 'OLD COMPUTER 2') ? undefined : (pageTheme === 'ANALOG PANEL') ? 'bg-[#1a1a1a]' : (pageTheme === 'MUNY' ? 'bg-[#FFFFFF]' : (pageTheme === 'OLD INTERNET' ? 'bg-[#C0C0C0]' : 'bg-[#FCFAEE]'))
             }`}
             style={{
               minHeight: '100dvh',
               height: 'auto', // Allow content to extend naturally on all devices
-              color: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : (currentTheme?.text || primary),
+              color: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : (currentTheme?.text || primary),
               zIndex: 1,
               position: 'relative',
               overflowY: 'visible', // Allow full scrolling
-              backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.background : ((pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FFFFFF') : undefined),
+              backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.background : (pageTheme === 'ANALOG PANEL') ? '#1a1a1a' : ((pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FFFFFF') : undefined),
               backgroundImage: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? `
                 repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px),
                 repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(255,255,255,.03) 2px, rgba(255,255,255,.03) 4px)
@@ -2421,7 +2448,7 @@ function MixerPage() {
                 )
               ` : undefined),
               backgroundSize: (pageTheme === 'MUNY' ? '18px 18px' : undefined),
-              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : 'inherit'),
+              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : 'inherit'),
               paddingBottom: isVerySmallScreen 
                 ? 'clamp(180px, 25vh, 200px)' 
                 : isSmallScreen 
@@ -2443,12 +2470,12 @@ function MixerPage() {
                   left: '12px',
                   width: isMobile ? '36px' : '42px',
                   height: isMobile ? '36px' : '42px',
-                  borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '50%',
-                  backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE')),
-                  color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                  border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                  fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                  borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '50%',
+                  backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE')),
+                  color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
+                  border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
+                  boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                  fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
                   fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
                   zIndex: 1000,
                   cursor: 'pointer',
@@ -2502,8 +2529,8 @@ function MixerPage() {
                   borderRadius: '50%',
                   backgroundColor: (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.buttonBg || '#D4C5B9') : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE')),
                   color: (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.buttonText || '#000000') : 'inherit',
-                  border: (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${currentTheme?.border || '#000000'}` : `1px solid ${primary}`,
-                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                  border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${currentTheme?.border || '#000000'}` : `1px solid ${primary}`,
+                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'ANALOG PANEL') ? 'none' : 'none',
                   fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
                   fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
                   zIndex: 1000,
@@ -2520,7 +2547,7 @@ function MixerPage() {
                 >
                   <path
                     d="M4 10v4h3l5 4V6l-5 4H4z"
-                    stroke={primary}
+                    stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : primary}
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -2529,7 +2556,7 @@ function MixerPage() {
                   {!audioUnlocked && (
                     <path
                       d="M6 6L18 18"
-                      stroke={primary}
+                      stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : primary}
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -2539,14 +2566,14 @@ function MixerPage() {
                     <>
                       <path
                         d="M16 9c1.333 1.333 1.333 4.667 0 6"
-                        stroke={primary}
+                        stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : primary}
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
                       <path
                         d="M18.5 7.5c2.333 2.333 2.333 6.667 0 9"
-                        stroke={primary}
+                        stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : primary}
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -2559,14 +2586,14 @@ function MixerPage() {
             )}
 
             {/* ▶️ Main Playback Controls */}
-            {(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? (
-              /* Player Box for OLD COMPUTER theme */
+            {(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? (
+              /* Player Box for OLD COMPUTER theme / Analog Panel */
               <div 
                 style={{
-                  backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.cardBg : '#D4C5B9',
-                  border: (pageTheme === 'OLD COMPUTER 2') ? `3px solid ${color2Colors.border}` : '3px solid #000000',
-                  borderBottom: 'none',
-                  boxShadow: 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
+                  backgroundColor: (pageTheme === 'ANALOG PANEL') ? 'transparent' : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.cardBg : '#D4C5B9'),
+                  border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : ((pageTheme === 'OLD COMPUTER 2') ? `3px solid ${color2Colors.border}` : '3px solid #000000'),
+                  borderBottom: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : ((pageTheme === 'OLD COMPUTER 2') ? `3px solid ${color2Colors.border}` : '3px solid #000000'),
+                  boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
                   padding: isMobile ? '4px' : '8px',
                   paddingBottom: isMobile ? '4px' : '8px',
                   position: 'relative',
@@ -2582,30 +2609,58 @@ function MixerPage() {
                   marginRight: isMobile ? 'auto' : 'auto',
                 }}
               >
-                {/* Title Bar */}
-                <div 
-                  style={{
-                    backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowTitleBg : '#C0C0C0',
-                    border: (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000',
-                    padding: isMobile ? '3px 6px' : '4px 8px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: isMobile ? '2px' : '4px',
-                    fontSize: isMobile ? '11px' : '15px',
-                    fontWeight: 'bold',
-                    color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#000000',
-                    fontFamily: 'monospace',
-                  }}
-                >
-                  <span>PLAYER</span>
-                </div>
+                {/* Title Bar / Embedded Label */}
+                {pageTheme === 'ANALOG PANEL' ? (
+                  <div 
+                    style={{
+                      position: 'relative',
+                      borderTop: `1px solid ${currentTheme?.border || '#D0D0D0'}`,
+                      marginTop: isMobile ? '2px' : '4px',
+                      marginBottom: isMobile ? '6px' : '8px',
+                    }}
+                  >
+                    <span 
+                      style={{
+                        position: 'absolute',
+                        left: isMobile ? '8px' : '12px',
+                        top: '-8px',
+                        backgroundColor: currentTheme?.background || '#1a1a1a',
+                        padding: '0 8px',
+                        fontSize: isMobile ? '9px' : '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        color: currentTheme?.text || '#E8E8E8',
+                        fontFamily: 'Arial, Helvetica, sans-serif',
+                      }}
+                    >
+                      PLAYER
+                    </span>
+                  </div>
+                ) : (
+                  <div 
+                    style={{
+                      backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowTitleBg : '#C0C0C0',
+                      border: (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000',
+                      padding: isMobile ? '3px 6px' : '4px 8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: isMobile ? '2px' : '4px',
+                      fontSize: isMobile ? '11px' : '15px',
+                      fontWeight: 'bold',
+                      color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#000000',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    <span>PLAYER</span>
+                  </div>
+                )}
 
                 {/* Content Area with Playback Controls */}
                 <div 
                   style={{
-                    backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowContentBg : '#FFFFFF',
-                    border: (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000',
+                    backgroundColor: (pageTheme === 'ANALOG PANEL') ? 'transparent' : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowContentBg : '#FFFFFF'),
+                    border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : ((pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000'),
                     padding: isMobile ? '12px' : '20px',
                     position: 'relative',
                     display: 'flex',
@@ -2634,12 +2689,12 @@ function MixerPage() {
                         style={{
                           width: '48px',
                           height: '48px',
-                          borderRadius: '0',
-                          backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9',
-                          color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : '#000000',
-                          border: (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000000',
-                          boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                          fontFamily: 'monospace',
+                          borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : '0',
+                          backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9'),
+                          color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : '#000000'),
+                          border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : ((pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000000'),
+                          boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                          fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'monospace',
                           fontWeight: 'bold',
                           padding: 0,
                         }}
@@ -2655,7 +2710,7 @@ function MixerPage() {
                         >
                           <path
                             d="M4 10v4h3l5 4V6l-5 4H4z"
-                            stroke="#000000"
+                            stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -2664,7 +2719,7 @@ function MixerPage() {
                           {!showUnmuted && (
                             <path
                               d="M6 6L18 18"
-                              stroke="#000000"
+                              stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -2704,13 +2759,15 @@ function MixerPage() {
                         : 'hover:opacity-90'
                     }`}
                     style={{
-                      backgroundColor: timelineReady && allAssetsLoaded ? ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9') : '#ccc',
+                      backgroundColor: timelineReady && allAssetsLoaded 
+                        ? ((pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9'))
+                        : '#ccc',
                       width: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
                       height: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
-                      borderRadius: '0',
-                      border: '2px solid #000000',
+                      borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : '0',
+                      border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : '2px solid #000000',
                       padding: 0,
-                      boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                      boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
                     }}
                     aria-label="Play"
                   >
@@ -2723,8 +2780,8 @@ function MixerPage() {
                     >
                       <path
                         d="M8 5v14l11-7z"
-                        fill="#000000"
-                        stroke="#000000"
+                        fill={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
+                        stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -2738,13 +2795,13 @@ function MixerPage() {
                     disabled={!timelineReady}
                     className="pressable flex items-center justify-center transition-all duration-200 hover:opacity-90"
                     style={{
-                      backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9',
+                      backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9'),
                       width: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
                       height: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
-                      borderRadius: '0',
-                      border: '2px solid #000000',
+                      borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : '0',
+                      border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : '2px solid #000000',
                       padding: 0,
-                      boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                      boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
                     }}
                     aria-label="Pause"
                   >
@@ -2760,8 +2817,8 @@ function MixerPage() {
                         y="4"
                         width="4"
                         height="16"
-                        fill="#000000"
-                        stroke="#000000"
+                        fill={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
+                        stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -2771,8 +2828,8 @@ function MixerPage() {
                         y="4"
                         width="4"
                         height="16"
-                        fill="#000000"
-                        stroke="#000000"
+                        fill={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
+                        stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -2794,12 +2851,12 @@ function MixerPage() {
                       style={{
                         width: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : '44px',
                         height: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : '44px',
-                        borderRadius: '0',
-                        backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9',
-                        color: '#000000',
-                        border: '2px solid #000000',
-                        boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                        fontFamily: 'monospace',
+                        borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : '0',
+                        backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9'),
+                        color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000',
+                        border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : '2px solid #000000',
+                        boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                        fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'monospace',
                         fontWeight: 'bold',
                         padding: 0,
                       }}
@@ -2815,7 +2872,7 @@ function MixerPage() {
                       >
                         <path
                           d="M4 10v4h3l5 4V6l-5 4H4z"
-                          stroke="#000000"
+                          stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -2824,7 +2881,7 @@ function MixerPage() {
                         {!audioUnlocked && (
                           <path
                             d="M6 6L18 18"
-                            stroke="#000000"
+                            stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -2834,14 +2891,14 @@ function MixerPage() {
                           <>
                             <path
                               d="M16 9c1.333 1.333 1.333 4.667 0 6"
-                              stroke="#000000"
+                              stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
                             />
                             <path
                               d="M18.5 7.5c2.333 2.333 2.333 6.667 0 9"
-                              stroke="#000000"
+                              stroke={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#000000'}
                               strokeWidth="2"
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -2856,472 +2913,7 @@ function MixerPage() {
               </div>
             ) : null}
 
-            {/* 🎛️ Secondary Controls - Desktop Only */}
-            {/* Hidden for OLD COMPUTER theme - moved into controls box */}
 
-            {/* Original structure for other themes - Playback Controls */}
-            {(pageTheme !== 'OLD COMPUTER' && pageTheme !== 'OLD COMPUTER 2') && (
-              <div className={`flex justify-center items-center mb-2 ${isMobile ? 'gap-2' : 'gap-8'} ${isMobile ? 'px-2' : ''}`} style={{
-                gap: isVerySmallScreen ? '8px' : isSmallScreen ? '12px' : isMobile ? '16px' : '32px',
-                paddingLeft: isMobile ? 'clamp(8px, 2vw, 16px)' : '0',
-                paddingRight: isMobile ? 'clamp(8px, 2vw, 16px)' : '0',
-              }}>
-                {/* (Mobile unmute button moved to floating top-right) */}
-
-              <button
-                onClick={playAll}
-                disabled={!timelineReady || !allAssetsLoaded}
-                className={`pressable flex items-center justify-center transition-all duration-200 ${
-                  !timelineReady || !allAssetsLoaded
-                    ? 'opacity-60 cursor-not-allowed' 
-                    : 'hover:opacity-90'
-                }`}
-                style={{
-                      backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')
-                        ? (timelineReady && allAssetsLoaded ? '#D4C5B9' : '#ccc')
-                        : pageTheme === 'MUNY'
-                        ? (timelineReady && allAssetsLoaded ? '#FFFFFF' : '#ccc')
-                    : (isTransparent 
-                      ? 'rgba(255,255,255,0.05)' 
-                      : (timelineReady && allAssetsLoaded ? primary : '#ccc')),
-                  backdropFilter: isTransparent ? 'blur(2px)' : 'none',
-                  width: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
-                  height: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
-                  borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '50%',
-                  border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                    ? '2px solid #000000' 
-                    : (isTransparent ? `1px solid ${primary}` : 'none'),
-                  padding: 0,
-                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                    ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' 
-                    : (isTransparent ? '0 0 6px rgba(255,255,255,0.2)' : 'none'),
-                }}
-                aria-label="Play"
-              >
-                <svg
-                  width={isVerySmallScreen ? '18' : isSmallScreen ? '20' : isMobile ? '22' : '24'}
-                  height={isVerySmallScreen ? '18' : isSmallScreen ? '20' : isMobile ? '22' : '24'}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M8 5v14l11-7z"
-                    fill={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                      ? '#000000' 
-                      : (isTransparent 
-                        ? primary 
-                        : (timelineReady && allAssetsLoaded ? 'white' : '#666'))}
-                    stroke={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                      ? '#000000' 
-                      : (isTransparent 
-                        ? primary 
-                        : (timelineReady && allAssetsLoaded ? 'white' : '#666'))}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-
-              <button
-                onClick={pauseAll}
-                disabled={!timelineReady}
-                className="pressable flex items-center justify-center transition-all duration-200 hover:opacity-90"
-                style={{
-                  backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                    ? '#D4C5B9' 
-                    : pageTheme === 'MUNY'
-                    ? '#FFFFFF'
-                    : (isTransparent 
-                      ? 'rgba(255,255,255,0.05)' 
-                      : primary),
-                  backdropFilter: isTransparent ? 'blur(2px)' : 'none',
-                  width: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
-                  height: isVerySmallScreen ? '36px' : isSmallScreen ? '40px' : isMobile ? '44px' : '48px',
-                  borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '50%',
-                  border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                    ? '2px solid #000000' 
-                    : (isTransparent ? `1px solid ${primary}` : 'none'),
-                  padding: 0,
-                  boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                    ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' 
-                    : (isTransparent ? '0 0 6px rgba(255,255,255,0.2)' : 'none'),
-                }}
-                aria-label="Pause"
-              >
-                <svg
-                  width={isVerySmallScreen ? '18' : isSmallScreen ? '20' : isMobile ? '22' : '24'}
-                  height={isVerySmallScreen ? '18' : isSmallScreen ? '20' : isMobile ? '22' : '24'}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect
-                    x="6"
-                    y="4"
-                    width="4"
-                    height="16"
-                    fill={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (isTransparent ? primary : 'white')}
-                    stroke={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (isTransparent ? primary : 'white')}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <rect
-                    x="14"
-                    y="4"
-                    width="4"
-                    height="16"
-                    fill={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (isTransparent ? primary : 'white')}
-                    stroke={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (isTransparent ? primary : 'white')}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-
-                {/* UNSOLO Button - Hidden but logic preserved for future use */}
-                {/* <button
-                  onClick={unsoloAll}
-                  className="pressable text-white font-mono tracking-wide"
-                  style={{
-                    backgroundColor: primary,
-                    padding: isVerySmallScreen 
-                      ? '6px 10px' 
-                      : isSmallScreen 
-                        ? '8px 12px' 
-                        : isMobile 
-                          ? '8px 16px' 
-                          : '12px 24px',
-                    fontSize: isVerySmallScreen 
-                      ? '11px' 
-                      : isSmallScreen 
-                        ? '12px' 
-                        : isMobile 
-                          ? '13px' 
-                          : '14px',
-                  }}
-                >
-                  UNSOLO
-                </button> */}
-              </div>
-            )}
-
-            {/* 🎛️ Secondary Controls - Desktop Only */}
-            {/* Hidden for OLD COMPUTER themes - moved into controls box */}
-            {!isMobile && (pageTheme !== 'OLD COMPUTER' && pageTheme !== 'OLD COMPUTER 2') && (
-              <div className={`flex justify-center mb-1 gap-8`}>
-
-              {/* Master Effect Dropdown */}
-              <div className="relative">
-                <div 
-                  className="pressable font-mono tracking-wide cursor-pointer"
-                  style={{ 
-                  backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE')),
-                    color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                    border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                    padding: '8px 12px',
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                    boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                    fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                    outline: 'none'
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    const dropdown = document.getElementById('master-effect-dropdown')
-                    if (dropdown) {
-                      dropdown.classList.toggle('hidden')
-                    }
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault()
-                    e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE')
-                  }}
-                  onMouseUp={(e) => {
-                    e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE')
-                  }}
-                  onTouchStart={(e) => {
-                    e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE')
-                  }}
-                  onTouchEnd={(e) => {
-                    e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE')
-                  }}
-                >
-                  <span>EFFECT</span>
-                  <span style={{ fontSize: '8px' }}>▼</span>
-                </div>
-                
-                {/* Custom Dropdown Menu */}
-                <div 
-                  id="master-effect-dropdown"
-                  className="absolute rounded shadow-lg hidden"
-                  style={{ 
-                    top: '100%', 
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    marginTop: '4px',
-                    zIndex: 10,
-                    minWidth: 'fit-content',
-                    whiteSpace: 'nowrap',
-                    border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                    backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                      ? '#FFFFFF' 
-                      : (isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC'),
-                    backdropFilter: isTransparent ? 'blur(4px)' : 'none',
-                    borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
-                    boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                  }}
-                >
-                  <div 
-                    className="px-2 py-1 cursor-pointer font-mono transition-colors"
-                    style={{ 
-                      fontSize: '10px',
-                      color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                      backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
-                      fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                      fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
-                    }}
-                    onMouseEnter={(e) => {
-                      if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                        e.currentTarget.style.backgroundColor = '#E0E0E0'
-                        e.currentTarget.style.color = '#000000'
-                      } else {
-                        e.currentTarget.style.backgroundColor = primary
-                        e.currentTarget.style.color = '#FCFAEE'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                        e.currentTarget.style.backgroundColor = pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE'
-                        e.currentTarget.style.color = '#000000'
-                      } else {
-                        e.currentTarget.style.backgroundColor = 'transparent'
-                        e.currentTarget.style.color = primary
-                      }
-                    }}
-                    onClick={() => {
-                      setSelectedMasterEffect('flanger')
-                      document.getElementById('master-effect-dropdown')?.classList.add('hidden')
-                    }}
-                  >
-                    FLANGER
-                  </div>
-                  <div 
-                    className="px-2 py-1 cursor-pointer font-mono transition-colors"
-                    style={{ 
-                      fontSize: '10px',
-                      color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                      backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
-                      fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                      fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
-                    }}
-                    onMouseEnter={(e) => {
-                      if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                        e.currentTarget.style.backgroundColor = '#E0E0E0'
-                        e.currentTarget.style.color = '#000000'
-                      } else {
-                        e.currentTarget.style.backgroundColor = primary
-                        e.currentTarget.style.color = '#FCFAEE'
-                      }
-                    }}
-                      onMouseLeave={(e) => {
-                        if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                          e.currentTarget.style.backgroundColor = pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE'
-                          e.currentTarget.style.color = '#000000'
-                        } else {
-                          e.currentTarget.style.backgroundColor = 'transparent'
-                          e.currentTarget.style.color = primary
-                        }
-                      }}
-                      onClick={() => {
-                        setSelectedMasterEffect('compressor')
-                        document.getElementById('master-effect-dropdown')?.classList.add('hidden')
-                      }}
-                  >
-                    COMPRESSOR
-                  </div>
-                </div>
-              </div>
-
-              {/* Master Effect Buttons */}
-              {selectedMasterEffect === 'flanger' ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={(e) => {
-                      // Just open the modal for settings - don't toggle on/off
-                      handleFlangerConfigOpen()
-                    }}
-                      className="pressable px-4 py-2 font-mono tracking-wide"
-                    style={{ 
-                      backgroundColor: (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                      color: (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
-                      border: (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
-                      fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : undefined,
-                      boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
-                      fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
-                    }}
-                  >
-                    FLANGE
-                  </button>
-                  
-                  {/* Toggle Switch */}
-                  <div 
-                    className="flex items-center cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      const currentEnabled = globalFlanger?.enabled || false
-                      const newWet = currentEnabled ? 0 : 0.5
-                      
-                      const newConfig = {
-                        ...(globalFlanger || defaultFlangerConfig),
-                        wet: newWet,
-                        enabled: !currentEnabled
-                      }
-                      setGlobalFlanger(newConfig)
-                      
-                      if (mixerEngineRef.current?.audioEngine) {
-                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                          type: "command",
-                          data: { 
-                            command: "setFlangerConfig", 
-                            config: newConfig
-                          }
-                        });
-                      }
-                    }}
-                    style={{ marginLeft: '8px' }}
-                  >
-                    <div 
-                      className={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? "relative transition-all duration-200 ease-in-out overflow-visible" : (pageTheme === 'TERMINAL THEME' ? "relative rounded-full border transition-all duration-200 ease-in-out" : "relative rounded-full border transition-all duration-200 ease-in-out")}
-                      style={{ 
-                        width: '44px',
-                        height: '24px',
-                        backgroundColor: (globalFlanger?.enabled || false) 
-                          ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
-                          : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                        border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
-                        borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
-                        borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
-                        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
-                      }}
-                    >
-                      <div 
-                        className={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? "absolute transition-all duration-200 ease-in-out" : (pageTheme === 'TERMINAL THEME' ? "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm" : "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm")}
-                        style={{ 
-                          width: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '20px' : '18px',
-                          height: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '28px' : '18px',
-                          top: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '50%' : undefined,
-                          left: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                            ? ((globalFlanger?.enabled || false) ? '26px' : '-2px')
-                            : undefined,
-                          transform: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                            ? 'translateY(-50%)' 
-                            : ((globalFlanger?.enabled || false) ? 'translateX(20px)' : 'translateX(2px)'),
-                          backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
-                          border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
-                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
-                          zIndex: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 10 : undefined
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={(e) => {
-                      // Just open the modal for settings - don't toggle on/off
-                      handleCompressorConfigOpen()
-                    }}
-                      className="pressable px-4 py-2 font-mono tracking-wide"
-                    style={{ 
-                      backgroundColor: (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                      color: (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
-                      border: (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
-                      fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : undefined,
-                      boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
-                      fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
-                    }}
-                  >
-                    COMPRESS
-                  </button>
-                  
-                  {/* Toggle Switch */}
-                  <div 
-                    className="flex items-center cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      const currentEnabled = globalCompressor?.enabled || false
-                      const newWet = currentEnabled ? 0 : 1.0
-                      
-                      const newConfig = {
-                        ...(globalCompressor || defaultCompressorConfig),
-                        wet: newWet,
-                        enabled: !currentEnabled
-                      }
-                      setGlobalCompressor(newConfig)
-                      
-                      if (mixerEngineRef.current?.audioEngine) {
-                        mixerEngineRef.current.audioEngine.sendMessageToAudioProcessor({
-                          type: "command",
-                          data: { 
-                            command: "setCompressorConfig", 
-                            config: newConfig
-                          }
-                        });
-                      }
-                    }}
-                    style={{ marginLeft: '8px' }}
-                  >
-                    <div 
-                      className={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? "relative transition-all duration-200 ease-in-out overflow-visible" : (pageTheme === 'TERMINAL THEME' ? "relative rounded-full border transition-all duration-200 ease-in-out" : "relative rounded-full border transition-all duration-200 ease-in-out")}
-                      style={{ 
-                        width: '44px',
-                        height: '24px',
-                        backgroundColor: (globalCompressor?.enabled || false) 
-                          ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
-                          : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                        border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
-                        borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
-                        borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
-                        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
-                      }}
-                    >
-                      <div 
-                        className={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? "absolute transition-all duration-200 ease-in-out" : (pageTheme === 'TERMINAL THEME' ? "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm" : "absolute top-0.5 left-0.5 rounded-full bg-white transition-all duration-200 ease-in-out shadow-sm")}
-                        style={{ 
-                          width: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '20px' : '18px',
-                          height: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '28px' : '18px',
-                          top: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '50%' : undefined,
-                          left: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                            ? ((globalCompressor?.enabled || false) ? '26px' : '-2px')
-                            : undefined,
-                          transform: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                            ? 'translateY(-50%)' 
-                            : ((globalCompressor?.enabled || false) ? 'translateX(20px)' : 'translateX(2px)'),
-                          backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
-                          border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
-                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
-                          zIndex: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 10 : undefined
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            )}
 
 
 
@@ -3376,19 +2968,19 @@ function MixerPage() {
                   setVarispeed={setVarispeed}
                   delaysRef={delaysRef}
                   backgroundVideo={songData?.background_video}
-                  primaryColor={primary}
+                  primaryColor={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.accent || currentTheme?.text || '#E8E8E8') : primary}
                   varispeedMode={isNaturalVarispeed ? 'natural' : 'timeStretch'}
                   onVarispeedModeChange={(mode) => setIsNaturalVarispeed(mode === 'natural')}
                 />
               </div>
-            ) : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? (
-              /* Retro Window - Mixer Box (OLD COMPUTER) */
+            ) : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? (
+              /* Retro Window - Mixer Box (OLD COMPUTER) / Analog Panel */
               <div 
                 style={{
-                  backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.cardBg : '#D4C5B9',
-                  border: (pageTheme === 'OLD COMPUTER 2') ? `3px solid ${color2Colors.border}` : '3px solid #000000',
-                  borderTop: (pageTheme === 'OLD COMPUTER 2') ? `3px solid ${color2Colors.border}` : '3px solid #000000',
-                  boxShadow: 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
+                  backgroundColor: (pageTheme === 'ANALOG PANEL') ? 'transparent' : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.cardBg : '#D4C5B9'),
+                  border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : ((pageTheme === 'OLD COMPUTER 2') ? `3px solid ${color2Colors.border}` : '3px solid #000000'),
+                  borderTop: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : ((pageTheme === 'OLD COMPUTER 2') ? `3px solid ${color2Colors.border}` : '3px solid #000000'),
+                  boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff',
                   padding: isMobile ? '4px' : '8px',
                   paddingTop: isMobile ? '4px' : '8px',
                   position: 'relative',
@@ -3403,58 +2995,117 @@ function MixerPage() {
                   display: 'block',
                 }}
               >
-                {/* Title Bar */}
-                <div 
-                  style={{
-                    backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowTitleBg : '#C0C0C0',
-                    border: (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000',
-                    padding: isMobile ? '3px 6px' : '4px 8px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: isMobile ? '2px' : '4px',
-                    fontSize: isMobile ? '11px' : '15px',
-                    fontWeight: 'bold',
-                    color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#000000',
-                    fontFamily: 'monospace',
-                  }}
-                >
-                  <span>MIXER</span>
-                  <button
-                    onClick={() => setIsListeningMode(!isListeningMode)}
+                {/* Title Bar / Embedded Label */}
+                {pageTheme === 'ANALOG PANEL' ? (
+                  <div 
                     style={{
-                      padding: isMobile ? '2px 6px' : '3px 8px',
-                      fontSize: isMobile ? '9px' : '11px',
-                      backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9',
-                      border: (pageTheme === 'OLD COMPUTER 2') ? `1px solid ${color2Colors.border}` : '1px solid #000',
-                      cursor: 'pointer',
-                      fontFamily: 'monospace',
-                      fontWeight: 'bold',
-                      color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : '#000000',
-                      boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER 2') ? color2Colors.sectionBg : '#E8D9CD';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9';
+                      position: 'relative',
+                      borderTop: `1px solid ${currentTheme?.border || '#D0D0D0'}`,
+                      marginTop: isMobile ? '2px' : '4px',
+                      marginBottom: isMobile ? '6px' : '8px',
                     }}
                   >
-                    {isListeningMode ? 'MIX' : 'LISTEN'}
-                  </button>
-                </div>
+                    <span 
+                      style={{
+                        position: 'absolute',
+                        left: isMobile ? '8px' : '12px',
+                        top: '-8px',
+                        backgroundColor: currentTheme?.background || '#1a1a1a',
+                        padding: '0 8px',
+                        fontSize: isMobile ? '9px' : '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        color: currentTheme?.text || '#E8E8E8',
+                        fontFamily: 'Arial, Helvetica, sans-serif',
+                      }}
+                    >
+                      MIXER
+                    </span>
+                  </div>
+                ) : (
+                  <div 
+                    style={{
+                      backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowTitleBg : '#C0C0C0',
+                      border: (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000',
+                      padding: isMobile ? '3px 6px' : '4px 8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: isMobile ? '2px' : '4px',
+                      fontSize: isMobile ? '11px' : '15px',
+                      fontWeight: 'bold',
+                      color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#000000',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    <span>MIXER</span>
+                    <button
+                      onClick={() => setIsListeningMode(!isListeningMode)}
+                      style={{
+                        padding: isMobile ? '2px 6px' : '3px 8px',
+                        fontSize: isMobile ? '9px' : '11px',
+                        backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9',
+                        border: (pageTheme === 'OLD COMPUTER 2') ? `1px solid ${color2Colors.border}` : '1px solid #000',
+                        cursor: 'pointer',
+                        fontFamily: 'monospace',
+                        fontWeight: 'bold',
+                        color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : '#000000',
+                        boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER 2') ? color2Colors.sectionBg : '#E8D9CD';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9';
+                      }}
+                    >
+                      {isListeningMode ? 'MIX' : 'LISTEN'}
+                    </button>
+                  </div>
+                )}
+
+                {/* Listen/Mix Button for ANALOG PANEL */}
+                {pageTheme === 'ANALOG PANEL' && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: isMobile ? '6px' : '8px' }}>
+                    <button
+                      onClick={() => setIsListeningMode(!isListeningMode)}
+                      style={{
+                        padding: isMobile ? '2px 6px' : '3px 8px',
+                        fontSize: isMobile ? '9px' : '11px',
+                        backgroundColor: currentTheme?.buttonBg || '#2a2a2a',
+                        border: `1px solid ${currentTheme?.border || '#D0D0D0'}`,
+                        cursor: 'pointer',
+                        fontFamily: 'Arial, Helvetica, sans-serif',
+                        fontWeight: 'normal',
+                        color: currentTheme?.buttonText || '#E8E8E8',
+                        boxShadow: 'none',
+                        borderRadius: '0',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = currentTheme?.buttonBg || '#2a2a2a';
+                      }}
+                    >
+                      {isListeningMode ? 'MIX' : 'LISTEN'}
+                    </button>
+                  </div>
+                )}
 
                 {/* Content Area with Scrollable Modules or CD Spinner */}
                 <div 
                   style={{
-                    backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowContentBg : '#808080',
-                    border: (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000',
+                    backgroundColor: (pageTheme === 'ANALOG PANEL') ? 'transparent' : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowContentBg : '#808080'),
+                    border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : ((pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000'),
                     padding: isMobile ? '10px' : '20px',
                     position: 'relative',
                     minHeight: isMobile ? '160px' : '200px',
                     zIndex: 20,
-                    color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#FFF',
-                    fontFamily: 'monospace',
+                    color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#FFF'),
+                    fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'monospace',
                     overflowX: isListeningMode ? 'hidden' : 'auto',
                     overflowY: isListeningMode ? 'hidden' : 'visible',
                     touchAction: isMobile ? 'pan-x' : 'auto',
@@ -3753,7 +3404,7 @@ function MixerPage() {
                         color: pageTheme === 'CLASSIC' 
                           ? (isTransparent ? primary : 'white')
                           : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (isTransparent ? primary : 'white')),
-                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                         flexGrow: 1,
                         justifyContent: 'center',
                         marginBottom: isVerySmallScreen 
@@ -3835,207 +3486,9 @@ function MixerPage() {
                           : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (isTransparent ? primary : 'white')),
                         fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit'
                       }}>
-                        {/* Effect Type Dropdown */}
-                        <div className="mb-0.5 relative" style={{ zIndex: 10, overflow: 'visible', width: '100%', display: 'flex', justifyContent: 'center' }}>
-                          {/* Custom Dropdown Menu - positioned above */}
-                          <div 
-                            id={`effect-dropdown-${stem.label}`}
-                            className="absolute rounded shadow-lg hidden"
-                            style={{ 
-                              bottom: '100%', 
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                              marginBottom: '4px',
-                              zIndex: 10,
-                              width: 'fit-content',
-                              minWidth: '60px',
-                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                              backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                ? (isTransparent ? 'rgba(255,255,255,0.1)' : '#FFFFFF')
-                                : (isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC'),
-                              backdropFilter: isTransparent ? 'blur(4px)' : 'none',
-                              borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
-                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            <div 
-                              className="px-2 py-1 cursor-pointer font-mono transition-colors"
-                              style={{ 
-                                fontSize: '10px',
-                                color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                                backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : 'transparent')),
-                                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                                fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                                textDecoration: 'none',
-                                borderBottom: 'none',
-                                WebkitTapHighlightColor: 'transparent',
-                                outline: 'none'
-                              }}
-                              onMouseEnter={(e) => {
-                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                                  e.currentTarget.style.backgroundColor = '#E0E0E0';
-                                  e.currentTarget.style.color = '#000000';
-                                } else {
-                                  e.currentTarget.style.backgroundColor = primary;
-                                  e.currentTarget.style.color = '#FCFAEE';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                                  e.currentTarget.style.backgroundColor = pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE');
-                                  e.currentTarget.style.color = '#000000';
-                                } else {
-                                  e.currentTarget.style.backgroundColor = 'transparent';
-                                  e.currentTarget.style.color = primary;
-                                }
-                              }}
-                              onClick={() => {
-                                setSelectedEffects(prev => ({ ...prev, [stem.label]: 'reverb' }))
-                                document.getElementById(`effect-dropdown-${stem.label}`)?.classList.add('hidden')
-                              }}
-                            >
-                              REVERB
-                            </div>
-                            <div 
-                              className="px-2 py-1 cursor-pointer font-mono transition-colors"
-                              style={{ 
-                                fontSize: '10px',
-                                color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                                backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : 'transparent')),
-                                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                                fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                                textDecoration: 'none',
-                                borderBottom: 'none',
-                                WebkitTapHighlightColor: 'transparent',
-                                outline: 'none'
-                              }}
-                              onMouseEnter={(e) => {
-                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                                  e.currentTarget.style.backgroundColor = '#E0E0E0';
-                                  e.currentTarget.style.color = '#000000';
-                                } else {
-                                  e.currentTarget.style.backgroundColor = primary;
-                                  e.currentTarget.style.color = '#FCFAEE';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                                  e.currentTarget.style.backgroundColor = pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE');
-                                  e.currentTarget.style.color = '#000000';
-                                } else {
-                                  e.currentTarget.style.backgroundColor = 'transparent';
-                                  e.currentTarget.style.color = primary;
-                                }
-                              }}
-                              onClick={() => {
-                                setSelectedEffects(prev => ({ ...prev, [stem.label]: 'echo' }))
-                                document.getElementById(`effect-dropdown-${stem.label}`)?.classList.add('hidden')
-                              }}
-                            >
-                              ECHO
-                            </div>
-                          </div>
-                          
-                          <div 
-                            className="text-[#FCFAEE] rounded font-mono cursor-pointer flex items-center justify-center transition-colors px-0 py-1 gap-0"
-                            style={{ 
-                              fontSize: '10px',
-                              backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                ? 'transparent' 
-                                : (pageTheme === 'MUNY' ? '#FFFFFF' : (isTransparent ? 'rgba(255,255,255,0.1)' : primary)),
-                              color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                ? '#000000' 
-                                : (isTransparent ? primary : '#FCFAEE'),
-                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'none' : ((pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : `1px solid ${primary}`),
-                              borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
-                              fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'none' : ((pageTheme === 'MUNY') ? 'inset -1px -1px 0 #000' : (pageTheme === 'OLD INTERNET' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none')),
-                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                              outline: 'none',
-                              width: 'fit-content',
-                              minWidth: 'fit-content',
-                              whiteSpace: 'nowrap',
-                              margin: '0 auto'
-                            }}
-                            onMouseEnter={(e) => {
-                              // Darken the color on hover (only for non-transparent and not OLD COMPUTER)
-                              if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                                // No background change for OLD COMPUTER theme
-                                return;
-                              }
-                              if (!isTransparent) {
-                                const rgb = primary.match(/\d+/g);
-                                if (rgb) {
-                                  const r = Math.max(0, parseInt(rgb[0]) - 30);
-                                  const g = Math.max(0, parseInt(rgb[1]) - 30);
-                                  const b = Math.max(0, parseInt(rgb[2]) - 30);
-                                  e.currentTarget.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
-                                }
-                              } else {
-                                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.2)';
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                ? 'transparent' 
-                                : (pageTheme === 'MUNY' ? '#FFFFFF' : (isTransparent ? 'rgba(255,255,255,0.1)' : primary));
-                            }}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              const dropdown = document.getElementById(`effect-dropdown-${stem.label}`)
-                              if (dropdown) {
-                                dropdown.classList.toggle('hidden')
-                              }
-                            }}
-                            onMouseDown={(e) => {
-                              e.preventDefault()
-                              e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                ? '#D4C5B9' 
-                                : (isTransparent ? 'rgba(255,255,255,0.1)' : primary)
-                            }}
-                            onMouseUp={(e) => {
-                              e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                ? '#D4C5B9' 
-                                : (isTransparent ? 'rgba(255,255,255,0.1)' : primary)
-                            }}
-                            onTouchStart={(e) => {
-                              e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                ? '#D4C5B9' 
-                                : (isTransparent ? 'rgba(255,255,255,0.1)' : primary)
-                            }}
-                            onTouchEnd={(e) => {
-                              e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                ? '#D4C5B9' 
-                                : (isTransparent ? 'rgba(255,255,255,0.1)' : primary)
-                            }}
-                          >
-                            <span style={{ fontSize: '12px' }}>EFFECT</span>
-                            <span className="ml-0.5" style={{ fontSize: '8px' }}>▼</span>
-                          </div>
-                        </div>
-                        
-                        {/* Config Button */}
-                        <span 
-                          className="mb-1 cursor-pointer font-mono text-xs transition-all duration-200 ease-in-out"
-                          style={{ 
-                            color: pageTheme === 'CLASSIC' 
-                          ? (isTransparent ? primary : 'white')
-                          : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (isTransparent ? primary : 'white')),
-                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                            fontSize: '10px',
-                            letterSpacing: '0.5px',
-                            display: 'inline-block',
-                            padding: isMobile ? '4px 6px' : '0',
-                            borderRadius: isMobile ? '4px' : '0',
-                            backgroundColor: 'transparent',
-                            touchAction: 'manipulation',
-                            textDecoration: 'none',
-                            WebkitTapHighlightColor: 'transparent',
-                            borderBottom: 'none',
-                            outline: 'none'
-                          }}
+                        {/* Settings Icon Button - Above REVERB */}
+                        <button
+                          className="" 
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
@@ -4058,9 +3511,198 @@ function MixerPage() {
                               handleEchoConfigOpen(stem.label, stemIndex, { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY })
                             }
                           }}
+                          style={{ 
+                            padding: '4px',
+                            fontSize: isVerySmallScreen ? '9px' : '10px',
+                            backgroundColor: 'transparent',
+                            color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
+                              ? '#000000' 
+                              : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8',
+                            border: 'none',
+                            fontWeight: 'bold',
+                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
+                            cursor: 'pointer',
+                            outline: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            touchAction: 'manipulation',
+                            WebkitTapHighlightColor: 'transparent',
+                            marginBottom: '4px',
+                            marginTop: isMobile ? '-8px' : '-12px',
+                            height: isMobile ? '28px' : '26px',
+                            width: isMobile ? '100%' : (isVerySmallScreen ? '75px' : isSmallScreen ? '72px' : '70px'),
+                            textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                            letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined,
+                            WebkitAppearance: 'none',
+                            MozAppearance: 'none',
+                            appearance: 'none'
+                          }}
+                          onMouseDown={(e) => {
+                            e.preventDefault()
+                          }}
+                          onTouchStart={(e) => {
+                            e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
+                              ? '#D4C5B9' 
+                              : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.sectionBg || '#3a3a3a') : 'rgba(58, 58, 58, 0.9)'
+                          }}
+                          onTouchEnd={(e) => {
+                            e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
+                              ? '#D4C5B9' 
+                              : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : 'rgba(42, 42, 42, 0.8)'
+                          }}
                         >
-                          {(selectedEffects[stem.label] || 'reverb') === 'reverb' ? 'REVERB' : 'ECHO'}
-                        </span>
+                          <svg 
+                            width="14" 
+                            height="14" 
+                            viewBox="0 0 24 24" 
+                            fill="none" 
+                            stroke={(pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
+                              ? '#000000' 
+                              : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8'}
+                            strokeWidth="2" 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                        </button>
+
+                        {/* Effect Type Dropdown */}
+                        <div className="mb-0.5 relative" style={{ zIndex: 10, overflow: 'visible', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                          {/* Custom Dropdown Menu - positioned above */}
+                          <div 
+                            id={`effect-dropdown-${stem.label}`}
+                            className="absolute rounded shadow-lg hidden"
+                            style={{ 
+                              bottom: '100%', 
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              marginBottom: '4px',
+                              zIndex: 10,
+                              width: 'fit-content',
+                              minWidth: '60px',
+                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : ((pageTheme === 'MUNY' || pageTheme === 'OLD INTERNET') ? '2px solid #000000' : (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : `1px solid rgba(208, 208, 208, 0.5)`),
+                              backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
+                                ? (isTransparent ? 'rgba(255,255,255,0.1)' : '#FFFFFF')
+                                : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : 'rgba(42, 42, 42, 0.95)'),
+                              backdropFilter: isTransparent ? 'blur(4px)' : 'none',
+                              borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '4px',
+                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'ANALOG PANEL') ? 'none' : 'none',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            <div 
+                              className="px-2 py-1 cursor-pointer font-mono transition-colors"
+                              style={{ 
+                                fontSize: '10px',
+                                color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8',
+                                backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : 'transparent'),
+                                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
+                                fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
+                                textDecoration: 'none',
+                                borderBottom: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : ((pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : '1px solid rgba(208, 208, 208, 0.3)'),
+                                WebkitTapHighlightColor: 'transparent',
+                                outline: 'none'
+                              }}
+                              onMouseEnter={(e) => {
+                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
+                                  e.currentTarget.style.backgroundColor = '#E0E0E0';
+                                  e.currentTarget.style.color = '#000000';
+                                } else if (pageTheme === 'ANALOG PANEL') {
+                                  e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a';
+                                } else {
+                                  e.currentTarget.style.backgroundColor = 'rgba(58, 58, 58, 0.9)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
+                                  e.currentTarget.style.backgroundColor = pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE');
+                                  e.currentTarget.style.color = '#000000';
+                                } else if (pageTheme === 'ANALOG PANEL') {
+                                  e.currentTarget.style.backgroundColor = currentTheme?.buttonBg || '#2a2a2a';
+                                } else {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }
+                              }}
+                              onClick={() => {
+                                setSelectedEffects(prev => ({ ...prev, [stem.label]: 'reverb' }))
+                                document.getElementById(`effect-dropdown-${stem.label}`)?.classList.add('hidden')
+                              }}
+                            >
+                              REVERB
+                            </div>
+                            <div 
+                              className="px-2 py-1 cursor-pointer font-mono transition-colors"
+                              style={{ 
+                                fontSize: '10px',
+                                color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8',
+                                backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : 'transparent'),
+                                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
+                                fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
+                                textDecoration: 'none',
+                                borderBottom: 'none',
+                                WebkitTapHighlightColor: 'transparent',
+                                outline: 'none'
+                              }}
+                              onMouseEnter={(e) => {
+                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
+                                  e.currentTarget.style.backgroundColor = '#E0E0E0';
+                                  e.currentTarget.style.color = '#000000';
+                                } else if (pageTheme === 'ANALOG PANEL') {
+                                  e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a';
+                                } else {
+                                  e.currentTarget.style.backgroundColor = 'rgba(58, 58, 58, 0.9)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
+                                  e.currentTarget.style.backgroundColor = pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE');
+                                  e.currentTarget.style.color = '#000000';
+                                } else if (pageTheme === 'ANALOG PANEL') {
+                                  e.currentTarget.style.backgroundColor = currentTheme?.buttonBg || '#2a2a2a';
+                                } else {
+                                  e.currentTarget.style.backgroundColor = 'transparent';
+                                }
+                              }}
+                              onClick={() => {
+                                setSelectedEffects(prev => ({ ...prev, [stem.label]: 'echo' }))
+                                document.getElementById(`effect-dropdown-${stem.label}`)?.classList.add('hidden')
+                              }}
+                            >
+                              ECHO
+                            </div>
+                          </div>
+                          
+                          {/* REVERB Dropdown - Text Only */}
+                          <div 
+                            className="font-mono cursor-pointer flex items-center justify-center"
+                            style={{ 
+                              fontSize: isVerySmallScreen ? '9px' : '10px',
+                              color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
+                                ? '#000000' 
+                                : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8',
+                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
+                              fontWeight: 'bold',
+                              marginBottom: isMobile ? '12px' : '16px',
+                              gap: '4px',
+                              textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                              letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              const dropdown = document.getElementById(`effect-dropdown-${stem.label}`)
+                              if (dropdown) {
+                                dropdown.classList.toggle('hidden')
+                              }
+                            }}
+                          >
+                            <span>{(selectedEffects[stem.label] || 'reverb').toUpperCase()}</span>
+                            <span style={{ fontSize: isVerySmallScreen ? '8px' : '10px' }}>▼</span>
+                          </div>
+                        </div>
                         
                         {/* Effect Knob */}
                         <DelayKnob
@@ -4106,12 +3748,13 @@ function MixerPage() {
                       <div style={{
                         display: 'flex',
                         width: '100%',
-                        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+                        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '8px',
                         overflow: 'hidden',
-                        border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
+                        border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : `1px solid rgba(208, 208, 208, 0.5)`,
+                        backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? undefined : 'rgba(42, 42, 42, 0.8)',
                         marginBottom: '6px',
                         height: isMobile ? '28px' : '32px',
-                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'ANALOG PANEL') ? 'none' : 'none',
                       }}>
                         {/* Left side - MUTE (M) */}
                         <button
@@ -4127,14 +3770,14 @@ function MixerPage() {
                             fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'bold',
                             padding: '0',
                             border: 'none',
-                            borderRight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
+                            borderRight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : `1px solid rgba(208, 208, 208, 0.5)`,
                             backgroundColor: mutes[stem.label] 
                               ? '#FFB3B3' 
-                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : '#FCFAEE'),
+                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : 'rgba(42, 42, 42, 0.8)'),
                             color: mutes[stem.label] 
                               ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : 'black')
-                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FFFFFF' : primary),
-                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FFFFFF' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8'),
+                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -4159,11 +3802,11 @@ function MixerPage() {
                             border: 'none',
                             backgroundColor: solos[stem.label] 
                               ? '#FFD700' 
-                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : '#FCFAEE'),
+                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : 'rgba(42, 42, 42, 0.8)'),
                             color: solos[stem.label] 
                               ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : 'black')
-                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FFFFFF' : primary),
-                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                              : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FFFFFF' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8'),
+                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
@@ -4180,14 +3823,14 @@ function MixerPage() {
                         style={{
                           fontSize: isVerySmallScreen ? '9px' : isSmallScreen ? '9.5px' : isMobile ? '10px' : '10px',
                           padding: isMobile ? '2px 4px' : '3px 6px',
-                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
-                          backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#FCFAEE',
-                          color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
+                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '8px',
+                          backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : 'rgba(42, 42, 42, 0.8)',
+                          color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8',
                           marginTop: '4px',
-                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                           fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                          border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                          border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : `1px solid rgba(208, 208, 208, 0.5)`,
+                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'ANALOG PANEL') ? 'none' : 'none',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -4287,7 +3930,7 @@ function MixerPage() {
                             ? (isTransparent ? 'rgba(255,255,255,0.05)' : '#D4C5B9') // Beige like buttons
                             : pageTheme === 'MUNY'
                             ? (isTransparent ? 'rgba(255,255,255,0.05)' : '#FFFFFF') // White for MUNY
-                            : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary))),
+                              : (isTransparent ? 'rgba(255,255,255,0.05)' : ((pageTheme === 'ANALOG PANEL') ? 'transparent' : (currentTheme?.moduleBg || primary)))),
                         border: pageTheme === 'CLASSIC'
                           ? (isTransparent ? `1px solid ${primary}` : '1px solid #444')
                           : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
@@ -4359,7 +4002,7 @@ function MixerPage() {
                           color: pageTheme === 'CLASSIC' 
                             ? (isTransparent ? primary : 'white')
                             : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (isTransparent ? primary : 'white')),
-                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                           flexGrow: 1,
                           justifyContent: 'center',
                           marginBottom: isVerySmallScreen 
@@ -4460,8 +4103,8 @@ function MixerPage() {
                                   ? (isTransparent ? 'rgba(255,255,255,0.1)' : '#FFFFFF')
                                   : (isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC'),
                                 backdropFilter: isTransparent ? 'blur(4px)' : 'none',
-                                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
-                                boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '4px',
+                                boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'ANALOG PANEL') ? 'none' : 'none',
                                 whiteSpace: 'nowrap',
                               }}
                             >
@@ -4471,7 +4114,7 @@ function MixerPage() {
                                   fontSize: '10px',
                                   color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
                                   backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : 'transparent')),
-                                  fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                                  fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                                   fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
                                   textDecoration: 'none',
                                   borderBottom: 'none',
@@ -4509,7 +4152,7 @@ function MixerPage() {
                                   fontSize: '10px',
                                   color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
                                   backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : 'transparent')),
-                                  fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                                  fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                                   fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
                                   textDecoration: 'none',
                                   borderBottom: 'none',
@@ -4554,10 +4197,10 @@ function MixerPage() {
                                   ? '#000000' 
                                   : (isTransparent ? primary : '#FCFAEE'),
                                 border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+                                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '4px',
                                 fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
                                 boxShadow: ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') || pageTheme === 'MUNY') ? 'inset -1px -1px 0 #000' : (pageTheme === 'OLD INTERNET' ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none'),
-                                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                                 outline: 'none',
                                 width: 'fit-content',
                                 minWidth: 'fit-content',
@@ -4625,7 +4268,7 @@ function MixerPage() {
                               color: pageTheme === 'CLASSIC' 
                             ? (isTransparent ? primary : 'white')
                             : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (isTransparent ? primary : 'white')),
-                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                               fontSize: '10px',
                               letterSpacing: '0.5px',
                               display: 'inline-block',
@@ -4708,12 +4351,12 @@ function MixerPage() {
                         <div style={{
                           display: 'flex',
                           width: '100%',
-                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '4px',
                           overflow: 'hidden',
                           border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
                           marginBottom: '6px',
                           height: isMobile ? '28px' : '32px',
-                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'ANALOG PANEL') ? 'none' : 'none',
                         }}>
                           {/* Left side - MUTE (M) */}
                           <button
@@ -4729,14 +4372,14 @@ function MixerPage() {
                               fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'bold',
                               padding: '0',
                               border: 'none',
-                              borderRight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
+                              borderRight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : `1px solid rgba(208, 208, 208, 0.5)`,
                               backgroundColor: mutes[stem.label] 
                                 ? '#FFB3B3' 
                                 : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : '#FCFAEE'),
                               color: mutes[stem.label] 
                                 ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : 'black')
                                 : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FFFFFF' : primary),
-                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
@@ -4765,7 +4408,7 @@ function MixerPage() {
                               color: solos[stem.label] 
                                 ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : 'black')
                                 : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FFFFFF' : primary),
-                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                              fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
@@ -4782,14 +4425,14 @@ function MixerPage() {
                           style={{
                             fontSize: isVerySmallScreen ? '9px' : isSmallScreen ? '9.5px' : isMobile ? '10px' : '10px',
                             padding: isMobile ? '2px 4px' : '3px 6px',
-                            borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+                            borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '4px',
                             backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#FCFAEE',
                             color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
                             marginTop: '4px',
-                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                             fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
                             border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                            boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                            boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'ANALOG PANEL') ? 'none' : 'none',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -4841,56 +4484,94 @@ function MixerPage() {
                   maxWidth: '896px',
                 }}
               >
-                {/* Title Bar */}
-                <div 
-                  style={{
-                    backgroundColor: (pageTheme === 'OLD COMPUTER') 
-                      ? '#C0C0C0' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? color2Colors.windowTitleBg 
-                        : (isTransparent ? 'rgba(255,255,255,0.1)' : primary),
-                    border: (pageTheme === 'OLD COMPUTER') 
-                      ? '2px solid #000' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? `2px solid ${color2Colors.border}` 
-                        : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
-                    padding: '4px 8px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '4px',
-                    fontSize: '15px',
-                    fontWeight: 'bold',
-                    color: (pageTheme === 'OLD COMPUTER') 
-                      ? '#000000' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? color2Colors.text 
-                        : (isTransparent ? primary : '#FCFAEE'),
-                    fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                  }}
-                >
-                  <span>CONTROLS</span>
-                </div>
+                {/* Title Bar - Matching mobile embedded label style */}
+                {pageTheme === 'ANALOG PANEL' ? (
+                  <div 
+                    style={{
+                      position: 'relative',
+                      borderTop: `1px solid ${currentTheme?.border || '#D0D0D0'}`,
+                      marginTop: '4px',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    <span 
+                      style={{
+                        position: 'absolute',
+                        left: '12px',
+                        top: '-8px',
+                        backgroundColor: currentTheme?.background || '#1a1a1a',
+                        padding: '0 8px',
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        color: currentTheme?.text || '#E8E8E8',
+                        fontFamily: 'Arial, Helvetica, sans-serif',
+                      }}
+                    >
+                      CONTROLS
+                    </span>
+                  </div>
+                ) : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? (
+                  <div 
+                    style={{
+                      backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowTitleBg : '#C0C0C0',
+                      border: (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : '2px solid #000',
+                      padding: '4px 8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '4px',
+                      fontSize: '15px',
+                      fontWeight: 'bold',
+                      color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#000000',
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    <span>CONTROLS</span>
+                  </div>
+                ) : (
+                  <div 
+                    style={{
+                      backgroundColor: (isTransparent ? 'rgba(255,255,255,0.1)' : primary),
+                      border: (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
+                      padding: '4px 8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '4px',
+                      fontSize: '15px',
+                      fontWeight: 'bold',
+                      color: (isTransparent ? primary : '#FCFAEE'),
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    <span>CONTROLS</span>
+                  </div>
+                )}
 
                 {/* Content Area */}
                 <div 
                   style={{
-                    backgroundColor: (pageTheme === 'OLD COMPUTER') 
-                      ? '#FFFFFF' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? color2Colors.windowContentBg 
-                        : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary)),
-                    border: (pageTheme === 'OLD COMPUTER') 
-                      ? '2px solid #000' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? `2px solid ${color2Colors.border}` 
-                        : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
-                    padding: '20px',
+                    backgroundColor: (pageTheme === 'ANALOG PANEL') 
+                      ? 'transparent' 
+                      : ((pageTheme === 'OLD COMPUTER') 
+                        ? '#FFFFFF' 
+                        : (pageTheme === 'OLD COMPUTER 2') 
+                          ? color2Colors.windowContentBg 
+                          : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary))),
+                    border: (pageTheme === 'ANALOG PANEL') 
+                      ? `1px solid ${currentTheme?.border || '#D0D0D0'}` 
+                      : ((pageTheme === 'OLD COMPUTER') 
+                        ? '2px solid #000' 
+                        : (pageTheme === 'OLD COMPUTER 2') 
+                          ? `2px solid ${color2Colors.border}` 
+                          : (isTransparent ? `1px solid ${primary}` : ((pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : `1px solid ${currentTheme?.moduleBorder || primary}`))),
+                    padding: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '12px' : '20px',
                     position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: '20px',
+                    gap: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '12px' : '20px',
                     overflow: 'visible',
                   }}
                 >
@@ -4901,21 +4582,27 @@ function MixerPage() {
                       <div 
                         className="pressable font-mono tracking-wide cursor-pointer"
                         style={{ 
-                          backgroundColor: (pageTheme === 'OLD COMPUTER') 
-                            ? '#D4C5B9' 
-                            : (pageTheme === 'OLD COMPUTER 2') 
-                              ? color2Colors.buttonBg 
-                              : (pageTheme === 'MUNY' ? '#FFFFFF' : primary),
-                          color: (pageTheme === 'OLD COMPUTER') 
-                            ? '#000000' 
-                            : (pageTheme === 'OLD COMPUTER 2') 
-                              ? color2Colors.buttonText 
-                              : '#FCFAEE',
-                          border: (pageTheme === 'OLD COMPUTER') 
-                            ? '2px solid #000000' 
-                            : (pageTheme === 'OLD COMPUTER 2') 
-                              ? `2px solid ${color2Colors.border}` 
-                              : `1px solid ${primary}`,
+                          backgroundColor: (pageTheme === 'ANALOG PANEL') 
+                            ? (currentTheme?.buttonBg || '#2a2a2a')
+                            : (pageTheme === 'OLD COMPUTER') 
+                              ? '#D4C5B9' 
+                              : (pageTheme === 'OLD COMPUTER 2') 
+                                ? color2Colors.buttonBg 
+                                : (pageTheme === 'MUNY' ? '#FFFFFF' : primary),
+                          color: (pageTheme === 'ANALOG PANEL') 
+                            ? (currentTheme?.buttonText || '#E8E8E8')
+                            : (pageTheme === 'OLD COMPUTER') 
+                              ? '#000000' 
+                              : (pageTheme === 'OLD COMPUTER 2') 
+                                ? color2Colors.buttonText 
+                                : '#FCFAEE',
+                          border: (pageTheme === 'ANALOG PANEL') 
+                            ? `1px solid ${currentTheme?.border || '#D0D0D0'}`
+                            : (pageTheme === 'OLD COMPUTER') 
+                              ? '2px solid #000000' 
+                              : (pageTheme === 'OLD COMPUTER 2') 
+                                ? `2px solid ${color2Colors.border}` 
+                                : `1px solid ${primary}`,
                           padding: '8px 12px',
                           fontSize: '12px',
                           display: 'flex',
@@ -4925,8 +4612,8 @@ function MixerPage() {
                           boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
                             ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' 
                             : 'none',
-                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
+                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '4px',
                           outline: 'none'
                         }}
                         onClick={(e) => {
@@ -4939,10 +4626,10 @@ function MixerPage() {
                         }}
                         onMouseDown={(e) => {
                           e.preventDefault()
-                          e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE')
+                          e.currentTarget.style.backgroundColor = (pageTheme === 'ANALOG PANEL') ? (currentTheme?.sectionBg || '#3a3a3a') : (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE')
                         }}
                         onMouseUp={(e) => {
-                          e.currentTarget.style.backgroundColor = (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE')
+                          e.currentTarget.style.backgroundColor = (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE')
                         }}
                       >
                         <span>EFFECT</span>
@@ -4961,24 +4648,26 @@ function MixerPage() {
                           zIndex: 10,
                           minWidth: 'fit-content',
                           whiteSpace: 'nowrap',
-                          border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                          backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                            ? '#FFFFFF' 
-                            : (isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC'),
+                          border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
+                          backgroundColor: (pageTheme === 'ANALOG PANEL') 
+                            ? (currentTheme?.buttonBg || '#2a2a2a')
+                            : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
+                              ? '#FFFFFF' 
+                              : (isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC'),
                           backdropFilter: isTransparent ? 'blur(4px)' : 'none',
-                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
-                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                          borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+                          boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
                         }}
                       >
                         <div 
                           className="px-2 py-1 cursor-pointer font-mono transition-colors"
                           style={{ 
                             fontSize: '10px',
-                            color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                            backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
-                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                            color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
+                            backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
+                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                             fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                            borderBottom: '2px solid #000000'
+                            borderBottom: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : '2px solid #000000'
                           }}
                         onMouseEnter={(e) => {
                           if (pageTheme === 'OLD COMPUTER') {
@@ -4987,6 +4676,9 @@ function MixerPage() {
                           } else if (pageTheme === 'OLD COMPUTER 2') {
                             e.currentTarget.style.backgroundColor = color2Colors.sectionBg
                             e.currentTarget.style.color = color2Colors.text
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
                           } else {
                             e.currentTarget.style.backgroundColor = primary
                             e.currentTarget.style.color = '#FCFAEE'
@@ -4999,6 +4691,9 @@ function MixerPage() {
                           } else if (pageTheme === 'OLD COMPUTER 2') {
                             e.currentTarget.style.backgroundColor = color2Colors.windowContentBg
                             e.currentTarget.style.color = color2Colors.text
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.buttonBg || '#2a2a2a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
                           } else {
                             e.currentTarget.style.backgroundColor = 'transparent'
                             e.currentTarget.style.color = primary
@@ -5015,9 +4710,9 @@ function MixerPage() {
                           className="px-2 py-1 cursor-pointer font-mono transition-colors"
                           style={{ 
                             fontSize: '10px',
-                            color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                            backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
-                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                            color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
+                            backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#FCFAEE' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
+                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                             fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
                           }}
                         onMouseEnter={(e) => {
@@ -5027,6 +4722,9 @@ function MixerPage() {
                           } else if (pageTheme === 'OLD COMPUTER 2') {
                             e.currentTarget.style.backgroundColor = color2Colors.sectionBg
                             e.currentTarget.style.color = color2Colors.text
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
                           } else {
                             e.currentTarget.style.backgroundColor = primary
                             e.currentTarget.style.color = '#FCFAEE'
@@ -5039,6 +4737,9 @@ function MixerPage() {
                           } else if (pageTheme === 'OLD COMPUTER 2') {
                             e.currentTarget.style.backgroundColor = color2Colors.windowContentBg
                             e.currentTarget.style.color = color2Colors.text
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.buttonBg || '#2a2a2a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
                           } else {
                             e.currentTarget.style.backgroundColor = 'transparent'
                             e.currentTarget.style.color = primary
@@ -5063,12 +4764,15 @@ function MixerPage() {
                           }}
                           className="pressable px-4 py-2 font-mono tracking-wide"
                           style={{ 
-                            backgroundColor: (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                            color: (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
-                            border: (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
+                            backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                          color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : '#E8E8E8'),
+                          border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid rgba(208, 208, 208, 0.5)`),
                             fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : undefined,
-                            boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
-                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
+                            boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
+                            fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined),
+                            borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : undefined,
+                            textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                            letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined
                           }}
                         >
                           FLANGE
@@ -5107,11 +4811,11 @@ function MixerPage() {
                               width: '44px',
                               height: '24px',
                               backgroundColor: (globalFlanger?.enabled || false) 
-                                ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
-                                : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
-                              borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
+                                ? ((pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
+                                : ((pageTheme === 'ANALOG PANEL') ? (currentTheme?.sectionBg || '#3a3a3a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                              border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
+                              borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
+                              boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
                             }}
                           >
                             <div 
@@ -5126,10 +4830,10 @@ function MixerPage() {
                                 transform: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
                                   ? 'translateY(-50%)' 
                                   : ((globalFlanger?.enabled || false) ? 'translateX(20px)' : 'translateX(2px)'),
-                                backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
-                                border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
-                                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                                boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
+                                backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
+                                border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
+                                borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
+                                boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
                                 zIndex: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 10 : undefined
                               }}
                             />
@@ -5144,12 +4848,15 @@ function MixerPage() {
                           }}
                           className="pressable px-4 py-2 font-mono tracking-wide"
                           style={{ 
-                            backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                            color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
-                            border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
+                            backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                            color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
+                            border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
                             fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : undefined,
-                            boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
-                            fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
+                            boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
+                            fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined),
+                            borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : undefined,
+                            textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                            letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined
                           }}
                         >
                           COMPRESSOR
@@ -5185,11 +4892,11 @@ function MixerPage() {
                               width: '44px',
                               height: '24px',
                               backgroundColor: (globalCompressor?.enabled || false) 
-                                ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
-                                : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
-                              borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
+                                ? ((pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
+                                : ((pageTheme === 'ANALOG PANEL') ? (currentTheme?.sectionBg || '#3a3a3a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                              border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
+                              borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
+                              boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
                             }}
                           >
                             <div 
@@ -5204,10 +4911,10 @@ function MixerPage() {
                                 transform: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
                                   ? 'translateY(-50%)' 
                                   : ((globalCompressor?.enabled || false) ? 'translateX(20px)' : 'translateX(2px)'),
-                                backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
-                                border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
-                                borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                                boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
+                                backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
+                                border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
+                                borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
+                                boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
                                 zIndex: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 10 : undefined
                               }}
                             />
@@ -5218,7 +4925,11 @@ function MixerPage() {
                   </div>
 
                   {/* Varispeed Section */}
-                  <div className="relative" style={{ width: '350px', height: '140px', overflow: 'visible' }}>
+                  <div className="relative" style={{ 
+                    width: '350px', 
+                    height: '140px', 
+                    overflow: 'visible'
+                  }}>
                     <div
                       className="absolute top-0 left-0 w-full flex flex-col items-center"
                       style={{
@@ -5228,25 +4939,29 @@ function MixerPage() {
                     >
                       {bpm !== null && (
                         <div className="text-xs font-mono mb-1" style={{ 
-                          color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#000000',
-                          fontFamily: 'monospace',
+                          color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#000000') : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#000000',
+                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'monospace',
                           fontWeight: 'bold'
                         }}>
                           {Math.round(bpm * varispeed)} BPM
                         </div>
                       )}
                       <div className="text-sm tracking-wider" style={{ 
-                        color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#000000',
-                        fontFamily: 'monospace',
-                        fontWeight: 'bold'
+                        color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? ((pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : '#000000') : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#000000',
+                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'monospace',
+                        fontWeight: 'bold',
+                        textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                        letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined
                       }}>
                         VARISPEED
                       </div>
                     </div>
 
+                    {/* Slider Container */}
                     <div
-                      className="absolute left-1/2"
                       style={{
+                        position: 'absolute',
+                        left: '50%',
                         transform: 'translateX(-50%) rotate(-90deg)',
                         top: '-118px',
                       }}
@@ -5259,14 +4974,21 @@ function MixerPage() {
                           setVarispeedControl(newVarispeed, isNaturalVarispeed);
                         }}
                         isIOS={isIOS}
-                        primaryColor={primary}
+                        primaryColor={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.accent || currentTheme?.text || '#E8E8E8') : '#E8E8E8'}
                         stemCount={stems.length}
                         pageTheme={pageTheme}
                       />
                     </div>
 
                     {/* NATURAL/STRETCH toggle and THEMES button */}
-                    <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2" style={{ bottom: '-6px', zIndex: 100, pointerEvents: 'auto' }}>
+                    <div 
+                      className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2" 
+                      style={{ 
+                        bottom: '-6px',
+                        zIndex: 100, 
+                        pointerEvents: 'auto' 
+                      }}
+                    >
                       <button
                         onClick={() => {
                           const newMode = !isNaturalVarispeed;
@@ -5275,10 +4997,10 @@ function MixerPage() {
                         }}
                         className="px-2 py-1 text-xs font-mono rounded border"
                         style={{ 
-                          color: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : '#000000',
-                          borderColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.border : '#000000',
-                          borderWidth: '2px',
-                          backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9',
+                          color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : '#000000',
+                          borderColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.border || '#D0D0D0') : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.border : '#000000',
+                          borderWidth: (pageTheme === 'ANALOG PANEL') ? '1px' : '2px',
+                          backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9',
                           pointerEvents: 'auto',
                           height: '26px',
                           width: '70px',
@@ -5288,9 +5010,11 @@ function MixerPage() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 'bold',
-                          boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                          fontFamily: 'monospace',
-                          borderRadius: '0'
+                          boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                          fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'monospace',
+                          borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : '0',
+                          textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                          letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined
                         }}
                         title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
                       >
@@ -5303,10 +5027,10 @@ function MixerPage() {
                           className="px-2 py-1 text-xs font-mono rounded border"
                           data-theme-button
                           style={{ 
-                            color: (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.buttonText || color2Colors.buttonText) : '#000000',
-                            borderColor: (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.border || color2Colors.border) : '#000000',
-                            borderWidth: '2px',
-                            backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.buttonBg || color2Colors.buttonBg) : '#D4C5B9',
+                            color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.buttonText || color2Colors.buttonText) : '#000000',
+                            borderColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.border || '#D0D0D0') : (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.border || color2Colors.border) : '#000000',
+                            borderWidth: (pageTheme === 'ANALOG PANEL') ? '1px' : '2px',
+                            backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER 2') ? (currentTheme?.buttonBg || color2Colors.buttonBg) : '#D4C5B9',
                             pointerEvents: 'auto',
                             height: '26px',
                             width: isVerySmallScreen ? '75px' : isSmallScreen ? '72px' : '70px',
@@ -5315,13 +5039,15 @@ function MixerPage() {
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 'bold',
-                            boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                            fontFamily: 'monospace',
-                            borderRadius: '0',
+                            boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                            fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'monospace',
+                            borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : '0',
                             whiteSpace: 'nowrap',
                             gap: '2px',
                             zIndex: 1000,
-                            position: 'relative'
+                            position: 'relative',
+                            textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                            letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined
                           }}
                         >
                           <span>THEMES</span>
@@ -5335,15 +5061,15 @@ function MixerPage() {
                               left: '50%',
                               transform: 'translateX(-50%)',
                               marginBottom: '8px',
-                              backgroundColor: (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9',
-                              border: '2px solid #000000',
-                              borderRadius: '0',
+                              backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : '#D4C5B9',
+                              border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : '2px solid #000000',
+                              borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : '0',
                               zIndex: 1000,
                               minWidth: '120px',
-                              boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff'
+                              boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff'
                             }}
                           >
-                            {(['OLD COMPUTER', 'OLD COMPUTER 2', 'FIGMA', 'DEMO'] as const).map((themeOption, index, array) => (
+                            {(['OLD COMPUTER', 'OLD COMPUTER 2', 'FIGMA', 'DEMO', 'ANALOG PANEL'] as const).map((themeOption, index, array) => (
                               <div
                                 key={themeOption}
                                 onClick={() => {
@@ -5353,21 +5079,33 @@ function MixerPage() {
                                 style={{
                                   padding: '10px 16px',
                                   cursor: 'pointer',
-                                  backgroundColor: pageTheme === themeOption ? '#E0E0E0' : '#D4C5B9',
-                                  color: '#000000',
-                                  borderBottom: index !== array.length - 1 ? '2px solid #000000' : 'none',
-                                  fontSize: '12px',
-                                  fontFamily: 'monospace',
-                                  fontWeight: 'bold'
+                              backgroundColor: (pageTheme === 'ANALOG PANEL') 
+                                ? (pageTheme === themeOption ? (currentTheme?.sectionBg || '#3a3a3a') : (currentTheme?.buttonBg || '#2a2a2a'))
+                                : (pageTheme === themeOption ? '#E0E0E0' : '#D4C5B9'),
+                              color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#000000',
+                              borderBottom: index !== array.length - 1 
+                                ? ((pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : '2px solid #000000')
+                                : 'none',
+                              fontSize: '12px',
+                              fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'monospace',
+                              fontWeight: 'bold'
                                 }}
                                 onMouseEnter={(e) => {
                                   if (pageTheme !== themeOption) {
-                                    e.currentTarget.style.backgroundColor = '#E0E0E0';
+                                    if (pageTheme === 'ANALOG PANEL') {
+                                      e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a';
+                                    } else {
+                                      e.currentTarget.style.backgroundColor = '#E0E0E0';
+                                    }
                                   }
                                 }}
                                 onMouseLeave={(e) => {
                                   if (pageTheme !== themeOption) {
-                                    e.currentTarget.style.backgroundColor = '#D4C5B9';
+                                    if (pageTheme === 'ANALOG PANEL') {
+                                      e.currentTarget.style.backgroundColor = currentTheme?.buttonBg || '#2a2a2a';
+                                    } else {
+                                      e.currentTarget.style.backgroundColor = '#D4C5B9';
+                                    }
                                   }
                                 }}
                               >
@@ -5377,218 +5115,42 @@ function MixerPage() {
                           </div>
                         )}
                       </div>
-
-                      {/* EDIT button for OLD COMPUTER 2 */}
-                      {pageTheme === 'OLD COMPUTER 2' && (
-                        <button
-                          onClick={() => setShowColor2Editor(true)}
-                          className="px-2 py-1 text-xs font-mono rounded border"
-                          style={{ 
-                            color: currentTheme?.buttonText || color2Colors.buttonText,
-                            borderColor: currentTheme?.border || color2Colors.border,
-                            borderWidth: '2px',
-                            backgroundColor: currentTheme?.buttonBg || color2Colors.buttonBg,
-                            pointerEvents: 'auto',
-                            height: '26px',
-                            width: isVerySmallScreen ? '60px' : '65px',
-                            fontSize: isVerySmallScreen ? '9px' : '10px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 'bold',
-                            boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
-                            fontFamily: 'monospace',
-                            borderRadius: '0',
-                            whiteSpace: 'nowrap',
-                            zIndex: 1000,
-                            position: 'relative'
-                          }}
-                        >
-                          EDIT
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 🎚️ Varispeed Section - Moved up */}
-            {/* Desktop Varispeed Slider */}
-            {!isMobile && (pageTheme !== 'OLD COMPUTER' && pageTheme !== 'OLD COMPUTER 2') && (
-              <div className="w-full flex justify-center">
-                <div
-                  className="relative"
-                  style={{
-                    marginTop: '10px',
-                    width: '350px',
-                    height: '120px',
-                  }}
-                >
-                  <div
-                    className="absolute top-0 left-0 w-full flex flex-col items-center"
-                    style={{
-                      pointerEvents: 'none',
-                      marginTop: '0px',
-                    }}
-                  >
-                    {bpm !== null && (
-                      <div className="text-xs font-mono mb-1" style={{ 
-                        color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                        fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
-                      }}>
-                        {Math.round(bpm * varispeed)} BPM
-                      </div>
-                    )}
-                    <div className="text-sm tracking-wider" style={{ 
-                      color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                      fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                      fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
-                    }}>
-                      VARISPEED
                     </div>
                   </div>
 
-                  <div
-                    className="absolute left-1/2"
-                    style={{
-                      transform: 'translateX(-50%) rotate(-90deg)',
-                      top: '-118px',
-                    }}
-                  >
-                    <VarispeedSlider
-                      value={isIOS ? varispeed : 2 - varispeed}
-                      onChange={val => {
-                        const newVarispeed = isIOS ? val : 2 - val;
-                        setVarispeed(newVarispeed);
-                        setVarispeedControl(newVarispeed, isNaturalVarispeed);
-                      }}
-                      isIOS={isIOS}
-                      primaryColor={primary}
-                      stemCount={stems.length}
-                      pageTheme={pageTheme}
-                    />
-                  </div>
-                  
-                  {/* Mode Toggle Button (desktop) – Theme button temporarily disabled.
-                      ⚠️ IMPORTANT: This row is the BOTTOM BOUNDARY of the page. 
-                      Nothing can be placed below these buttons. All content must be above this line. */}
-                  <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2" style={{ bottom: '-11px' }}>
+                  {/* EDIT button for OLD COMPUTER 2 */}
+                  {pageTheme === 'OLD COMPUTER 2' && (
                     <button
-                      onClick={() => {
-                        const newMode = !isNaturalVarispeed;
-                        setIsNaturalVarispeed(newMode);
-                        setVarispeedControl(varispeed, newMode);
-                      }}
+                      onClick={() => setShowColor2Editor(true)}
                       className="px-2 py-1 text-xs font-mono rounded border"
                       style={{ 
-                        color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                        borderColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                        borderWidth: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px' : '1px',
-                        backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')
-                          ? '#D4C5B9'
-                          : pageTheme === 'MUNY'
-                          ? '#FFFFFF'
-                          : (isNaturalVarispeed ? primary + '20' : 'transparent'),
+                        color: currentTheme?.buttonText || color2Colors.buttonText,
+                        borderColor: currentTheme?.border || color2Colors.border,
+                        borderWidth: '2px',
+                        backgroundColor: currentTheme?.buttonBg || color2Colors.buttonBg,
                         pointerEvents: 'auto',
                         height: '26px',
-                        width: '70px',
-                        fontSize: isVerySmallScreen ? '10px' : '12px',
-                        padding: '0',
+                        width: isVerySmallScreen ? '60px' : '65px',
+                        fontSize: isVerySmallScreen ? '9px' : '10px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px'
+                        fontWeight: 'bold',
+                        boxShadow: 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff',
+                        fontFamily: 'monospace',
+                        borderRadius: '0',
+                        whiteSpace: 'nowrap',
+                        zIndex: 1000,
+                        position: 'relative'
                       }}
-                      title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
                     >
-                      {isNaturalVarispeed ? 'NATURAL' : 'STRETCH'}
+                      EDIT
                     </button>
-                    {/*
-                    <div className="relative" data-theme-dropdown>
-                      <button
-                        onClick={() => setShowThemeDropdown(!showThemeDropdown)}
-                        className="px-2 py-1 text-xs font-mono rounded border"
-                        data-theme-button
-                        style={{ 
-                          color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                          borderColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                          borderWidth: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px' : '1px',
-                          backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
-                          pointerEvents: 'auto',
-                          height: '26px',
-                          width: isVerySmallScreen ? '75px' : isSmallScreen ? '72px' : '70px',
-                          fontSize: isVerySmallScreen ? '10px' : '12px',
-                          padding: '0 4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
-                          whiteSpace: 'nowrap',
-                          letterSpacing: isVerySmallScreen ? '-0.3px' : '0px',
-                        }}
-                        title="Select theme"
-                      >
-                        <span>THEMES</span><span style={{ marginLeft: '2px', fontSize: isVerySmallScreen ? '8px' : '10px' }}>▼</span>
-                      </button>
-                      {showThemeDropdown && (
-                        <div
-                          style={{
-                            position: 'absolute',
-                            bottom: '100%',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            marginBottom: '8px',
-                            backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#F5F5DC')),
-                            border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                            borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
-                            zIndex: 1000,
-                            minWidth: '120px',
-                            boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 2px 8px rgba(0,0,0,0.15)'
-                          }}
-                        >
-                          {(['CLASSIC', 'OLD COMPUTER', 'MUNY', 'TERMINAL THEME', 'OLD INTERNET'] as const).map(themeOption => (
-                            <div
-                              key={themeOption}
-                              onClick={() => handleThemeChange(themeOption)}
-                              style={{
-                                padding: '10px 16px',
-                                cursor: 'pointer',
-                                backgroundColor: pageTheme === themeOption ? primary : '#F5F5DC',
-                                color: pageTheme === themeOption ? '#FCFAEE' : primary,
-                                borderBottom: themeOption !== 'TERMINAL THEME' ? `1px solid ${primary}` : 'none',
-                                fontSize: '12px',
-                                fontFamily: 'monospace'
-                              }}
-                              onMouseEnter={(e) => {
-                                if (pageTheme !== themeOption) {
-                                  e.currentTarget.style.backgroundColor = primary + '20'
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (pageTheme !== themeOption) {
-                                  e.currentTarget.style.backgroundColor = '#F5F5DC'
-                                }
-                              }}
-                            >
-                              {themeOption === 'CLASSIC' ? 'classic' : themeOption}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    */}
-                  </div>
+                  )}
                 </div>
               </div>
             )}
+
 
             {/* Mobile Effect Controls - Above VARISPEED - Hidden for DEMO theme */}
             {/* Optimized for iPhone 13/14 (390x844 viewport) - ONLY move down for small screens */}
@@ -5596,104 +5158,143 @@ function MixerPage() {
               /* Mobile Controls Box for all themes */
               <div 
                 style={{
-                  backgroundColor: (pageTheme === 'OLD COMPUTER') 
+                  backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
                     ? '#D4C5B9' 
-                    : (pageTheme === 'OLD COMPUTER 2') 
-                      ? color2Colors.cardBg 
-                      : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary)),
-                  border: (pageTheme === 'OLD COMPUTER') 
+                    : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary)),
+                  border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
                     ? '3px solid #000000' 
-                    : (pageTheme === 'OLD COMPUTER 2') 
-                      ? `3px solid ${color2Colors.border}` 
-                      : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
+                    : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
                   boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
                     ? 'inset -2px -2px 0 #000, inset 2px 2px 0 #fff' 
                     : (isTransparent ? '0 0 6px rgba(255,255,255,0.2)' : 'inset 0 2px 4px rgba(0, 0, 0, 0.25)'),
                   borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '10px',
                   backdropFilter: isTransparent ? 'blur(2px)' : 'none',
-                  padding: '4px',
+                  padding: '8px',
                   position: 'relative',
                   overflow: 'visible',
                   zIndex: 10,
-                  marginTop: (isSmallScreen || isMediumScreen) ? '12px' : '-22px',
+                  marginTop: '20px',
                   marginLeft: 'auto',
                   marginRight: 'auto',
-                  marginBottom: (isSmallScreen || isMediumScreen) ? '40px' : '60px',
+                  marginBottom: '60px',
                   width: 'calc(100% - 20px)',
                   maxWidth: '896px',
                 }}
               >
-                {/* Title Bar */}
-                <div 
-                  style={{
-                    backgroundColor: (pageTheme === 'OLD COMPUTER') 
-                      ? '#C0C0C0' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? color2Colors.windowTitleBg 
-                        : (isTransparent ? 'rgba(255,255,255,0.1)' : primary),
-                    border: (pageTheme === 'OLD COMPUTER') 
-                      ? '2px solid #000' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? `2px solid ${color2Colors.border}` 
-                        : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
-                    padding: '3px 6px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '2px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    color: (pageTheme === 'OLD COMPUTER') 
-                      ? '#000000' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? color2Colors.text 
-                        : (isTransparent ? primary : '#FCFAEE'),
-                    fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                  }}
-                >
-                  <span>CONTROLS</span>
-                </div>
+                {/* Title Bar / Embedded Label */}
+                {pageTheme === 'ANALOG PANEL' ? (
+                  <div 
+                    style={{
+                      position: 'relative',
+                      borderTop: `1px solid ${currentTheme?.border || '#D0D0D0'}`,
+                      marginTop: '4px',
+                      marginBottom: '8px',
+                    }}
+                  >
+                    <span 
+                      style={{
+                        position: 'absolute',
+                        left: '12px',
+                        top: '-8px',
+                        backgroundColor: currentTheme?.background || '#1a1a1a',
+                        padding: '0 8px',
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                        color: currentTheme?.text || '#E8E8E8',
+                        fontFamily: 'Arial, Helvetica, sans-serif',
+                      }}
+                    >
+                      CONTROLS
+                    </span>
+                  </div>
+                ) : (
+                  <div 
+                    style={{
+                      backgroundColor: (pageTheme === 'OLD COMPUTER') 
+                        ? '#C0C0C0' 
+                        : (pageTheme === 'OLD COMPUTER 2') 
+                          ? color2Colors.windowTitleBg 
+                          : (isTransparent ? 'rgba(255,255,255,0.1)' : primary),
+                      border: (pageTheme === 'OLD COMPUTER') 
+                        ? '2px solid #000' 
+                        : (pageTheme === 'OLD COMPUTER 2') 
+                          ? `2px solid ${color2Colors.border}` 
+                          : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
+                      padding: '4px 8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '4px',
+                      fontSize: '15px',
+                      fontWeight: 'bold',
+                      color: (pageTheme === 'OLD COMPUTER') 
+                        ? '#000000' 
+                        : (pageTheme === 'OLD COMPUTER 2') 
+                          ? color2Colors.text 
+                          : (isTransparent ? primary : '#FCFAEE'),
+                      fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
+                    }}
+                  >
+                    <span>CONTROLS</span>
+                  </div>
+                )}
 
                 {/* Content Area */}
                 <div 
                   style={{
-                    backgroundColor: (pageTheme === 'OLD COMPUTER') 
-                      ? '#FFFFFF' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? color2Colors.windowContentBg 
-                        : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || primary)),
-                    border: (pageTheme === 'OLD COMPUTER') 
-                      ? '2px solid #000' 
-                      : (pageTheme === 'OLD COMPUTER 2') 
-                        ? `2px solid ${color2Colors.border}` 
-                        : (isTransparent ? `1px solid ${primary}` : `1px solid ${currentTheme?.moduleBorder || primary}`),
-                    padding: '12px',
+                    backgroundColor: (pageTheme === 'ANALOG PANEL') 
+                      ? 'transparent' 
+                      : ((pageTheme === 'OLD COMPUTER') 
+                        ? '#FFFFFF' 
+                        : (pageTheme === 'OLD COMPUTER 2') 
+                          ? color2Colors.windowContentBg 
+                          : (isTransparent ? 'rgba(255,255,255,0.05)' : (currentTheme?.moduleBg || 'rgba(42, 42, 42, 0.8)'))),
+                    border: (pageTheme === 'ANALOG PANEL') 
+                      ? `1px solid ${currentTheme?.border || '#D0D0D0'}` 
+                      : ((pageTheme === 'OLD COMPUTER') 
+                        ? '2px solid #000' 
+                        : (pageTheme === 'OLD COMPUTER 2') 
+                          ? `2px solid ${color2Colors.border}` 
+                          : (isTransparent ? `1px solid rgba(208, 208, 208, 0.5)` : `1px solid ${currentTheme?.moduleBorder || 'rgba(208, 208, 208, 0.5)'}`)),
+                    padding: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '12px' : '8px',
                     position: 'relative',
+                    maxWidth: '100%',
+                    overflow: 'visible', // Changed to visible so varispeed slider can show
+                    boxSizing: 'border-box'
                   }}
                 >
                     {/* Mobile Effect Controls */}
                     <div id="mobile-effect-controls" className="w-full flex justify-center sm:hidden" style={{ 
                       marginTop: '0',
                       marginLeft: '0', 
-                      marginBottom: '12px' 
+                      marginBottom: '12px',
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      paddingLeft: '4px',
+                      paddingRight: '4px',
+                      boxSizing: 'border-box'
                     }}>
-                <div className="flex justify-center gap-4">
+                <div className="flex justify-center gap-4" style={{
+                  maxWidth: '100%',
+                  flexWrap: 'wrap'
+                }}>
                   {/* Master Effect Dropdown */}
                   <div className="relative">
                     <div 
                       className="pressable font-mono tracking-wide cursor-pointer"
                       style={{ 
-                        backgroundColor: (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE')),
-                        color: (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : primary,
-                        border: (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : `1px solid ${primary}`,
+                        backgroundColor: (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : 'rgba(42, 42, 42, 0.8)')),
+                        color: (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8',
+                        border: (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : `1px solid rgba(208, 208, 208, 0.5)`,
                         padding: '4px 8px',
                         fontSize: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px',
                         fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'ANALOG PANEL') ? 'none' : 'none',
+                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                         outline: 'none'
                       }}
                       onClick={(e) => {
@@ -5734,15 +5335,15 @@ function MixerPage() {
                         marginTop: '4px',
                         minWidth: 'fit-content',
                         whiteSpace: 'nowrap',
-                        border: (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : `1px solid ${primary}`,
+                        border: (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : `1px solid rgba(208, 208, 208, 0.5)`,
                         backgroundColor: (pageTheme === 'OLD COMPUTER') 
                           ? '#FFFFFF' 
                           : (pageTheme === 'OLD COMPUTER 2') 
                             ? color2Colors.windowContentBg 
-                            : (isTransparent ? 'rgba(255,255,255,0.1)' : '#F5F5DC'),
+                            : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (isTransparent ? 'rgba(255,255,255,0.1)' : 'rgba(42, 42, 42, 0.95)'),
                         backdropFilter: isTransparent ? 'blur(4px)' : 'none',
-                        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
-                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                        borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '4px',
+                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'ANALOG PANEL') ? 'none' : 'none',
                       }}
                     >
                       <div 
@@ -5751,25 +5352,34 @@ function MixerPage() {
                           fontSize: '10px',
                           color: (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : primary,
                           backgroundColor: (pageTheme === 'OLD COMPUTER') ? '#FCFAEE' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowContentBg : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
-                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                           fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
                         }}
                         onMouseEnter={(e) => {
                           if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
                             e.currentTarget.style.backgroundColor = '#E0E0E0'
                             e.currentTarget.style.color = '#000000'
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
                           } else {
-                            e.currentTarget.style.backgroundColor = primary
-                            e.currentTarget.style.color = '#FCFAEE'
+                            e.currentTarget.style.backgroundColor = 'rgba(58, 58, 58, 0.9)'
+                            e.currentTarget.style.color = '#E8E8E8'
                           }
                         }}
                         onMouseLeave={(e) => {
                           if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
                             e.currentTarget.style.backgroundColor = pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE'
                             e.currentTarget.style.color = '#000000'
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.buttonBg || '#2a2a2a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
                           } else {
                             e.currentTarget.style.backgroundColor = 'transparent'
-                            e.currentTarget.style.color = primary
+                            e.currentTarget.style.color = '#E8E8E8'
                           }
                         }}
                         onClick={() => {
@@ -5785,25 +5395,34 @@ function MixerPage() {
                           fontSize: '10px',
                           color: (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.text : primary,
                           backgroundColor: (pageTheme === 'OLD COMPUTER') ? '#FCFAEE' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.windowContentBg : (pageTheme === 'MUNY' ? '#FFFFFF' : 'transparent'),
-                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                           fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
                         }}
                         onMouseEnter={(e) => {
                           if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
                             e.currentTarget.style.backgroundColor = '#E0E0E0'
                             e.currentTarget.style.color = '#000000'
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
                           } else {
-                            e.currentTarget.style.backgroundColor = primary
-                            e.currentTarget.style.color = '#FCFAEE'
+                            e.currentTarget.style.backgroundColor = 'rgba(58, 58, 58, 0.9)'
+                            e.currentTarget.style.color = '#E8E8E8'
                           }
                         }}
                         onMouseLeave={(e) => {
                           if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
                             e.currentTarget.style.backgroundColor = pageTheme === 'MUNY' ? '#FFFFFF' : '#FCFAEE'
                             e.currentTarget.style.color = '#000000'
+                          } else if (pageTheme === 'ANALOG PANEL') {
+                            e.currentTarget.style.backgroundColor = currentTheme?.buttonBg || '#2a2a2a'
+                            e.currentTarget.style.color = currentTheme?.text || '#E8E8E8'
                           } else {
                             e.currentTarget.style.backgroundColor = 'transparent'
-                            e.currentTarget.style.color = primary
+                            e.currentTarget.style.color = '#E8E8E8'
                           }
                         }}
                         onClick={() => {
@@ -5825,14 +5444,17 @@ function MixerPage() {
                           handleFlangerConfigOpen()
                         }}
                         className="pressable px-3 py-1 text-sm font-mono tracking-wide"
-                        style={{ 
-                          backgroundColor: (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                          color: (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
-                          border: (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
-                          fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : undefined,
-                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
-                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
-                        }}
+                          style={{ 
+                            backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER') ? '#D4C5B9' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonBg : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                          color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : (pageTheme === 'OLD COMPUTER') ? '#000000' : (pageTheme === 'OLD COMPUTER 2') ? color2Colors.buttonText : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : '#E8E8E8'),
+                          border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER') ? '2px solid #000000' : (pageTheme === 'OLD COMPUTER 2') ? `2px solid ${color2Colors.border}` : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid rgba(208, 208, 208, 0.5)`),
+                            fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : undefined,
+                            boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
+                            fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined),
+                            borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : undefined,
+                            textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                            letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined
+                          }}
                       >
                         FLANGE
                       </button>
@@ -5870,13 +5492,13 @@ function MixerPage() {
                             width: '36px',
                             height: '20px',
                             backgroundColor: (globalFlanger?.enabled || false) 
-                          ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
-                          : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                            border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
-                            borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
-                            borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
-                            borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                            boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
+                          ? ((pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : 'rgba(42, 42, 42, 0.8)')))
+                          : ((pageTheme === 'ANALOG PANEL') ? (currentTheme?.sectionBg || '#3a3a3a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                            border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
+                            borderColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.border || '#D0D0D0') : (pageTheme === 'CLASSIC' ? 'rgba(208, 208, 208, 0.5)' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined)),
+                            borderWidth: (pageTheme === 'ANALOG PANEL') ? '1px' : (pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined)),
+                            borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
+                            boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
                           }}
                         >
                           <div 
@@ -5891,10 +5513,10 @@ function MixerPage() {
                               transform: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
                                 ? 'translateY(-50%)' 
                                 : ((globalFlanger?.enabled || false) ? 'translateX(16px)' : 'translateX(2px)'),
-                              backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
-                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
-                              borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
+                              backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
+                              border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
+                              borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
+                              boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
                               zIndex: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 10 : undefined
                             }}
                           />
@@ -5909,13 +5531,16 @@ function MixerPage() {
                           handleCompressorConfigOpen()
                         }}
                         className="pressable px-3 py-1 text-sm font-mono tracking-wide"
-                        style={{ 
-                          backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                          color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
-                          border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
+                          style={{ 
+                          backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                          color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : primary),
+                          border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : `1px solid ${primary}`),
                           fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : undefined,
-                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
-                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined)
+                          boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? undefined : undefined),
+                          fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'TERMINAL THEME' ? '"Courier New", "Courier", monospace' : undefined),
+                          borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : undefined,
+                          textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                          letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined
                         }}
                       >
                         COMPRESS
@@ -5953,14 +5578,14 @@ function MixerPage() {
                           style={{ 
                             width: '36px',
                             height: '20px',
-                            backgroundColor: (globalCompressor?.enabled || false) 
-                          ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : primary)))
-                          : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
-                            border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
-                            borderColor: pageTheme === 'CLASSIC' ? primary : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined),
-                            borderWidth: pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined),
-                            borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                            boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
+                              backgroundColor: (globalCompressor?.enabled || false)
+                          ? ((pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'TERMINAL THEME' ? '#0A0A0A' : 'rgba(42, 42, 42, 0.8)')))
+                          : ((pageTheme === 'ANALOG PANEL') ? (currentTheme?.sectionBg || '#3a3a3a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#808080' : (pageTheme === 'TERMINAL THEME' ? '#000000' : '#FCFAEE')),
+                            border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'TERMINAL THEME' ? '1px solid #FFFFFF' : undefined),
+                            borderColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.border || '#D0D0D0') : (pageTheme === 'CLASSIC' ? 'rgba(208, 208, 208, 0.5)' : (pageTheme === 'TERMINAL THEME' ? '#FFFFFF' : undefined)),
+                            borderWidth: (pageTheme === 'ANALOG PANEL') ? '1px' : (pageTheme === 'CLASSIC' ? '1px' : (pageTheme === 'TERMINAL THEME' ? '1px' : undefined)),
+                            borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
+                            boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : (pageTheme === 'TERMINAL THEME' ? '0 0 10px rgba(255,255,255,0.3)' : 'inset 0 1px 3px rgba(0,0,0,0.1)')
                           }}
                         >
                           <div 
@@ -5975,10 +5600,10 @@ function MixerPage() {
                               transform: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
                                 ? 'translateY(-50%)' 
                                 : ((globalCompressor?.enabled || false) ? 'translateX(16px)' : 'translateX(2px)'),
-                              backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
-                              border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
-                              borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
-                              boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
+                              backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#E0E0E0' : '#ffffff',
+                              border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : 'none',
+                              borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '9999px',
+                              boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 1px 2px rgba(0,0,0,0.2)',
                               zIndex: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 10 : undefined
                             }}
                           />
@@ -5989,7 +5614,7 @@ function MixerPage() {
                 </div>
                     </div>
 
-                    {/* Mobile Portrait Varispeed */}
+                    {/* Mobile Portrait Varispeed - Inside Controls Box */}
                     <div id="mobile-varispeed" className="w-full flex justify-center sm:hidden" style={{ 
                       marginTop: isSmallScreen ? '8px' : '12px',
                       marginLeft: '0',
@@ -5998,11 +5623,9 @@ function MixerPage() {
                 <div
                   className="relative"
                   style={{
-                    marginTop: '0px',
-                    marginBottom: '0px', // Removed - spacing handled by parent
-                    paddingBottom: isVerySmallScreen ? '8px' : isSmallScreen ? '10px' : '8px', // Padding for NATURAL button clearance
-                    width: isVerySmallScreen ? '320px' : (isSmallScreen || isMediumScreen) ? '340px' : '350px',
-                    height: isVerySmallScreen ? '120px' : (isSmallScreen || isMediumScreen) ? '130px' : '140px',
+                    width: '350px',
+                    height: '140px',
+                    overflow: 'visible'
                   }}
                 >
                   <div
@@ -6014,16 +5637,16 @@ function MixerPage() {
                   >
                     {bpm !== null && (
                       <div className="text-xs font-mono mb-1" style={{ 
-                        color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                        color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8',
+                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                         fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
                       }}>
                         {Math.round(bpm * varispeed)} BPM
                       </div>
                     )}
                     <div className="text-sm tracking-wider" style={{ 
-                      color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                      fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                      color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.text || '#E8E8E8') : '#E8E8E8',
+                      fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : 'inherit',
                       fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
                     }}>
                       VARISPEED
@@ -6045,17 +5668,17 @@ function MixerPage() {
                         setVarispeedControl(newVarispeed, isNaturalVarispeed);
                       }}
                       isIOS={isIOS}
-                      primaryColor={primary}
+                      primaryColor={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.accent || currentTheme?.text || '#E8E8E8') : '#E8E8E8'}
                       stemCount={stems.length}
                       pageTheme={pageTheme}
                     />
                   </div>
                   
-                  {/* Mode Toggle Button and Theme Button - Centered below slider for mobile */}
-                  {/* ⚠️ IMPORTANT: These buttons are the BOTTOM BOUNDARY of the page. 
-                      Positioned with safe spacing from container bottom to avoid browser chrome overlap. */}
+                  {/* NATURAL/STRETCH toggle and THEMES button */}
                   <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-2" style={{ 
-                    bottom: isVerySmallScreen ? '4px' : isSmallScreen ? '6px' : '4px' // Safe spacing from container bottom
+                    bottom: '-6px', 
+                    zIndex: 100, 
+                    pointerEvents: 'auto'
                   }}>
                     <button
                       onClick={() => {
@@ -6065,25 +5688,34 @@ function MixerPage() {
                       }}
                       className="px-2 py-1 text-xs font-mono rounded border"
                       style={{ 
-                        color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                        borderColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
+                        color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : '#E8E8E8',
+                        borderColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.border || '#D0D0D0') : 'rgba(208, 208, 208, 0.5)',
                         borderWidth: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px' : '1px',
-                        backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')
-                          ? '#D4C5B9'
-                          : pageTheme === 'MUNY'
-                          ? '#FFFFFF'
-                          : (isNaturalVarispeed ? primary + '20' : 'transparent'),
+                        backgroundColor: (pageTheme === 'ANALOG PANEL') 
+                          ? (currentTheme?.buttonBg || '#2a2a2a')
+                          : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')
+                            ? '#D4C5B9'
+                            : pageTheme === 'MUNY'
+                            ? '#FFFFFF'
+                            : (isNaturalVarispeed ? 'rgba(42, 42, 42, 0.3)' : 'rgba(42, 42, 42, 0.8)'),
                         pointerEvents: 'auto',
                         height: '26px',
                         width: '70px',
+                        maxWidth: 'calc(50% - 4px)',
                         fontSize: isVerySmallScreen ? '10px' : '12px',
                         padding: '0',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                        boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                        fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit'
+                        boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                        fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                        borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : undefined,
+                        textTransform: (pageTheme === 'ANALOG PANEL') ? 'uppercase' : undefined,
+                        letterSpacing: (pageTheme === 'ANALOG PANEL') ? '0.5px' : undefined,
+                        boxSizing: 'border-box',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                       }}
                       title={`Switch to ${isNaturalVarispeed ? 'Time-stretch' : 'Natural'} mode`}
                     >
@@ -6095,27 +5727,31 @@ function MixerPage() {
                         className="pressable font-mono tracking-wide"
                         data-theme-button
                         style={{ 
-                          backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#FCFAEE')),
-                          color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : primary,
-                          border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
+                          backgroundColor: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : 'rgba(42, 42, 42, 0.8)')),
+                          color: (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonText || '#E8E8E8') : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#000000' : '#E8E8E8',
+                          border: (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid rgba(208, 208, 208, 0.5)`,
                           pointerEvents: 'auto',
                           height: '26px',
                           width: isVerySmallScreen ? '75px' : isSmallScreen ? '72px' : '70px',
-                          fontSize: isVerySmallScreen ? '10px' : '12px',
+                          maxWidth: 'calc(50% - 4px)',
+                          minWidth: isVerySmallScreen ? '70px' : isSmallScreen ? '68px' : '66px',
+                          fontSize: isVerySmallScreen ? '9px' : isSmallScreen ? '10px' : '11px',
                           padding: '0 4px',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal',
-                          boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
-                          fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
-                          borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+                          boxShadow: (pageTheme === 'ANALOG PANEL') ? 'none' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : 'none',
+                          fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'inherit',
+                          borderRadius: (pageTheme === 'ANALOG PANEL') ? '4px' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
                           whiteSpace: 'nowrap',
-                          letterSpacing: isVerySmallScreen ? '-0.3px' : '0px',
+                          letterSpacing: isVerySmallScreen ? '0px' : '0px',
+                          boxSizing: 'border-box',
+                          overflow: 'visible'
                         }}
                         title="Select theme"
                       >
-                        <span>THEMES</span><span style={{ marginLeft: '2px', fontSize: isVerySmallScreen ? '8px' : '10px' }}>▼</span>
+                        <span>THEMES</span><span style={{ marginLeft: '2px', fontSize: isVerySmallScreen ? '7px' : '9px' }}>▼</span>
                       </button>
                       {showThemeDropdown && (
                         <div
@@ -6125,54 +5761,68 @@ function MixerPage() {
                             left: '50%',
                             transform: 'translateX(-50%)',
                             marginBottom: '8px',
-                            backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : '#F5F5DC')),
-                            border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : `1px solid ${primary}`,
-                            borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '0' : '4px',
+                            backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '#D4C5B9' : (pageTheme === 'MUNY' ? '#FFFFFF' : (pageTheme === 'OLD INTERNET' ? '#C0C0C0' : (pageTheme === 'ANALOG PANEL') ? (currentTheme?.buttonBg || '#2a2a2a') : 'rgba(42, 42, 42, 0.95)')),
+                            border: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? '2px solid #000000' : (pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : `1px solid rgba(208, 208, 208, 0.5)`,
+                            borderRadius: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'ANALOG PANEL') ? '0' : '4px',
                             zIndex: 1000,
                             minWidth: '120px',
                             boxShadow: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'inset -1px -1px 0 #000, inset 1px 1px 0 #fff' : '0 2px 8px rgba(0,0,0,0.15)'
                           }}
                         >
-                          {(['OLD COMPUTER', 'OLD COMPUTER 2', 'FIGMA', 'DEMO'] as const).map((themeOption, index, array) => (
+                          {(['OLD COMPUTER', 'OLD COMPUTER 2', 'FIGMA', 'DEMO', 'ANALOG PANEL'] as const).map((themeOption, index, array) => (
                             <div
                               key={themeOption}
                               onClick={() => handleThemeChange(themeOption)}
                               style={{
                                 padding: '10px 16px',
                                 cursor: 'pointer',
-                                backgroundColor: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                  ? (pageTheme === themeOption ? '#E0E0E0' : '#D4C5B9')
-                                  : (pageTheme === themeOption ? primary : '#F5F5DC'),
-                                color: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
-                                  ? '#000000' 
-                                  : (pageTheme === themeOption ? '#FCFAEE' : primary),
-                                borderBottom: index !== array.length - 1 ? ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'FIGMA') ? '2px solid #000000' : `1px solid ${primary}`) : 'none',
+                                backgroundColor: (pageTheme === 'ANALOG PANEL') 
+                                  ? (pageTheme === themeOption ? (currentTheme?.sectionBg || '#3a3a3a') : (currentTheme?.buttonBg || '#2a2a2a'))
+                                  : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
+                                    ? (pageTheme === themeOption ? '#E0E0E0' : '#D4C5B9')
+                                    : (pageTheme === themeOption ? 'rgba(42, 42, 42, 0.8)' : 'rgba(42, 42, 42, 0.95)'),
+                                color: (pageTheme === 'ANALOG PANEL') 
+                                  ? (currentTheme?.text || '#E8E8E8')
+                                  : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') 
+                                    ? '#000000' 
+                                    : (pageTheme === themeOption ? '#E8E8E8' : '#E8E8E8'),
+                                borderBottom: index !== array.length - 1 
+                                  ? ((pageTheme === 'ANALOG PANEL') ? `1px solid ${currentTheme?.border || '#D0D0D0'}` : ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2' || pageTheme === 'FIGMA') ? '2px solid #000000' : `1px solid rgba(208, 208, 208, 0.3)`))
+                                  : 'none',
                                 fontSize: '12px',
-                                fontFamily: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'monospace',
+                                fontFamily: (pageTheme === 'ANALOG PANEL') ? 'Arial, Helvetica, sans-serif' : (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'monospace' : 'monospace',
                                 fontWeight: (pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2') ? 'bold' : 'normal'
                               }}
-                              onMouseEnter={(e) => {
-                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                                  if (pageTheme !== themeOption) {
-                                    e.currentTarget.style.backgroundColor = '#E0E0E0'
+                                onMouseEnter={(e) => {
+                                  if (pageTheme === 'ANALOG PANEL') {
+                                    if (pageTheme !== themeOption) {
+                                      e.currentTarget.style.backgroundColor = currentTheme?.sectionBg || '#3a3a3a'
+                                    }
+                                  } else if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
+                                    if (pageTheme !== themeOption) {
+                                      e.currentTarget.style.backgroundColor = '#E0E0E0'
+                                    }
+                                  } else {
+                                    if (pageTheme !== themeOption) {
+                                      e.currentTarget.style.backgroundColor = primary + '20'
+                                    }
                                   }
-                                } else {
-                                  if (pageTheme !== themeOption) {
-                                    e.currentTarget.style.backgroundColor = primary + '20'
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (pageTheme === 'ANALOG PANEL') {
+                                    if (pageTheme !== themeOption) {
+                                      e.currentTarget.style.backgroundColor = currentTheme?.buttonBg || '#2a2a2a'
+                                    }
+                                  } else if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
+                                    if (pageTheme !== themeOption) {
+                                      e.currentTarget.style.backgroundColor = '#D4C5B9'
+                                    }
+                                  } else {
+                                    if (pageTheme !== themeOption) {
+                                      e.currentTarget.style.backgroundColor = '#F5F5DC'
+                                    }
                                   }
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if ((pageTheme === 'OLD COMPUTER' || pageTheme === 'OLD COMPUTER 2')) {
-                                  if (pageTheme !== themeOption) {
-                                    e.currentTarget.style.backgroundColor = '#D4C5B9'
-                                  }
-                                } else {
-                                  if (pageTheme !== themeOption) {
-                                    e.currentTarget.style.backgroundColor = '#F5F5DC'
-                                  }
-                                }
-                              }}
+                                }}
                             >
                               {themeOption === 'CLASSIC' ? 'classic' : themeOption}
                             </div>
@@ -6182,9 +5832,9 @@ function MixerPage() {
                     </div>
                   </div>
                 </div>
-                    </div>
                   </div>
                 </div>
+              </div>
             )}
 
 
@@ -6198,7 +5848,7 @@ function MixerPage() {
             initialConfig={reverbs[reverbConfigModal.stemLabel] || defaultReverbConfig}
             stemLabel={reverbConfigModal.stemLabel}
             position={reverbConfigModal.position}
-            primaryColor={primary}
+            primaryColor={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.accent || currentTheme?.text || '#E8E8E8') : primary}
           />
 
           {/* 🎛️ Echo Configuration Modal */}
@@ -6209,7 +5859,7 @@ function MixerPage() {
             initialConfig={echoes[echoConfigModal.stemLabel] || defaultEchoConfig}
             stemLabel={echoConfigModal.stemLabel}
             position={echoConfigModal.position}
-            primaryColor={primary}
+            primaryColor={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.accent || currentTheme?.text || '#E8E8E8') : primary}
           />
 
           {/* 🎛️ Global Flanger Configuration Modal */}
@@ -6221,7 +5871,7 @@ function MixerPage() {
             initialConfig={globalFlanger || defaultFlangerConfig}
             stemLabel="Global Mix"
             position={{ x: typeof window !== 'undefined' ? window.innerWidth / 2 : 400, y: typeof window !== 'undefined' ? window.innerHeight / 2 : 300 }}
-            primaryColor={primary}
+            primaryColor={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.accent || currentTheme?.text || '#E8E8E8') : primary}
           />
 
           {/* 🎛️ Global Compressor Configuration Modal */}
@@ -6233,7 +5883,7 @@ function MixerPage() {
             initialConfig={globalCompressor || defaultCompressorConfig}
             stemLabel="Global Mix"
             position={{ x: typeof window !== 'undefined' ? window.innerWidth / 2 : 400, y: typeof window !== 'undefined' ? window.innerHeight / 2 : 300 }}
-            primaryColor={primary}
+            primaryColor={(pageTheme === 'ANALOG PANEL') ? (currentTheme?.accent || currentTheme?.text || '#E8E8E8') : primary}
           />
 
           {/* 🎨 COLOR 2 Editor Modal */}
